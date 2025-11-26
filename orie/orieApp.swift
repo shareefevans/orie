@@ -11,7 +11,7 @@ import SwiftUI
 struct orieApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
     }
 }

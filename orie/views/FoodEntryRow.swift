@@ -36,6 +36,7 @@ struct FoodEntryRow: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal)
+        .contentShape(Rectangle())
     }
     
     private func formatTime(_ date: Date) -> String {

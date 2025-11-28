@@ -24,72 +24,89 @@ struct MainView: View {
         ZStack(alignment: .top) {
             // Main scrollable content
             ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Top padding to push content below fixed nav bar
-                        Spacer()
-                            .frame(height: 60)  // Height of TopNavigationBar
-
-                        // ⏰ Date and Time (SCROLLS)
-                        Text(formattedDate())
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 16)
-                            .padding(.bottom, 8)
-
-                        // 🍩 "Calories" Heading (SCROLLS)
-                        HStack {
-                            Text("Calories")
-                                .font(.title)
-                                .fontWeight(.semibold)
-                                .foregroundColor(
-                                    Color(
-                                        red: 69 / 255,
-                                        green: 69 / 255,
-                                        blue: 69 / 255
-                                    )
+                List {
+                    // Top padding spacer
+                    Color.clear
+                        .frame(height: 60)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    
+                    // Date section
+                    Text(formattedDate())
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .frame(maxWidth: .infinity) 
+                    
+                    // Calories heading
+                    HStack {
+                        Text("Calories")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                            .foregroundColor(
+                                Color(
+                                    red: 69 / 255,
+                                    green: 69 / 255,
+                                    blue: 69 / 255
                                 )
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 24)
-                        .padding(.bottom, 24)
-
-                        // Food entries
-                        ForEach(foodEntries) { entry in
-                            FoodEntryRow(entry: entry)
-                                .id(entry.id)
-                        }
-
-                        // Input field for new entry
-                        FoodInputField(
-                            text: $currentInput,
-                            onSubmit: {
-                                addFoodEntry()
-
-                                // Scroll to input field after adding
-                                DispatchQueue.main.asyncAfter(
-                                    deadline: .now() + 0.1
-                                ) {
-                                    withAnimation {
-                                        proxy.scrollTo(
-                                            "inputField",
-                                            anchor: .top
-                                        )
-                                    }
-                                }
-                            },
-                            isFocused: $isInputFocused  // ← Move to end
-                        )
-                        .id("inputField")
-
-                        // Extra padding at bottom - to clear macro display
+                            )
                         Spacer()
-                            .frame(height: 120)
                     }
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 24)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
+                    // Food entries
+                    ForEach(foodEntries) { entry in
+                        FoodEntryRow(entry: entry)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    deleteFoodEntry(entry)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
+                    
+                    // Input field
+                    FoodInputField(
+                        text: $currentInput,
+                        onSubmit: {
+                            addFoodEntry()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation {
+                                    proxy.scrollTo("inputField", anchor: .top)
+                                }
+                            }
+                        },
+                        isFocused: $isInputFocused
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .id("inputField")
+                    
+                    // Bottom padding
+                    Color.clear
+                        .frame(height: 120)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .onChange(of: foodEntries.count) { oldValue, newValue in
-                    // Auto-scroll when new entry is added
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation {
                             proxy.scrollTo("inputField", anchor: .top)
@@ -134,7 +151,7 @@ struct MainView: View {
                     // Done button (only shows when keyboard is open)
                     if isInputFocused {
                         Button(action: {
-                            isInputFocused = false  // Close keyboard
+                            isInputFocused = false
                         }) {
                             Image(systemName: "checkmark")
                                 .font(.callout)
@@ -142,7 +159,6 @@ struct MainView: View {
                                 .frame(width: 50, height: 50)
                                 .background(Color.yellow)
                                 .clipShape(Circle())
-                                .glassEffect(.regular.interactive())
                         }
                     }
                 }
@@ -162,7 +178,7 @@ struct MainView: View {
                     )
                     .frame(height: 100)
                 }
-                    .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea(edges: .bottom)
             )
         }
         .sheet(isPresented: $showAwards) {
@@ -194,6 +210,12 @@ struct MainView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMMM yyyy, HH.mm"
         return formatter.string(from: Date())
+    }
+    
+    private func deleteFoodEntry(_ entry: FoodEntry) {
+        withAnimation {
+            foodEntries.removeAll { $0.id == entry.id }
+        }
     }
 }
 

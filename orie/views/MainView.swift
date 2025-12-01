@@ -1,4 +1,4 @@
-////
+//
 //  ContentView.swift
 //  orie
 //
@@ -12,6 +12,8 @@ struct MainView: View {
     @State private var currentInput = ""
     @State private var showAwards = false
     @State private var showProfile = false
+    @State private var showDateSelection = false
+    @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @FocusState private var isInputFocused: Bool
 
     // 👉 Mock data for testing
@@ -19,6 +21,18 @@ struct MainView: View {
     @State private var totalProtein = 220.0
     @State private var totalCarbs = 195.0
     @State private var totalFats = 50.0
+    
+    // Computed property to filter entries for selected date
+    private var filteredEntries: [FoodEntry] {
+        foodEntries.filter { entry in
+            Calendar.current.isDate(entry.entryDate, inSameDayAs: selectedDate)
+        }
+    }
+    
+    // Check if selected date is today
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(selectedDate)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -65,7 +79,7 @@ struct MainView: View {
                     .listRowBackground(Color.clear)
 
                     // Food entries (sorted by time)
-                    ForEach(foodEntries.sorted()) { entry in
+                    ForEach(filteredEntries.sorted()) { entry in
                         FoodEntryRow(
                             entry: entry,
                             onTimeChange: { newTime in
@@ -124,7 +138,10 @@ struct MainView: View {
             VStack(spacing: 0) {
                 TopNavigationBar(
                     showAwards: $showAwards,
-                    showProfile: $showProfile
+                    showProfile: $showProfile,
+                    showDateSelection: $showDateSelection,
+                    selectedDate: selectedDate,
+                    isToday: isToday
                 )
                 Spacer()
             }
@@ -192,10 +209,14 @@ struct MainView: View {
         .sheet(isPresented: $showProfile) {
             Text("Profile Sheet - Coming Soon")
         }
+        .sheet(isPresented: $showDateSelection) {
+            DateSelectionModal(selectedDate: $selectedDate)
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private func addFoodEntry() {
-        let newEntry = FoodEntry(foodName: currentInput)
+        let newEntry = FoodEntry(foodName: currentInput, entryDate: selectedDate)
         foodEntries.append(newEntry)
         currentInput = ""
 

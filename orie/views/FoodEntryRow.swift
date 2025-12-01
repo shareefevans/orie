@@ -81,7 +81,7 @@ struct TimePickerSheet: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Button("Cancel") {
+                Button("Set Time") {
                     onDone()
                 }
                 .foregroundColor(.secondary)
@@ -89,11 +89,7 @@ struct TimePickerSheet: View {
                 .padding(.horizontal, 20)
                 
                 Spacer()
-                
-                Text("Edit Time")
-                    .font(.headline)
-                
-                Spacer()
+            
                 
                 Button("Done") {
                     onDone()

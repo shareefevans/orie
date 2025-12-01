@@ -10,6 +10,7 @@ import Foundation
 struct FoodEntry: Identifiable, Comparable {
     let id = UUID()
     var timestamp: Date
+    var entryDate: Date  // Just the day (no time component)
     var foodName: String
     var calories: Int?
     var protein: Double?
@@ -17,8 +18,9 @@ struct FoodEntry: Identifiable, Comparable {
     var fats: Double?
     var isLoading: Bool
     
-    init(foodName: String) {
+    init(foodName: String, entryDate: Date = Date()) {
         self.timestamp = Date()
+        self.entryDate = Calendar.current.startOfDay(for: entryDate)
         self.foodName = foodName
         self.calories = nil
         self.protein = nil

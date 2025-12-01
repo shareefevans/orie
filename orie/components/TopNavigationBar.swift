@@ -10,6 +10,9 @@ import SwiftUI
 struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
+    @Binding var showDateSelection: Bool
+    var selectedDate: Date
+    var isToday: Bool
     
     var body: some View {
         ZStack {
@@ -30,16 +33,16 @@ struct TopNavigationBar: View {
                 Spacer()
             }
             
-            // Center - App icon + Today (perfectly centered)
+            // Center - App icon + Date selector (perfectly centered)
             Button(action: {
-                // Empty action for now
+                showDateSelection = true
             }) {
                 HStack(spacing: 8) {
                     Image("AppLogo")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 24, height: 50)
-                    Text("Today")
+                    Text(isToday ? "Today" : formatSelectedDate(selectedDate))
                         .font(.callout.bold())
                         .foregroundColor(.primary)
                 }
@@ -78,8 +81,20 @@ struct TopNavigationBar: View {
         .padding(.horizontal)
         .padding(.vertical, 12)
     }
+    
+    private func formatSelectedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM dd"
+        return formatter.string(from: date)
+    }
 }
 
 #Preview {
-    TopNavigationBar(showAwards: .constant(false), showProfile: .constant(false))
+    TopNavigationBar(
+        showAwards: .constant(false),
+        showProfile: .constant(false),
+        showDateSelection: .constant(false),
+        selectedDate: Date(),
+        isToday: true
+    )
 }

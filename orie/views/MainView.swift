@@ -59,7 +59,7 @@ struct MainView: View {
                     
                     // Calories heading
                     HStack {
-                        Text("Calories")
+                        Text("1600 Cal")
                             .font(.title)
                             .fontWeight(.semibold)
                             .foregroundColor(
@@ -141,7 +141,11 @@ struct MainView: View {
                     showProfile: $showProfile,
                     showDateSelection: $showDateSelection,
                     selectedDate: selectedDate,
-                    isToday: isToday
+                    isToday: isToday,
+                    isInputFocused: Binding(
+                        get: { isInputFocused },
+                        set: { isInputFocused = $0 }
+                    )
                 )
                 Spacer()
             }
@@ -161,48 +165,48 @@ struct MainView: View {
                 .ignoresSafeArea(edges: .top)
             )
 
-            // 🍑 Floating Bottom Macro Tracker
-            VStack {
-                Spacer()
-                HStack(spacing: 12) {
-                    MacroDisplay(
-                        label: "Remaining",
-                        value: "\(totalCalories) cal"
-                    )
-
-                    // Done button (only shows when keyboard is open)
-                    if isInputFocused {
-                        Button(action: {
-                            isInputFocused = false
-                        }) {
-                            Image(systemName: "chevron.down")
-                                .font(.callout)
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                                .background(Color.yellow)
-                                .clipShape(Circle())
-                                .glassEffect(.regular.interactive())
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            }
-            .background(
-                VStack {
-                    Spacer()
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(.systemBackground).opacity(0),
-                            Color(.systemBackground),
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 100)
-                }
-                .ignoresSafeArea(edges: .bottom)
-            )
+            // 🍑 Floating Bottom Macro Tracker (COMMENTED OUT)
+//            VStack {
+//                Spacer()
+//                HStack(spacing: 12) {
+//                    MacroDisplay(
+//                        label: "Remaining",
+//                        value: "\(totalCalories) cal"
+//                    )
+//
+//                    // Done button (only shows when keyboard is open)
+//                    if isInputFocused {
+//                        Button(action: {
+//                            isInputFocused = false
+//                        }) {
+//                            Image(systemName: "chevron.down")
+//                                .font(.callout)
+//                                .foregroundColor(.white)
+//                                .frame(width: 50, height: 50)
+//                                .background(Color.yellow)
+//                                .clipShape(Circle())
+//                                .glassEffect(.regular.interactive())
+//                        }
+//                    }
+//                }
+//                .padding(.horizontal)
+//                .padding(.bottom, 8)
+//            }
+//            .background(
+//                VStack {
+//                    Spacer()
+//                    LinearGradient(
+//                        gradient: Gradient(colors: [
+//                            Color(.systemBackground).opacity(0),
+//                            Color(.systemBackground),
+//                        ]),
+//                        startPoint: .top,
+//                        endPoint: .bottom
+//                    )
+//                    .frame(height: 100)
+//                }
+//                .ignoresSafeArea(edges: .bottom)
+//            )
         }
         .sheet(isPresented: $showAwards) {
             Text("Awards Sheet - Coming Soon")
@@ -254,31 +258,31 @@ struct MainView: View {
     }
 }
 
-// 👉 Helper view for macro display at bottom
-struct MacroDisplay: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Text(label)
-                .font(.footnote)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity)
-        .frame(height: 50)
-        .glassEffect(.regular.interactive())
-    }
-}
+// 👉 Helper view for macro display at bottom (COMMENTED OUT)
+//struct MacroDisplay: View {
+//    let label: String
+//    let value: String
+//
+//    var body: some View {
+//        HStack(spacing: 16) {
+//            Text(label)
+//                .font(.footnote)
+//                .foregroundColor(.secondary)
+//
+//            Spacer()
+//
+//            Text(value)
+//                .font(.subheadline)
+//                .fontWeight(.semibold)
+//                .foregroundColor(.primary)
+//        }
+//        .padding(.horizontal, 16)
+//        .padding(.vertical, 12)
+//        .frame(maxWidth: .infinity)
+//        .frame(height: 50)
+//        .glassEffect(.regular.interactive())
+//    }
+//}
 
 #Preview {
     MainView()

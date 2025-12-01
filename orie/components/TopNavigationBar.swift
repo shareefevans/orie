@@ -13,9 +13,12 @@ struct TopNavigationBar: View {
     @Binding var showDateSelection: Bool
     var selectedDate: Date
     var isToday: Bool
+    @Binding var isInputFocused: Bool
+    
+    @Namespace private var animation
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             // Left side - Date selector
             Button(action: {
                 showDateSelection = true
@@ -38,23 +41,6 @@ struct TopNavigationBar: View {
             
             // Right side - Grouped buttons (bell, settings, trophy)
             HStack(spacing: 0) {
-                Button(action: {
-                    // Notifications action
-                }) {
-                    Image(systemName: "bell")
-                        .font(.callout)
-                        .foregroundColor(.primary)
-                        .frame(width: 50, height: 50)
-                }
-                
-                Button(action: {
-                    showProfile = true
-                }) {
-                    Image(systemName: "gearshape")
-                        .font(.callout)
-                        .foregroundColor(.primary)
-                        .frame(width: 44, height: 44)
-                }
                 
                 Button(action: {
                     showAwards = true
@@ -64,11 +50,47 @@ struct TopNavigationBar: View {
                         .foregroundColor(.primary)
                         .frame(width: 50, height: 50)
                 }
+                
+                Button(action: {
+                    // Notifications action
+                }) {
+                    Image(systemName: "bell")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                }
+        
+                Button(action: {
+                    showProfile = true
+                }) {
+                    Image(systemName: "gearshape")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(width: 44, height: 44)
+                }
+            
             }
             .glassEffect(.regular.interactive())
+            
+            // Keyboard dismiss button (only shows when keyboard is open)
+            if isInputFocused {
+                Button(action: {
+                    isInputFocused = false
+                }) {
+                    Image(systemName: "checkmark")
+                        .font(.callout)
+                        .foregroundColor(.white)
+                        .frame(width: 50, height: 50)
+                        .background(Color.yellow)
+                        .clipShape(Circle())
+                        .glassEffect(.regular.interactive())
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isInputFocused)
     }
     
     private func formatSelectedDate(_ date: Date) -> String {
@@ -84,6 +106,7 @@ struct TopNavigationBar: View {
         showProfile: .constant(false),
         showDateSelection: .constant(false),
         selectedDate: Date(),
-        isToday: true
+        isToday: true,
+        isInputFocused: .constant(false)
     )
 }

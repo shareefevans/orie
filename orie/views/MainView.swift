@@ -175,12 +175,13 @@ struct MainView: View {
                         Button(action: {
                             isInputFocused = false
                         }) {
-                            Image(systemName: "checkmark")
+                            Image(systemName: "chevron.down")
                                 .font(.callout)
                                 .foregroundColor(.white)
                                 .frame(width: 50, height: 50)
                                 .background(Color.yellow)
                                 .clipShape(Circle())
+                                .glassEffect(.regular.interactive())
                         }
                     }
                 }

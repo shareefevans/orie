@@ -15,25 +15,8 @@ struct TopNavigationBar: View {
     var isToday: Bool
     
     var body: some View {
-        ZStack {
-            // Left side
-            HStack {
-                // 🏆 Trophy button (left)
-                Button(action: {
-                    showAwards = true
-                }) {
-                    Image(systemName: "trophy")
-                        .font(.callout)
-                        .foregroundColor(.primary)
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                        .glassEffect(.regular.interactive())
-                }
-                
-                Spacer()
-            }
-            
-            // Center - App icon + Date selector (perfectly centered)
+        HStack {
+            // Left side - Date selector
             Button(action: {
                 showDateSelection = true
             }) {
@@ -51,32 +34,38 @@ struct TopNavigationBar: View {
                 .glassEffect(.regular.interactive())
             }
             
-            // Right side
-            HStack {
-                Spacer()
-                
-                // 🔔 Right side - Bell and Settings (grouped in one glass frame)
-                HStack(spacing: 0) {
-                    Button(action: {
-                        // Notifications action
-                    }) {
-                        Image(systemName: "bell")
-                            .font(.callout)
-                            .foregroundColor(.primary)
-                            .frame(width: 50, height: 50)
-                    }
-                    
-                    Button(action: {
-                        showProfile = true
-                    }) {
-                        Image(systemName: "gearshape")
-                            .font(.callout)
-                            .foregroundColor(.primary)
-                            .frame(width: 44, height: 44)
-                    }
+            Spacer()
+            
+            // Right side - Grouped buttons (bell, settings, trophy)
+            HStack(spacing: 0) {
+                Button(action: {
+                    // Notifications action
+                }) {
+                    Image(systemName: "bell")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
                 }
-                .glassEffect(.regular.interactive())
+                
+                Button(action: {
+                    showProfile = true
+                }) {
+                    Image(systemName: "gearshape")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(width: 44, height: 44)
+                }
+                
+                Button(action: {
+                    showAwards = true
+                }) {
+                    Image(systemName: "trophy")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                }
             }
+            .glassEffect(.regular.interactive())
         }
         .padding(.horizontal)
         .padding(.vertical, 12)

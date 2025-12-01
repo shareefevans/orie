@@ -131,7 +131,7 @@ struct MonthTab: View {
     var body: some View {
         Button(action: action) {
             Text(monthName(month))
-                .font(.callout)
+                .font(.footnote)
                 .foregroundColor(isSelected ? .white : .primary)
                 .frame(width: 80, height: 50)
                 .background(isSelected ? Color.yellow : Color.white)
@@ -211,15 +211,10 @@ struct DateRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                if isToday {
-                    Image(systemName: "ellipsis.calendar")
-                        .foregroundColor(.yellow)
-                        .font(.footnote)
-                }
-                
                 Text(formatDate(date))
                     .font(.footnote)
-                    .foregroundColor(isToday ? .yellow : .primary)
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .fontWeight(isSelected ? .semibold : .regular)
                 
                 Spacer()
             }
@@ -227,8 +222,9 @@ struct DateRow: View {
             .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 100)
-                    .fill(isSelected ? Color.yellow.opacity(0.1) : Color(.systemGray6))
+                    .fill(isSelected ? Color.yellow : Color(.systemGray6))
             )
+
         }
         .buttonStyle(.plain)
     }

@@ -1,4 +1,4 @@
-//
+////
 //  ContentView.swift
 //  orie
 //
@@ -41,7 +41,7 @@ struct MainView: View {
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .frame(maxWidth: .infinity) 
+                        .frame(maxWidth: .infinity)
                     
                     // Calories heading
                     HStack {
@@ -64,19 +64,24 @@ struct MainView: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
 
-                    // Food entries
-                    ForEach(foodEntries) { entry in
-                        FoodEntryRow(entry: entry)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    deleteFoodEntry(entry)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
+                    // Food entries (sorted by time)
+                    ForEach(foodEntries.sorted()) { entry in
+                        FoodEntryRow(
+                            entry: entry,
+                            onTimeChange: { newTime in
+                                updateEntryTime(entry.id, newTime: newTime)
                             }
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteFoodEntry(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                     
                     // Input field
@@ -202,6 +207,14 @@ struct MainView: View {
             }) {
                 foodEntries[index].calories = Int.random(in: 100...600)
                 foodEntries[index].isLoading = false
+            }
+        }
+    }
+    
+    private func updateEntryTime(_ entryId: UUID, newTime: Date) {
+        if let index = foodEntries.firstIndex(where: { $0.id == entryId }) {
+            withAnimation {
+                foodEntries[index].timestamp = newTime
             }
         }
     }

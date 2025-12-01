@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct FoodEntry: Identifiable {
+struct FoodEntry: Identifiable, Comparable {
     let id = UUID()
     var timestamp: Date
     var foodName: String
@@ -25,5 +25,10 @@ struct FoodEntry: Identifiable {
         self.carbs = nil
         self.fats = nil
         self.isLoading = true
+    }
+    
+    // Comparable implementation for sorting
+    static func < (lhs: FoodEntry, rhs: FoodEntry) -> Bool {
+        lhs.timestamp < rhs.timestamp
     }
 }

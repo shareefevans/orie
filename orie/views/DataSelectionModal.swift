@@ -36,7 +36,7 @@ struct DateSelectionModal: View {
                 Spacer()
             }
             .padding(.horizontal)
-            .padding(.top, 32)
+            .padding(.top, 40)
             .padding(.bottom, 16)
             
             // Horizontal scrolling month tabs

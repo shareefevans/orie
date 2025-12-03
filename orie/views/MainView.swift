@@ -59,7 +59,7 @@ struct MainView: View {
                     
                     // Calories heading
                     HStack {
-                        Text("1600 Cal")
+                        Text("1600 Calories")
                             .font(.title)
                             .fontWeight(.semibold)
                             .foregroundColor(
@@ -212,7 +212,7 @@ struct MainView: View {
             Text("Awards Sheet - Coming Soon")
         }
         .sheet(isPresented: $showProfile) {
-            Text("Profile Sheet - Coming Soon")
+            ProfileSheet()
         }
         .sheet(isPresented: $showDateSelection) {
             DateSelectionModal(selectedDate: $selectedDate)

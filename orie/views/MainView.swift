@@ -230,14 +230,29 @@ struct MainView: View {
         foodEntries.append(newEntry)
         currentInput = ""
 
-        // 👉 TODO: Call API here to get calories
-        // 👉 For now, simulate with mock data after 1 second
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            if let index = foodEntries.firstIndex(where: {
-                $0.id == newEntry.id
-            }) {
-                foodEntries[index].calories = Int.random(in: 100...600)
-                foodEntries[index].isLoading = false
+        // Call API to get nutrition data
+        Task {
+            do {
+                let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
+                
+                // Update the entry with real data
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].calories = nutrition.calories
+                        foodEntries[index].protein = nutrition.protein
+                        foodEntries[index].carbs = nutrition.carbs
+                        foodEntries[index].fats = nutrition.fats
+                        foodEntries[index].isLoading = false
+                    }
+                }
+            } catch {
+                print("Error fetching nutrition: \(error)")
+                // Keep loading state or show error
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].isLoading = false
+                    }
+                }
             }
         }
     }

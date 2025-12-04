@@ -59,7 +59,7 @@ struct MainView: View {
                     
                     // Calories heading
                     HStack {
-                        Text("1600 Calories")
+                        Text("Add Calories")
                             .font(.title)
                             .fontWeight(.semibold)
                             .foregroundColor(

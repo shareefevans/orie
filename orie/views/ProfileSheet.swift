@@ -12,10 +12,10 @@ struct ProfileSheet: View {
     
     // Mock user data
     @State private var userName = "Shareef Evans"
-    @State private var dailyCalories = 1680
-    @State private var dailyProtein = 200
-    @State private var dailyCarbs = 150
-    @State private var dailyFats = 50
+    @State private var dailyCalories = 0
+    @State private var dailyProtein = 0
+    @State private var dailyCarbs = 0
+    @State private var dailyFats = 0
     
     // Settings
     @State private var locationEnabled = true
@@ -175,17 +175,124 @@ struct MacroRow: View {
     @Binding var value: Int
     let unit: String
     
+    @State private var showPicker = false
+    @State private var tempValue: Int
+    
+    init(label: String, value: Binding<Int>, unit: String) {
+        self.label = label
+        self._value = value
+        self.unit = unit
+        _tempValue = State(initialValue: value.wrappedValue)
+    }
+    
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.footnote)
-                .fontWeight(.medium)
+        Button(action: {
+            tempValue = value
+            showPicker = true
+        }) {
+            HStack {
+                Text(label)
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    if value == 0 {
+                        Text("Add \(label)")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    } else {
+                        HStack(spacing: 2) {
+                            Text("\(value)")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                            Text(unit)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showPicker) {
+            MacroPickerSheet(
+                label: label,
+                value: $tempValue,
+                unit: unit,
+                onDone: {
+                    value = tempValue
+                    showPicker = false
+                }
+            )
+            .presentationDetents([.height(300)])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+// Macro Picker Sheet
+struct MacroPickerSheet: View {
+    let label: String
+    @Binding var value: Int
+    let unit: String
+    var onDone: () -> Void
+    
+    @State private var textValue: String = ""
+    @FocusState private var isTextFieldFocused: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button("Cancel") {
+                    onDone()
+                }
+                .foregroundColor(.secondary)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                
+                Spacer()
+                
+                Text("Set \(label)")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button("Done") {
+                    if let newValue = Int(textValue) {
+                        value = newValue
+                    }
+                    onDone()
+                }
+                .fontWeight(.semibold)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+            
+            Divider()
+            
+            // Text Field Input
+            VStack(spacing: 16) {
+                TextField("Enter value", text: $textValue)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 48, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .focused($isTextFieldFocused)
+                    .padding()
+            }
+            .padding(.top, 32)
             
             Spacer()
-            
-            Text("\(value)\(unit)")
-                .font(.footnote)
-                .foregroundColor(.secondary)
+        }
+        .onAppear {
+            textValue = "\(value)"
+            isTextFieldFocused = true
         }
     }
 }

@@ -209,7 +209,7 @@ struct MainView: View {
 //            )
         }
         .sheet(isPresented: $showAwards) {
-            Text("Awards Sheet - Coming Soon")
+            AwardSheet()
         }
         .sheet(isPresented: $showProfile) {
             ProfileSheet()

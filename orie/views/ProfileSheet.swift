@@ -30,7 +30,7 @@ struct ProfileSheet: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Settings")
                                 .font(.title)
-                                .fontWeight(.bold)
+                                .fontWeight(.semibold)
                                 .foregroundColor(
                                     Color(
                                         red: 69 / 255,
@@ -57,7 +57,7 @@ struct ProfileSheet: View {
                                 .frame(width: 56, height: 56)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Macronutrients")
+                                Text("Daily Macros")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(
@@ -98,7 +98,7 @@ struct ProfileSheet: View {
                                 .frame(width: 48, height: 48)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("App")
+                                Text("App Settings")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(

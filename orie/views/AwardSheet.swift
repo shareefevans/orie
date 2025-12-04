@@ -36,7 +36,7 @@ struct AwardSheet: View {
                             .foregroundColor(.secondary)
                     }
                     .padding(.horizontal)
-                    .padding(.top, 16)
+                    .padding(.top, 32)
                     .padding(.bottom, 16)
                     
                     // Badges List
@@ -92,6 +92,27 @@ struct AwardSheet: View {
                         
                         AwardRow(
                             imageName: "AwardSilver3",
+                            title: "Weekend Warrior",
+                            subtitle: "Tracked Saturday & Sunday",
+                            isUnlocked: false
+                        )
+                        
+                        AwardRow(
+                            imageName: "AwardBronze1",
+                            title: "Calorie Cutthroat",
+                            subtitle: "Maintained a 500 cal deficit for 10 days",
+                            isUnlocked: false
+                        )
+                        
+                        AwardRow(
+                            imageName: "AwardBronze2",
+                            title: "Maintenance Maven",
+                            subtitle: "Hit maintenance calories 7 days in a row",
+                            isUnlocked: false
+                        )
+                        
+                        AwardRow(
+                            imageName: "AwardBronze3",
                             title: "Weekend Warrior",
                             subtitle: "Tracked Saturday & Sunday",
                             isUnlocked: false

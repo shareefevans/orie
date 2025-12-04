@@ -45,7 +45,8 @@ struct ProfileSheet: View {
                         }
                         Spacer()
                     }
-                    .padding(.top, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                     
                     // Macronutrients Section
                     VStack(alignment: .leading, spacing: 16) {

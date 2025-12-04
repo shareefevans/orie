@@ -12,6 +12,7 @@ struct MainView: View {
     @State private var currentInput = ""
     @State private var showAwards = false
     @State private var showProfile = false
+    @State private var showNotifications = false
     @State private var showDateSelection = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @FocusState private var isInputFocused: Bool
@@ -59,7 +60,7 @@ struct MainView: View {
                     
                     // Calories heading
                     HStack {
-                        Text("Add Calories")
+                        Text("Calories")
                             .font(.title)
                             .fontWeight(.semibold)
                             .foregroundColor(
@@ -140,6 +141,7 @@ struct MainView: View {
                     showAwards: $showAwards,
                     showProfile: $showProfile,
                     showDateSelection: $showDateSelection,
+                    showNotifications: $showNotifications,
                     selectedDate: selectedDate,
                     isToday: isToday,
                     isInputFocused: Binding(
@@ -213,6 +215,9 @@ struct MainView: View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileSheet()
+        }
+        .sheet(isPresented: $showNotifications) {
+            NotificationSheet()
         }
         .sheet(isPresented: $showDateSelection) {
             DateSelectionModal(selectedDate: $selectedDate)

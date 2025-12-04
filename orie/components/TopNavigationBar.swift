@@ -11,6 +11,7 @@ struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
     @Binding var showDateSelection: Bool
+    @Binding var showNotifications: Bool
     var selectedDate: Date
     var isToday: Bool
     @Binding var isInputFocused: Bool
@@ -52,14 +53,14 @@ struct TopNavigationBar: View {
                 }
                 
                 Button(action: {
-                    // Notifications action
+                    showNotifications = true
                 }) {
                     Image(systemName: "bell")
                         .font(.callout)
                         .foregroundColor(.primary)
                         .frame(width: 50, height: 50)
                 }
-        
+                
                 Button(action: {
                     showProfile = true
                 }) {
@@ -68,7 +69,7 @@ struct TopNavigationBar: View {
                         .foregroundColor(.primary)
                         .frame(width: 44, height: 44)
                 }
-            
+                
             }
             .glassEffect(.regular.interactive())
             
@@ -105,6 +106,7 @@ struct TopNavigationBar: View {
         showAwards: .constant(false),
         showProfile: .constant(false),
         showDateSelection: .constant(false),
+        showNotifications: .constant(false),
         selectedDate: Date(),
         isToday: true,
         isInputFocused: .constant(false)

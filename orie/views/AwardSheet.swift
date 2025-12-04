@@ -37,7 +37,7 @@ struct AwardSheet: View {
                     }
                     .padding(.horizontal)
                     .padding(.top, 32)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 8)
                     
                     // Badges List
                     VStack(spacing: 16) {

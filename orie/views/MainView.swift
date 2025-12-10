@@ -35,7 +35,7 @@ struct MainView: View {
         Calendar.current.isDateInToday(selectedDate)
     }
 
-    var body: some View {
+var body: some View {
         ZStack(alignment: .top) {
             // Main scrollable content
             ScrollViewReader { proxy in

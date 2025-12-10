@@ -10,9 +10,10 @@ import SwiftUI
 struct FoodEntryRow: View {
     let entry: FoodEntry
     var onTimeChange: (Date) -> Void
-    
+
     @State private var showTimePicker = false
     @State private var selectedTime: Date
+    @State private var sparkleScale: CGFloat = 1.0
     
     init(entry: FoodEntry, onTimeChange: @escaping (Date) -> Void) {
         self.entry = entry
@@ -40,8 +41,16 @@ struct FoodEntryRow: View {
             
             // Calories (right)
             if entry.isLoading {
-                ProgressView()
-                    .frame(width: 90)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 14))
+                    .foregroundColor(.blue)
+                    .scaleEffect(sparkleScale)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                            sparkleScale = 1.3
+                        }
+                    }
+                    .frame(width: 90, alignment: .trailing)
             } else if let calories = entry.calories {
                 Text("\(calories) cal")
                     .font(.subheadline)
@@ -67,8 +76,8 @@ struct FoodEntryRow: View {
     
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH.mm"
-        return "@\(formatter.string(from: date))"
+        formatter.dateFormat = "hh:mma"
+        return "\(formatter.string(from: date))"
     }
 }
 

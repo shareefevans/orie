@@ -14,7 +14,7 @@ struct FoodInputField: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Text("@\(currentTime())")
+            Text("\(currentTime())")
                 .font(.subheadline)
                 .foregroundColor(.yellow)
                 .frame(width: 90, alignment: .leading)
@@ -57,7 +57,7 @@ struct FoodInputField: View {
     
     private func currentTime() -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH.mm"
+        formatter.dateFormat = "HH:mma"
         return formatter.string(from: Date())
     }
 }

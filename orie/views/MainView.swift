@@ -14,6 +14,7 @@ struct MainView: View {
     @State private var showProfile = false
     @State private var showNotifications = false
     @State private var showDateSelection = false
+    @State private var showMacros = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @FocusState private var isInputFocused: Bool
 
@@ -167,48 +168,42 @@ var body: some View {
                 .ignoresSafeArea(edges: .top)
             )
 
-            // 🍑 Floating Bottom Macro Tracker (COMMENTED OUT)
-//            VStack {
-//                Spacer()
-//                HStack(spacing: 12) {
-//                    MacroDisplay(
-//                        label: "Remaining",
-//                        value: "\(totalCalories) cal"
-//                    )
-//
-//                    // Done button (only shows when keyboard is open)
-//                    if isInputFocused {
-//                        Button(action: {
-//                            isInputFocused = false
-//                        }) {
-//                            Image(systemName: "chevron.down")
-//                                .font(.callout)
-//                                .foregroundColor(.white)
-//                                .frame(width: 50, height: 50)
-//                                .background(Color.yellow)
-//                                .clipShape(Circle())
-//                                .glassEffect(.regular.interactive())
-//                        }
-//                    }
-//                }
-//                .padding(.horizontal)
-//                .padding(.bottom, 8)
-//            }
-//            .background(
-//                VStack {
-//                    Spacer()
-//                    LinearGradient(
-//                        gradient: Gradient(colors: [
-//                            Color(.systemBackground).opacity(0),
-//                            Color(.systemBackground),
-//                        ]),
-//                        startPoint: .top,
-//                        endPoint: .bottom
-//                    )
-//                    .frame(height: 100)
-//                }
-//                .ignoresSafeArea(edges: .bottom)
-//            )
+            // Floating Bottom Navigation with Heart Button
+            VStack {
+                Spacer()
+                HStack {
+                    // Heart button in bottom left
+                    Button(action: {
+                        showMacros = true
+                    }) {
+                        Image(systemName: "heart")
+                            .font(.callout)
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
+                            .glassEffect(.regular.interactive())
+                    }
+                    .padding(.leading, 16)
+                    .padding(.bottom, 16)
+
+                    Spacer()
+                }
+            }
+            .background(
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(.systemBackground).opacity(0),
+                            Color(.systemBackground),
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 100)
+                }
+                .ignoresSafeArea(edges: .bottom)
+            )
         }
         .sheet(isPresented: $showAwards) {
             AwardSheet()
@@ -222,6 +217,13 @@ var body: some View {
         .sheet(isPresented: $showDateSelection) {
             DateSelectionModal(selectedDate: $selectedDate)
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showMacros) {
+            MacrosSheet()
+                .presentationDetents([.height(200)])
+                .presentationDragIndicator(.visible)
+                .presentationContentInteraction(.scrolls)
+                .presentationBackground(.bar)
         }
     }
 

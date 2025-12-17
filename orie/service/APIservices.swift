@@ -20,6 +20,8 @@ class APIService {
         let carbs: Double
         let fats: Double
         let servingSize: String
+        let imageUrl: String?
+        let sources: [NutritionSource]?
     }
     
     struct NutritionRequest: Codable {

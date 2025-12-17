@@ -236,7 +236,7 @@ var body: some View {
         Task {
             do {
                 let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
-                
+
                 // Update the entry with real data
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
@@ -244,6 +244,9 @@ var body: some View {
                         foodEntries[index].protein = nutrition.protein
                         foodEntries[index].carbs = nutrition.carbs
                         foodEntries[index].fats = nutrition.fats
+                        foodEntries[index].servingSize = nutrition.servingSize
+                        foodEntries[index].imageUrl = nutrition.imageUrl
+                        foodEntries[index].sources = nutrition.sources
                         foodEntries[index].isLoading = false
                     }
                 }

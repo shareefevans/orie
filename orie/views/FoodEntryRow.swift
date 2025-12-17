@@ -12,15 +12,16 @@ struct FoodEntryRow: View {
     var onTimeChange: (Date) -> Void
 
     @State private var showTimePicker = false
+    @State private var showNutritionDetail = false
     @State private var selectedTime: Date
     @State private var sparkleScale: CGFloat = 1.0
-    
+
     init(entry: FoodEntry, onTimeChange: @escaping (Date) -> Void) {
         self.entry = entry
         self.onTimeChange = onTimeChange
         _selectedTime = State(initialValue: entry.timestamp)
     }
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             // Timestamp (left) - Now clickable
@@ -33,12 +34,19 @@ struct FoodEntryRow: View {
                     .frame(width: 90, alignment: .leading)
             }
             .buttonStyle(.plain)
-            
-            // Food name
-            Text(entry.foodName)
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
+
+            // Food name - Now clickable
+            Button(action: {
+                showNutritionDetail = true
+            }) {
+                Text(entry.foodName)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .disabled(entry.isLoading)
+
             // Calories (right)
             if entry.isLoading {
                 Image(systemName: "sparkle")
@@ -71,6 +79,11 @@ struct FoodEntryRow: View {
             )
             .presentationDetents([.height(300)])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showNutritionDetail) {
+            NutritionDetailSheet(entry: entry)
+                .presentationDetents([.height(400)])
+                .presentationDragIndicator(.visible)
         }
     }
     

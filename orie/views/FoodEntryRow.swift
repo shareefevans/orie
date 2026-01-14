@@ -23,13 +23,13 @@ struct FoodEntryRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 0) {
             // Timestamp (left) - Now clickable
             Button(action: {
                 showTimePicker = true
             }) {
                 Text(formatTime(entry.timestamp))
-                    .font(.subheadline)
+                    .font(.system(size: 14))
                     .foregroundColor(.yellow)
                     .frame(width: 90, alignment: .leading)
             }
@@ -42,7 +42,10 @@ struct FoodEntryRow: View {
                 Text(entry.foodName)
                     .font(.subheadline)
                     .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
             }
             .buttonStyle(.plain)
             .disabled(entry.isLoading)
@@ -51,7 +54,16 @@ struct FoodEntryRow: View {
             if entry.isLoading {
                 Image(systemName: "sparkle")
                     .font(.system(size: 14))
-                    .foregroundColor(.blue)
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 75/255, green: 78/255, blue: 255/255),
+                                Color(red: 106/255, green: 118/255, blue: 255/255)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                     .scaleEffect(sparkleScale)
                     .onAppear {
                         withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
@@ -61,14 +73,12 @@ struct FoodEntryRow: View {
                     .frame(width: 90, alignment: .trailing)
             } else if let calories = entry.calories {
                 Text("\(calories) cal")
-                    .font(.subheadline)
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .frame(width: 90, alignment: .trailing)
             }
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal)
-        .contentShape(Rectangle())
+        .padding(.vertical, 12)
         .sheet(isPresented: $showTimePicker) {
             TimePickerSheet(
                 selectedTime: $selectedTime,
@@ -90,7 +100,7 @@ struct FoodEntryRow: View {
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "hh:mma"
-        return "\(formatter.string(from: date))"
+        return formatter.string(from: date).lowercased()
     }
 }
 

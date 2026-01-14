@@ -25,16 +25,16 @@ struct TopNavigationBar: View {
                 showDateSelection = true
             }) {
                 HStack(spacing: 8) {
-                    Image("AppLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 50)
+                    Image(systemName: "figure.run")
+                        .font(.system(size: 20))
+                        .foregroundColor(.primary)
+                        .frame(width: 24)
                     Text(isToday ? "Today" : formatSelectedDate(selectedDate))
                         .font(.callout.bold())
                         .foregroundColor(.primary)
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 0)
+                .padding(.vertical, 12)
                 .glassEffect(.regular.interactive())
             }
             

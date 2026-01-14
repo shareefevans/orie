@@ -13,27 +13,26 @@ struct FoodInputField: View {
     @FocusState.Binding var isFocused: Bool  // ← Changed to accept binding
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 0) {
             Text("\(currentTime())")
-                .font(.subheadline)
+                .font(.system(size: 14))
                 .foregroundColor(.yellow)
                 .frame(width: 90, alignment: .leading)
-                .padding(.top, 8)
-            
+
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
                     Text("Tap to Enter Food/s...")
                         .foregroundColor(.gray.opacity(0.5))
-                        .font(.subheadline)
-                        .padding(.top, 8)
+                        .font(.system(size: 15))
                         .padding(.leading, 5)
                 }
-                
+
                 TextEditor(text: $text)
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .frame(minHeight: 20)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
+                    .offset(y: -8)
                     .focused($isFocused)
                     .onChange(of: text) { oldValue, newValue in
                         if newValue.contains("\n") {
@@ -51,13 +50,12 @@ struct FoodInputField: View {
                     }
             }
         }
-        .padding(.horizontal)
         .padding(.vertical, 12)
     }
     
     private func currentTime() -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mma"
-        return formatter.string(from: Date())
+        formatter.dateFormat = "hh:mma"
+        return formatter.string(from: Date()).lowercased()
     }
 }

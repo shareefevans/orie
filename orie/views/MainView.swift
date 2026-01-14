@@ -16,6 +16,7 @@ struct MainView: View {
     @State private var showDateSelection = false
     @State private var showMacros = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
+    @State private var selectedTab: String = "consumed"
     @FocusState private var isInputFocused: Bool
 
     // 👉 Mock data for testing
@@ -38,85 +39,169 @@ struct MainView: View {
 
 var body: some View {
         ZStack(alignment: .top) {
+            // Background color
+            Color(red: 247/255, green: 247/255, blue: 247/255)
+                .ignoresSafeArea()
+
             // Main scrollable content
             ScrollViewReader { proxy in
                 List {
                     // Top padding spacer
                     Color.clear
-                        .frame(height: 60)
+                        .frame(height: 68)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                    
-                    // Date section
-                    Text(formattedDate())
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .frame(maxWidth: .infinity)
-                    
-                    // Calories heading
-                    HStack {
-                        Text("Calories")
-                            .font(.title)
-                            .fontWeight(.semibold)
-                            .foregroundColor(
-                                Color(
-                                    red: 69 / 255,
-                                    green: 69 / 255,
-                                    blue: 69 / 255
-                                )
-                            )
-                        Spacer()
+
+                    // Tab buttons
+                    HStack(spacing: 32) {
+                        TabButton(
+                            title: "Health",
+                            isSelected: selectedTab == "health",
+                            action: { selectedTab = "health" }
+                        )
+
+                        TabButton(
+                            title: "Consumed",
+                            isSelected: selectedTab == "consumed",
+                            action: { selectedTab = "consumed" }
+                        )
+
+                        TabButton(
+                            title: "Activity",
+                            isSelected: selectedTab == "activity",
+                            action: { selectedTab = "activity" }
+                        )
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 24)
-                    .padding(.bottom, 24)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+                    .padding(.bottom, 40)
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
 
-                    // Food entries (sorted by time)
-                    ForEach(filteredEntries.sorted()) { entry in
-                        FoodEntryRow(
-                            entry: entry,
-                            onTimeChange: { newTime in
-                                updateEntryTime(entry.id, newTime: newTime)
+                    // Consumed Tab Content
+                    if selectedTab == "consumed" {
+                        VStack(spacing: 8) {
+                            // Calorie Tracking Card
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text("Daily intake")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                                    .fontWeight(.medium)
+
+                                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                    Text("2,300")
+                                        .font(.system(size: 24))
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.black)
+
+                                    Text("cal")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.black)
+                                        .fontWeight(.regular)
+                                }
+                                .padding(.top, 4)
+
+                                Text("150 remaining")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.yellow)
+                                    .padding(.top, 4)
+
+                                // Progress bar
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Text("0")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.gray)
+
+                                        Spacer()
+
+                                        Text("2,300")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.gray)
+                                    }
+
+                                    GeometryReader { geometry in
+                                        HStack(spacing: 0) {
+                                            // Blue progress (filled) - small 8px sliver
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(
+                                                    LinearGradient(
+                                                        gradient: Gradient(colors: [
+                                                            Color(red: 75/255, green: 78/255, blue: 255/255),
+                                                            Color(red: 106/255, green: 118/255, blue: 255/255)
+                                                        ]),
+                                                        startPoint: .top,
+                                                        endPoint: .bottom
+                                                    )
+                                                )
+                                                .frame(width: 8, height: 6)
+
+                                            // Grey unfilled bar
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(Color.gray.opacity(0.3))
+                                                .frame(width: geometry.size.width - 8, height: 6)
+                                        }
+                                    }
+                                    .frame(height: 6)
+                                }
+                                .padding(.top, 32)
                             }
-                        )
+                            .padding(.top, 32)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 32)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(32)
+
+                            // Food Entries Card
+                            VStack(spacing: 0) {
+                            // Food entries (sorted by time)
+                            ForEach(filteredEntries.sorted()) { entry in
+                                FoodEntryRow(
+                                    entry: entry,
+                                    onTimeChange: { newTime in
+                                        updateEntryTime(entry.id, newTime: newTime)
+                                    }
+                                )
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        deleteFoodEntry(entry)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+
+                            // Input field
+                            FoodInputField(
+                                text: $currentInput,
+                                onSubmit: {
+                                    addFoodEntry()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        withAnimation {
+                                            proxy.scrollTo("inputField", anchor: .top)
+                                        }
+                                    }
+                                },
+                                isFocused: $isInputFocused
+                            )
+                            .id("inputField")
+                            }
+                            .padding(.top, 16)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 16)
+                            .frame(minHeight: 200)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(32)
+                        }
+                        .padding(.horizontal, 16)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                deleteFoodEntry(entry)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
                     }
-                    
-                    // Input field
-                    FoodInputField(
-                        text: $currentInput,
-                        onSubmit: {
-                            addFoodEntry()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                withAnimation {
-                                    proxy.scrollTo("inputField", anchor: .top)
-                                }
-                            }
-                        },
-                        isFocused: $isInputFocused
-                    )
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .id("inputField")
                     
                     // Bottom padding
                     Color.clear
@@ -168,42 +253,6 @@ var body: some View {
                 .ignoresSafeArea(edges: .top)
             )
 
-            // Floating Bottom Navigation with Heart Button
-            VStack {
-                Spacer()
-                HStack {
-                    // Heart button in bottom left
-                    Button(action: {
-                        showMacros = true
-                    }) {
-                        Image(systemName: "heart")
-                            .font(.callout)
-                            .foregroundColor(.primary)
-                            .frame(width: 50, height: 50)
-                            .clipShape(Circle())
-                            .glassEffect(.regular.interactive())
-                    }
-                    .padding(.leading, 16)
-                    .padding(.bottom, 16)
-
-                    Spacer()
-                }
-            }
-            .background(
-                VStack {
-                    Spacer()
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(.systemBackground).opacity(0),
-                            Color(.systemBackground),
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 100)
-                }
-                .ignoresSafeArea(edges: .bottom)
-            )
         }
         .sheet(isPresented: $showAwards) {
             AwardSheet()
@@ -280,6 +329,31 @@ var body: some View {
         withAnimation {
             foodEntries.removeAll { $0.id == entry.id }
         }
+    }
+}
+
+// Tab Button Component
+struct TabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(isSelected ? .system(size: 16) : .system(size: 14))
+                    .fontWeight(isSelected ? .semibold : .medium)
+                    .foregroundColor(isSelected ? .black : .gray)
+                    .offset(y: isSelected ? -6 : 0)
+
+                // Small black dot beneath selected tab
+                Circle()
+                    .fill(isSelected ? Color.black : Color.clear)
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

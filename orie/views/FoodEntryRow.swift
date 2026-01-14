@@ -10,20 +10,44 @@ import SwiftUI
 struct FoodEntryRow: View {
     let entry: FoodEntry
     var onTimeChange: (Date) -> Void
+    var onDelete: (() -> Void)?
 
     @State private var showTimePicker = false
     @State private var showNutritionDetail = false
     @State private var selectedTime: Date
     @State private var sparkleScale: CGFloat = 1.0
+    @State private var offset: CGFloat = 0
+    @State private var showDeleteButton = false
 
-    init(entry: FoodEntry, onTimeChange: @escaping (Date) -> Void) {
+    init(entry: FoodEntry, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil) {
         self.entry = entry
         self.onTimeChange = onTimeChange
+        self.onDelete = onDelete
         _selectedTime = State(initialValue: entry.timestamp)
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
+        ZStack(alignment: .trailing) {
+            // Delete button background
+            if showDeleteButton {
+                Button(action: {
+                    withAnimation {
+                        onDelete?()
+                    }
+                }) {
+                    Image(systemName: "trash")
+                        .font(.callout)
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Color.red)
+                        .clipShape(Circle())
+                }
+                .padding(.trailing, -8)
+                .transition(.opacity)
+            }
+
+            // Main content
+            HStack(alignment: .top, spacing: 0) {
             // Timestamp (left) - Now clickable
             Button(action: {
                 showTimePicker = true
@@ -79,6 +103,36 @@ struct FoodEntryRow: View {
             }
         }
         .padding(.vertical, 12)
+        .background(Color.white)
+        .offset(x: offset)
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    if value.translation.width < 0 {
+                        offset = value.translation.width
+                    }
+                }
+                .onEnded { value in
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if value.translation.width < -50 {
+                            offset = -52
+                            showDeleteButton = true
+                        } else {
+                            offset = 0
+                            showDeleteButton = false
+                        }
+                    }
+                }
+        )
+        .onTapGesture {
+            if showDeleteButton {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    offset = 0
+                    showDeleteButton = false
+                }
+            }
+        }
+        }
         .sheet(isPresented: $showTimePicker) {
             TimePickerSheet(
                 selectedTime: $selectedTime,

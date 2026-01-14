@@ -124,7 +124,7 @@ var body: some View {
 
                                     GeometryReader { geometry in
                                         HStack(spacing: 0) {
-                                            // Blue progress (filled) - small 8px sliver
+                                            // Blue progress (filled) - 64% progress
                                             RoundedRectangle(cornerRadius: 3)
                                                 .fill(
                                                     LinearGradient(
@@ -136,12 +136,12 @@ var body: some View {
                                                         endPoint: .bottom
                                                     )
                                                 )
-                                                .frame(width: 8, height: 6)
+                                                .frame(width: geometry.size.width * 0.64, height: 6)
 
                                             // Grey unfilled bar
                                             RoundedRectangle(cornerRadius: 3)
                                                 .fill(Color.gray.opacity(0.3))
-                                                .frame(width: geometry.size.width - 8, height: 6)
+                                                .frame(width: geometry.size.width * 0.36, height: 6)
                                         }
                                     }
                                     .frame(height: 6)
@@ -163,15 +163,11 @@ var body: some View {
                                     entry: entry,
                                     onTimeChange: { newTime in
                                         updateEntryTime(entry.id, newTime: newTime)
+                                    },
+                                    onDelete: {
+                                        deleteFoodEntry(entry)
                                     }
                                 )
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        deleteFoodEntry(entry)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
                             }
 
                             // Input field

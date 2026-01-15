@@ -249,6 +249,22 @@ var body: some View {
                 .ignoresSafeArea(edges: .top)
             )
 
+
+            // Bottom fade overlay
+            VStack {
+                Spacer()
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 247/255, green: 247/255, blue: 247/255).opacity(0),
+                        Color(red: 247/255, green: 247/255, blue: 247/255)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 100)
+                .allowsHitTesting(false)
+            }
+            .ignoresSafeArea(edges: .bottom)
         }
         .sheet(isPresented: $showAwards) {
             AwardSheet()

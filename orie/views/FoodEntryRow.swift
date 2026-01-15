@@ -105,16 +105,19 @@ struct FoodEntryRow: View {
         .padding(.vertical, 12)
         .background(Color.white)
         .offset(x: offset)
-        .gesture(
-            DragGesture()
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20)
                 .onChanged { value in
-                    if value.translation.width < 0 {
+                    // Only handle horizontal swipes (not vertical scrolling)
+                    let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
+                    if isHorizontalDrag && value.translation.width < 0 {
                         offset = value.translation.width
                     }
                 }
                 .onEnded { value in
+                    let isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
                     withAnimation(.easeOut(duration: 0.2)) {
-                        if value.translation.width < -50 {
+                        if isHorizontalDrag && value.translation.width < -50 {
                             offset = -52
                             showDeleteButton = true
                         } else {

@@ -21,17 +21,32 @@ struct MainView: View {
     @State private var selectedTab: String = "consumed"
     @FocusState private var isInputFocused: Bool
 
-    // 👉 Mock data for testing
-    @State private var totalCalories = 1680
-    @State private var totalProtein = 220.0
-    @State private var totalCarbs = 195.0
-    @State private var totalFats = 50.0
-    
+    // Daily calorie goal from user profile
+    @State private var dailyCalorieGoal: Int = 2300  // Default fallback
+
     // Computed property to filter entries for selected date
     private var filteredEntries: [FoodEntry] {
         foodEntries.filter { entry in
             Calendar.current.isDate(entry.entryDate, inSameDayAs: selectedDate)
         }
+    }
+
+    // Computed property to calculate total calories from filtered entries
+    private var consumedCalories: Int {
+        filteredEntries.reduce(0) { total, entry in
+            total + (entry.calories ?? 0)
+        }
+    }
+
+    // Remaining calories
+    private var remainingCalories: Int {
+        dailyCalorieGoal - consumedCalories
+    }
+
+    // Progress percentage (capped at 1.0)
+    private var calorieProgress: Double {
+        guard dailyCalorieGoal > 0 else { return 0 }
+        return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
     }
     
     // Check if selected date is today
@@ -93,7 +108,7 @@ var body: some View {
                                     .fontWeight(.medium)
 
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text("2,300")
+                                    Text(consumedCalories.formatted())
                                         .font(.system(size: 24))
                                         .fontWeight(.semibold)
                                         .foregroundColor(.black)
@@ -105,9 +120,9 @@ var body: some View {
                                 }
                                 .padding(.top, 4)
 
-                                Text("150 remaining")
+                                Text("\(remainingCalories) remaining")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(remainingCalories > 0 ? .yellow : .red)
                                     .padding(.top, 4)
 
                                 // Progress bar
@@ -119,31 +134,35 @@ var body: some View {
 
                                         Spacer()
 
-                                        Text("2,300")
+                                        Text(dailyCalorieGoal.formatted())
                                             .font(.system(size: 12))
                                             .foregroundColor(.gray)
                                     }
 
                                     GeometryReader { geometry in
                                         HStack(spacing: 0) {
-                                            // Blue progress (filled) - 64% progress
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .fill(
-                                                    LinearGradient(
-                                                        gradient: Gradient(colors: [
-                                                            Color(red: 75/255, green: 78/255, blue: 255/255),
-                                                            Color(red: 106/255, green: 118/255, blue: 255/255)
-                                                        ]),
-                                                        startPoint: .top,
-                                                        endPoint: .bottom
+                                            // Blue progress (filled)
+                                            if calorieProgress > 0 {
+                                                RoundedRectangle(cornerRadius: 3)
+                                                    .fill(
+                                                        LinearGradient(
+                                                            gradient: Gradient(colors: [
+                                                                Color(red: 75/255, green: 78/255, blue: 255/255),
+                                                                Color(red: 106/255, green: 118/255, blue: 255/255)
+                                                            ]),
+                                                            startPoint: .top,
+                                                            endPoint: .bottom
+                                                        )
                                                     )
-                                                )
-                                                .frame(width: geometry.size.width * 0.64, height: 6)
+                                                    .frame(width: geometry.size.width * calorieProgress, height: 6)
+                                            }
 
                                             // Grey unfilled bar
-                                            RoundedRectangle(cornerRadius: 3)
-                                                .fill(Color.gray.opacity(0.3))
-                                                .frame(width: geometry.size.width * 0.36, height: 6)
+                                            if calorieProgress < 1.0 {
+                                                RoundedRectangle(cornerRadius: 3)
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .frame(width: geometry.size.width * (1.0 - calorieProgress), height: 6)
+                                            }
                                         }
                                     }
                                     .frame(height: 6)
@@ -271,7 +290,9 @@ var body: some View {
         .sheet(isPresented: $showAwards) {
             AwardSheet()
         }
-        .sheet(isPresented: $showProfile) {
+        .sheet(isPresented: $showProfile, onDismiss: {
+            loadUserProfile()  // Reload in case user updated their calorie goal
+        }) {
             ProfileSheet()
                 .environmentObject(authManager)
         }
@@ -291,6 +312,7 @@ var body: some View {
         }
         .onAppear {
             loadFoodEntries()
+            loadUserProfile()
         }
         .onChange(of: selectedDate) { _, _ in
             loadFoodEntries()
@@ -298,9 +320,11 @@ var body: some View {
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 loadFoodEntries()
+                loadUserProfile()
             } else {
                 // Clear entries when user logs out
                 foodEntries = []
+                dailyCalorieGoal = 2300  // Reset to default
             }
         }
     }
@@ -397,6 +421,25 @@ var body: some View {
                 } catch {
                     print("Failed to delete entry: \(error)")
                 }
+            }
+        }
+    }
+
+    // MARK: - Profile Management
+
+    private func loadUserProfile() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            do {
+                let profile = try await AuthService.getProfile(accessToken: accessToken)
+                await MainActor.run {
+                    if let calories = profile.dailyCalories, calories > 0 {
+                        dailyCalorieGoal = calories
+                    }
+                }
+            } catch {
+                print("Failed to load user profile: \(error)")
             }
         }
     }

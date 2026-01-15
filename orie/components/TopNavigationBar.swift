@@ -12,32 +12,57 @@ struct TopNavigationBar: View {
     @Binding var showProfile: Bool
     @Binding var showDateSelection: Bool
     @Binding var showNotifications: Bool
-    var selectedDate: Date
+    @Binding var isDateSelectionMode: Bool
+    @Binding var selectedDate: Date
     var isToday: Bool
     @Binding var isInputFocused: Bool
-    
+
     @Namespace private var animation
-    
+
     var body: some View {
         HStack(spacing: 8) {
-            // Left side - Date selector
-            Button(action: {
-                showDateSelection = true
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "figure.run")
-                        .font(.system(size: 20))
-                        .foregroundColor(.primary)
-                        .frame(width: 24)
-                    Text(isToday ? "Today" : formatSelectedDate(selectedDate))
-                        .font(.callout.bold())
-                        .foregroundColor(.primary)
+            // Left side - Date selector and close button
+            HStack(spacing: 8) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        isDateSelectionMode.toggle()
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "figure.run")
+                            .font(.system(size: 20))
+                            .foregroundColor(.primary)
+                            .frame(width: 24)
+                        if !isDateSelectionMode {
+                            Text(isToday ? "Today" : formatSelectedDate(selectedDate))
+                                .font(.callout.bold())
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .glassEffect(.regular.interactive())
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .glassEffect(.regular.interactive())
+
+                // X button when in date selection mode (matches keyboard dismiss button)
+                if isDateSelectionMode {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isDateSelectionMode = false
+                        }
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.callout)
+                            .foregroundColor(.white)
+                            .frame(width: 50, height: 50)
+                            .background(Color.yellow)
+                            .clipShape(Circle())
+                            .glassEffect(.regular.interactive())
+                    }
+                    .transition(.move(edge: .leading).combined(with: .opacity).combined(with: .scale))
+                }
             }
-            
+
             Spacer()
             
             // Right side - Grouped buttons (bell, settings, trophy)
@@ -92,6 +117,7 @@ struct TopNavigationBar: View {
         .padding(.horizontal)
         .padding(.vertical, 12)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isInputFocused)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDateSelectionMode)
     }
     
     private func formatSelectedDate(_ date: Date) -> String {
@@ -107,7 +133,8 @@ struct TopNavigationBar: View {
         showProfile: .constant(false),
         showDateSelection: .constant(false),
         showNotifications: .constant(false),
-        selectedDate: Date(),
+        isDateSelectionMode: .constant(false),
+        selectedDate: .constant(Date()),
         isToday: true,
         isInputFocused: .constant(false)
     )

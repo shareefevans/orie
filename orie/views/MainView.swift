@@ -19,6 +19,7 @@ struct MainView: View {
     @State private var showMacros = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var selectedTab: String = "consumed"
+    @State private var isDateSelectionMode = false
     @FocusState private var isInputFocused: Bool
 
     // Animated progress for consumed tab
@@ -98,32 +99,88 @@ var body: some View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
 
-                    // Tab buttons
-                    HStack(spacing: 32) {
-                        TabButton(
-                            title: "Health",
-                            isSelected: selectedTab == "health",
-                            action: { selectedTab = "health" }
-                        )
+                    // Tab buttons or Date selector
+                    if isDateSelectionMode {
+                        // Horizontal date picker
+                        ScrollViewReader { dateProxy in
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 24) {
+                                    ForEach(datesInCurrentMonth(), id: \.self) { date in
+                                        DateButton(
+                                            date: date,
+                                            isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
+                                            action: {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                    selectedDate = date
+                                                }
+                                            }
+                                        )
+                                        .id(date)
+                                    }
+                                }
+                                .padding(.horizontal, 32)
+                            }
+                            .mask(
+                                HStack(spacing: 0) {
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [.clear, .black]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    .frame(width: 32)
 
-                        TabButton(
-                            title: "Consumed",
-                            isSelected: selectedTab == "consumed",
-                            action: { selectedTab = "consumed" }
-                        )
+                                    Color.black
 
-                        TabButton(
-                            title: "Activity",
-                            isSelected: selectedTab == "activity",
-                            action: { selectedTab = "activity" }
-                        )
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [.black, .clear]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    .frame(width: 32)
+                                }
+                            )
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        dateProxy.scrollTo(selectedDate, anchor: .center)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 32)
+                        .padding(.bottom, 40)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    } else {
+                        // Regular tab buttons
+                        HStack(spacing: 32) {
+                            TabButton(
+                                title: "Health",
+                                isSelected: selectedTab == "health",
+                                action: { selectedTab = "health" }
+                            )
+
+                            TabButton(
+                                title: "Consumed",
+                                isSelected: selectedTab == "consumed",
+                                action: { selectedTab = "consumed" }
+                            )
+
+                            TabButton(
+                                title: "Activity",
+                                isSelected: selectedTab == "activity",
+                                action: { selectedTab = "activity" }
+                            )
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 40)
+                        .padding(.bottom, 40)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 40)
-                    .padding(.bottom, 40)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
 
                     // Health Tab Content
                     if selectedTab == "health" {
@@ -309,7 +366,8 @@ var body: some View {
                     showProfile: $showProfile,
                     showDateSelection: $showDateSelection,
                     showNotifications: $showNotifications,
-                    selectedDate: selectedDate,
+                    isDateSelectionMode: $isDateSelectionMode,
+                    selectedDate: $selectedDate,
                     isToday: isToday,
                     isInputFocused: Binding(
                         get: { isInputFocused },
@@ -556,6 +614,24 @@ var body: some View {
             }
         }
     }
+
+    // MARK: - Date Selection Helpers
+
+    private func datesInCurrentMonth() -> [Date] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Get the start and end of the current month
+        guard let monthInterval = calendar.dateInterval(of: .month, for: now),
+              let monthRange = calendar.range(of: .day, in: .month, for: now) else {
+            return []
+        }
+
+        // Generate all dates in the month
+        return monthRange.compactMap { day -> Date? in
+            calendar.date(byAdding: .day, value: day - 1, to: monthInterval.start)
+        }
+    }
 }
 
 // Tab Button Component
@@ -578,6 +654,71 @@ struct TabButton: View {
                     .fill(isSelected ? Color.black : Color.clear)
                     .frame(width: 4, height: 4)
             }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// Date Button Component (matches TabButton UI pattern)
+struct DateButton: View {
+    let date: Date
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var dayNumber: Int {
+        Calendar.current.component(.day, from: date)
+    }
+
+    private var daySuffix: String {
+        switch dayNumber {
+        case 1, 21, 31: return "st"
+        case 2, 22: return "nd"
+        case 3, 23: return "rd"
+        default: return "th"
+        }
+    }
+
+    private var monthAbbrev: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        return formatter.string(from: date)
+    }
+
+    private var dayAbbrev: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date)
+    }
+
+    private var fullDayName: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: date)
+    }
+
+    private var displayText: String {
+        if isSelected {
+            return "\(fullDayName) \(monthAbbrev) \(dayNumber)"
+        } else {
+            return "\(dayNumber)\(daySuffix)"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Text(displayText)
+                    .font(isSelected ? .system(size: 16) : .system(size: 14))
+                    .fontWeight(isSelected ? .semibold : .medium)
+                    .foregroundColor(isSelected ? .black : .gray)
+                    .offset(y: isSelected ? -6 : 0)
+
+                // Small black dot beneath selected date
+                Circle()
+                    .fill(isSelected ? Color.black : Color.clear)
+                    .frame(width: 4, height: 4)
+            }
+            .padding(.top, 8)
         }
         .buttonStyle(PlainButtonStyle())
     }

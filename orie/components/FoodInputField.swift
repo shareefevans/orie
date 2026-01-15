@@ -45,9 +45,6 @@ struct FoodInputField: View {
                             }
                         }
                     }
-                    .onAppear {
-                        isFocused = true
-                    }
             }
         }
         .padding(.vertical, 12)

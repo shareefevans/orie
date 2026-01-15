@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MainView: View {
+    @EnvironmentObject var authManager: AuthManager
+
     @State private var foodEntries: [FoodEntry] = []
     @State private var currentInput = ""
     @State private var showAwards = false
@@ -271,6 +273,7 @@ var body: some View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileSheet()
+                .environmentObject(authManager)
         }
         .sheet(isPresented: $showNotifications) {
             NotificationSheet()
@@ -397,4 +400,5 @@ struct TabButton: View {
 
 #Preview {
     MainView()
+        .environmentObject(AuthManager())
 }

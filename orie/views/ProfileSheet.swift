@@ -9,18 +9,20 @@ import SwiftUI
 
 struct ProfileSheet: View {
     @Environment(\.dismiss) var dismiss
-    
-    // Mock user data
-    @State private var userName = "Shareef Evans"
+    @EnvironmentObject var authManager: AuthManager
+
+    // User data
+    @State private var userName = ""
     @State private var dailyCalories = 0
     @State private var dailyProtein = 0
     @State private var dailyCarbs = 0
     @State private var dailyFats = 0
-    
+    @State private var isLoading = true
+
     // Settings
     @State private var locationEnabled = true
     @State private var notificationsEnabled = true
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -77,18 +79,18 @@ struct ProfileSheet: View {
                         .padding(.bottom, 8)
                         
                         // Macro rows
-                        MacroRow(label: "Calories", value: $dailyCalories, unit: "c")
+                        MacroRow(label: "Calories", value: $dailyCalories, unit: "c", onSave: saveProfile)
                         Divider()
-                        MacroRow(label: "Protein", value: $dailyProtein, unit: "g")
+                        MacroRow(label: "Protein", value: $dailyProtein, unit: "g", onSave: saveProfile)
                         Divider()
-                        MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g")
+                        MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", onSave: saveProfile)
                         Divider()
-                        MacroRow(label: "Fats", value: $dailyFats, unit: "g")
+                        MacroRow(label: "Fats", value: $dailyFats, unit: "g", onSave: saveProfile)
                     }
                     .padding(24)
-                    .background(Color(.systemGray6))
+                    .background(Color.white)
                     .cornerRadius(24)
-                    
+
                     // App Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 16) {
@@ -141,6 +143,26 @@ struct ProfileSheet: View {
                         
                         Divider()
                         
+                        // Log Out
+                        Button(action: {
+                            Task {
+                                await authManager.logout()
+                                dismiss()
+                            }
+                        }) {
+                            HStack {
+                                Text("Log Out")
+                                    .font(.footnote)
+                                    .foregroundColor(.primary)
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .foregroundColor(.primary)
+                            }
+                        }
+
+                        Divider()
+
                         // Delete Account
                         Button(action: {
                             // Delete account action
@@ -157,16 +179,62 @@ struct ProfileSheet: View {
                         }
                     }
                     .padding(24)
-                    .background(Color(.systemGray6))
+                    .background(Color.white)
                     .cornerRadius(24)
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)
                 .padding(.bottom, 40)
             }
+            .background(Color(red: 247/255, green: 247/255, blue: 247/255))
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDragIndicator(.visible)
+        .onAppear {
+            loadProfile()
+        }
+    }
+
+    private func loadProfile() {
+        guard let accessToken = authManager.getAccessToken() else {
+            isLoading = false
+            return
+        }
+
+        Task {
+            do {
+                let profile = try await AuthService.getProfile(accessToken: accessToken)
+                await MainActor.run {
+                    userName = profile.fullName ?? ""
+                    dailyCalories = profile.dailyCalories ?? 0
+                    dailyProtein = profile.dailyProtein ?? 0
+                    dailyCarbs = profile.dailyCarbs ?? 0
+                    dailyFats = profile.dailyFats ?? 0
+                    isLoading = false
+                }
+            } catch {
+                print("Failed to load profile: \(error)")
+                isLoading = false
+            }
+        }
+    }
+
+    private func saveProfile() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            do {
+                _ = try await AuthService.updateProfile(
+                    accessToken: accessToken,
+                    dailyCalories: dailyCalories > 0 ? dailyCalories : nil,
+                    dailyProtein: dailyProtein > 0 ? dailyProtein : nil,
+                    dailyCarbs: dailyCarbs > 0 ? dailyCarbs : nil,
+                    dailyFats: dailyFats > 0 ? dailyFats : nil
+                )
+            } catch {
+                print("Failed to save profile: \(error)")
+            }
+        }
     }
 }
 
@@ -175,17 +243,19 @@ struct MacroRow: View {
     let label: String
     @Binding var value: Int
     let unit: String
-    
+    var onSave: (() -> Void)?
+
     @State private var showPicker = false
     @State private var tempValue: Int
-    
-    init(label: String, value: Binding<Int>, unit: String) {
+
+    init(label: String, value: Binding<Int>, unit: String, onSave: (() -> Void)? = nil) {
         self.label = label
         self._value = value
         self.unit = unit
+        self.onSave = onSave
         _tempValue = State(initialValue: value.wrappedValue)
     }
-    
+
     var body: some View {
         Button(action: {
             tempValue = value
@@ -196,9 +266,9 @@ struct MacroRow: View {
                     .font(.footnote)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
-                
+
                 Spacer()
-                
+
                 HStack(spacing: 8) {
                     if value == 0 {
                         Text("Add \(label)")
@@ -226,6 +296,7 @@ struct MacroRow: View {
                 onDone: {
                     value = tempValue
                     showPicker = false
+                    onSave?()
                 }
             )
             .presentationDetents([.height(300)])
@@ -300,4 +371,5 @@ struct MacroPickerSheet: View {
 
 #Preview {
     ProfileSheet()
+        .environmentObject(AuthManager())
 }

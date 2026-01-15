@@ -24,8 +24,9 @@ struct NutritionSource: Codable, Identifiable, Equatable {
 
 struct FoodEntry: Identifiable, Comparable {
     let id = UUID()
+    var dbId: String? // ← Add this for Supabase ID
     var timestamp: Date
-    var entryDate: Date  // Just the day (no time component)
+    var entryDate: Date
     var foodName: String
     var calories: Int?
     var protein: Double?
@@ -40,6 +41,7 @@ struct FoodEntry: Identifiable, Comparable {
         self.timestamp = Date()
         self.entryDate = Calendar.current.startOfDay(for: entryDate)
         self.foodName = foodName
+        self.dbId = nil // ← Initialize as nil
         self.calories = nil
         self.protein = nil
         self.carbs = nil

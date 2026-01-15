@@ -289,19 +289,35 @@ var body: some View {
                 .presentationContentInteraction(.scrolls)
                 .presentationBackground(.bar)
         }
+        .onAppear {
+            loadFoodEntries()
+        }
+        .onChange(of: selectedDate) { _, _ in
+            loadFoodEntries()
+        }
+        .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                loadFoodEntries()
+            } else {
+                // Clear entries when user logs out
+                foodEntries = []
+            }
+        }
     }
 
     private func addFoodEntry() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
         let newEntry = FoodEntry(foodName: currentInput, entryDate: selectedDate)
         foodEntries.append(newEntry)
         currentInput = ""
 
-        // Call API to get nutrition data
         Task {
             do {
+                // Get nutrition data
                 let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
 
-                // Update the entry with real data
+                // Update local entry
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].calories = nutrition.calories
@@ -313,10 +329,20 @@ var body: some View {
                         foodEntries[index].sources = nutrition.sources
                         foodEntries[index].isLoading = false
                     }
+
+                    // Save to database
+                    let dbEntry = try await FoodEntryService.createFoodEntry(
+                        accessToken: accessToken,
+                        entry: foodEntries[index]
+                    )
+
+                    // Update with database ID
+                    await MainActor.run {
+                        foodEntries[index].dbId = dbEntry.id
+                    }
                 }
             } catch {
-                print("Error fetching nutrition: \(error)")
-                // Keep loading state or show error
+                print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].isLoading = false
@@ -327,9 +353,23 @@ var body: some View {
     }
     
     private func updateEntryTime(_ entryId: UUID, newTime: Date) {
-        if let index = foodEntries.firstIndex(where: { $0.id == entryId }) {
-            withAnimation {
-                foodEntries[index].timestamp = newTime
+        guard let accessToken = authManager.getAccessToken(),
+              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+              let dbId = foodEntries[index].dbId else { return }
+
+        withAnimation {
+            foodEntries[index].timestamp = newTime
+        }
+
+        Task {
+            do {
+                _ = try await FoodEntryService.updateFoodEntry(
+                    accessToken: accessToken,
+                    id: dbId,
+                    timestamp: newTime
+                )
+            } catch {
+                print("Failed to update entry time: \(error)")
             }
         }
     }
@@ -341,8 +381,60 @@ var body: some View {
     }
     
     private func deleteFoodEntry(_ entry: FoodEntry) {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
         withAnimation {
             foodEntries.removeAll { $0.id == entry.id }
+        }
+
+        if let dbId = entry.dbId {
+            Task {
+                do {
+                    try await FoodEntryService.deleteFoodEntry(
+                        accessToken: accessToken,
+                        id: dbId
+                    )
+                } catch {
+                    print("Failed to delete entry: \(error)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Food Entry Management
+
+    private func loadFoodEntries() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            do {
+                let entries = try await FoodEntryService.getFoodEntries(
+                    accessToken: accessToken,
+                    date: selectedDate
+                )
+
+                await MainActor.run {
+                    foodEntries = entries.map { dbEntry in
+                        var entry = FoodEntry(foodName: dbEntry.foodName, entryDate: selectedDate)
+                        entry.dbId = dbEntry.id
+                        entry.calories = dbEntry.calories
+                        entry.protein = dbEntry.protein
+                        entry.carbs = dbEntry.carbs
+                        entry.fats = dbEntry.fats
+                        entry.servingSize = dbEntry.servingSize
+                        entry.isLoading = false
+
+                        // Parse timestamp
+                        if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
+                            entry.timestamp = timestamp
+                        }
+
+                        return entry
+                    }
+                }
+            } catch {
+                print("Failed to load food entries: \(error)")
+            }
         }
     }
 }

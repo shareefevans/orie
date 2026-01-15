@@ -15,6 +15,10 @@ struct CircularProgressChart: View {
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
     ]
+    var animationDuration: Double = 0.8
+    var animationDelay: Double = 0
+
+    @State private var animatedProgress: Double = 0
 
     var body: some View {
         ZStack {
@@ -25,7 +29,7 @@ struct CircularProgressChart: View {
 
             // Progress circle
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: animatedProgress)
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: gradientColors),
@@ -36,6 +40,18 @@ struct CircularProgressChart: View {
                 )
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(-90))
+        }
+        .onAppear {
+            animatedProgress = 0
+
+            withAnimation(.easeOut(duration: animationDuration).delay(animationDelay)) {
+                animatedProgress = progress
+            }
+        }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.easeOut(duration: animationDuration)) {
+                animatedProgress = newValue
+            }
         }
     }
 }

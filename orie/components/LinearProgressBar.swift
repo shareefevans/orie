@@ -17,6 +17,10 @@ struct LinearProgressBar: View {
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
     ]
+    var animationDuration: Double = 0.8
+    var animationDelay: Double = 0
+
+    @State private var animatedProgress: Double = 0
 
     var body: some View {
         VStack(spacing: 4) {
@@ -34,7 +38,8 @@ struct LinearProgressBar: View {
 
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    if progress > 0 {
+                    // Blue progress bar (expanding)
+                    if animatedProgress > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(
                                 LinearGradient(
@@ -43,17 +48,30 @@ struct LinearProgressBar: View {
                                     endPoint: .bottom
                                 )
                             )
-                            .frame(width: geometry.size.width * progress, height: height)
+                            .frame(width: geometry.size.width * min(animatedProgress, 1.0), height: height)
                     }
 
-                    if progress < 1.0 {
+                    // Grey bar (contracting)
+                    if animatedProgress < 1.0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.gray.opacity(0.3))
-                            .frame(width: geometry.size.width * (1.0 - progress), height: height)
+                            .frame(width: geometry.size.width * (1.0 - min(animatedProgress, 1.0)), height: height)
                     }
                 }
             }
             .frame(height: height)
+        }
+        .onAppear {
+            animatedProgress = 0
+
+            withAnimation(.easeOut(duration: animationDuration).delay(animationDelay)) {
+                animatedProgress = progress
+            }
+        }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.easeOut(duration: animationDuration)) {
+                animatedProgress = newValue
+            }
         }
     }
 }

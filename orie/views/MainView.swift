@@ -21,6 +21,10 @@ struct MainView: View {
     @State private var selectedTab: String = "consumed"
     @FocusState private var isInputFocused: Bool
 
+    // Animated progress for consumed tab
+    @State private var animatedCalorieProgress: Double = 0
+    @State private var consumedTabId: UUID = UUID()
+
     // Daily goals from user profile
     @State private var dailyCalorieGoal: Int = 2300  // Default fallback
     @State private var dailyProteinGoal: Int = 150   // Default fallback
@@ -183,8 +187,8 @@ var body: some View {
 
                                     GeometryReader { geometry in
                                         HStack(spacing: 0) {
-                                            // Blue progress (filled)
-                                            if calorieProgress > 0 {
+                                            // Blue progress (expanding)
+                                            if animatedCalorieProgress > 0 {
                                                 RoundedRectangle(cornerRadius: 3)
                                                     .fill(
                                                         LinearGradient(
@@ -196,18 +200,36 @@ var body: some View {
                                                             endPoint: .bottom
                                                         )
                                                     )
-                                                    .frame(width: geometry.size.width * calorieProgress, height: 6)
+                                                    .frame(width: geometry.size.width * min(animatedCalorieProgress, 1.0), height: 6)
                                             }
 
-                                            // Grey unfilled bar
-                                            if calorieProgress < 1.0 {
+                                            // Grey bar (contracting)
+                                            if animatedCalorieProgress < 1.0 {
                                                 RoundedRectangle(cornerRadius: 3)
                                                     .fill(Color.gray.opacity(0.3))
-                                                    .frame(width: geometry.size.width * (1.0 - calorieProgress), height: 6)
+                                                    .frame(width: geometry.size.width * (1.0 - min(animatedCalorieProgress, 1.0)), height: 6)
                                             }
                                         }
                                     }
                                     .frame(height: 6)
+                                    .id(consumedTabId)
+                                    .onAppear {
+                                        animatedCalorieProgress = 0
+
+                                        withAnimation(.easeOut(duration: 0.8)) {
+                                            animatedCalorieProgress = calorieProgress
+                                        }
+                                    }
+                                    .onChange(of: calorieProgress) { _, newValue in
+                                        withAnimation(.easeOut(duration: 0.8)) {
+                                            animatedCalorieProgress = newValue
+                                        }
+                                    }
+                                    .onChange(of: selectedTab) { _, newTab in
+                                        if newTab == "consumed" {
+                                            consumedTabId = UUID()
+                                        }
+                                    }
                                 }
                                 .padding(.top, 32)
                             }
@@ -560,32 +582,6 @@ struct TabButton: View {
         .buttonStyle(PlainButtonStyle())
     }
 }
-
-// 👉 Helper view for macro display at bottom (COMMENTED OUT)
-//struct MacroDisplay: View {
-//    let label: String
-//    let value: String
-//
-//    var body: some View {
-//        HStack(spacing: 16) {
-//            Text(label)
-//                .font(.footnote)
-//                .foregroundColor(.secondary)
-//
-//            Spacer()
-//
-//            Text(value)
-//                .font(.subheadline)
-//                .fontWeight(.semibold)
-//                .foregroundColor(.primary)
-//        }
-//        .padding(.horizontal, 16)
-//        .padding(.vertical, 12)
-//        .frame(maxWidth: .infinity)
-//        .frame(height: 50)
-//        .glassEffect(.regular.interactive())
-//    }
-//}
 
 #Preview {
     MainView()

@@ -21,8 +21,11 @@ struct MainView: View {
     @State private var selectedTab: String = "consumed"
     @FocusState private var isInputFocused: Bool
 
-    // Daily calorie goal from user profile
+    // Daily goals from user profile
     @State private var dailyCalorieGoal: Int = 2300  // Default fallback
+    @State private var dailyProteinGoal: Int = 150   // Default fallback
+    @State private var dailyCarbsGoal: Int = 250     // Default fallback
+    @State private var dailyFatsGoal: Int = 65       // Default fallback
 
     // Computed property to filter entries for selected date
     private var filteredEntries: [FoodEntry] {
@@ -48,7 +51,28 @@ struct MainView: View {
         guard dailyCalorieGoal > 0 else { return 0 }
         return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
     }
-    
+
+    // Consumed protein
+    private var consumedProtein: Int {
+        Int(filteredEntries.reduce(0.0) { total, entry in
+            total + (entry.protein ?? 0)
+        })
+    }
+
+    // Consumed carbs
+    private var consumedCarbs: Int {
+        Int(filteredEntries.reduce(0.0) { total, entry in
+            total + (entry.carbs ?? 0)
+        })
+    }
+
+    // Consumed fats
+    private var consumedFats: Int {
+        Int(filteredEntries.reduce(0.0) { total, entry in
+            total + (entry.fats ?? 0)
+        })
+    }
+
     // Check if selected date is today
     private var isToday: Bool {
         Calendar.current.isDateInToday(selectedDate)
@@ -97,6 +121,24 @@ var body: some View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
 
+                    // Health Tab Content
+                    if selectedTab == "health" {
+                        HealthTabView(
+                            consumedCalories: consumedCalories,
+                            dailyCalorieGoal: dailyCalorieGoal,
+                            burnedCalories: 0,
+                            consumedProtein: consumedProtein,
+                            dailyProteinGoal: dailyProteinGoal,
+                            consumedCarbs: consumedCarbs,
+                            dailyCarbsGoal: dailyCarbsGoal,
+                            consumedFats: consumedFats,
+                            dailyFatsGoal: dailyFatsGoal
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+
                     // Consumed Tab Content
                     if selectedTab == "consumed" {
                         VStack(spacing: 8) {
@@ -136,7 +178,7 @@ var body: some View {
 
                                         Text(dailyCalorieGoal.formatted())
                                             .font(.system(size: 12))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(.black)
                                     }
 
                                     GeometryReader { geometry in
@@ -325,6 +367,9 @@ var body: some View {
                 // Clear entries when user logs out
                 foodEntries = []
                 dailyCalorieGoal = 2300  // Reset to default
+                dailyProteinGoal = 150   // Reset to default
+                dailyCarbsGoal = 250     // Reset to default
+                dailyFatsGoal = 65       // Reset to default
             }
         }
     }
@@ -436,6 +481,15 @@ var body: some View {
                 await MainActor.run {
                     if let calories = profile.dailyCalories, calories > 0 {
                         dailyCalorieGoal = calories
+                    }
+                    if let protein = profile.dailyProtein, protein > 0 {
+                        dailyProteinGoal = protein
+                    }
+                    if let carbs = profile.dailyCarbs, carbs > 0 {
+                        dailyCarbsGoal = carbs
+                    }
+                    if let fats = profile.dailyFats, fats > 0 {
+                        dailyFatsGoal = fats
                     }
                 }
             } catch {

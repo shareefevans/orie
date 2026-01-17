@@ -11,7 +11,8 @@ class APIService {
     // Change this to your computer's local IP when testing on device
     // Or use localhost when testing on simulator
     //static let baseURL = "http://192.168.1.227:3000"
-     static let baseURL = "http://localhost:3000"
+    // static let baseURL = "http://localhost:3000"
+    static let baseURL = "https://oriebackend.onrender.com"
     
     struct NutritionResponse: Codable {
         let foodName: String

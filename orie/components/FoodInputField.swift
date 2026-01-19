@@ -9,8 +9,8 @@ import SwiftUI
 
 struct FoodInputField: View {
     @Binding var text: String
-    var onSubmit: () -> Void
-    @FocusState.Binding var isFocused: Bool  // ← Changed to accept binding
+    var onSubmit: (String) -> Void  // Now passes the text value directly
+    @FocusState.Binding var isFocused: Bool
     
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -36,9 +36,10 @@ struct FoodInputField: View {
                     .focused($isFocused)
                     .onChange(of: text) { oldValue, newValue in
                         if newValue.contains("\n") {
-                            text = newValue.replacingOccurrences(of: "\n", with: "")
-                            if !text.isEmpty {
-                                onSubmit()
+                            let strippedText = newValue.replacingOccurrences(of: "\n", with: "")
+                            text = ""  // Clear immediately
+                            if !strippedText.isEmpty {
+                                onSubmit(strippedText)  // Pass the value directly
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                     isFocused = true
                                 }

@@ -28,13 +28,18 @@ class AuthManager: ObservableObject {
     func checkAuthState() {
         isLoading = true
 
-        if let _ = getAccessToken() {
-            isAuthenticated = true
+        // If we have a refresh token, try to get a fresh session
+        if let _ = getRefreshToken() {
+            Task {
+                await refreshSession()
+                await MainActor.run {
+                    isLoading = false
+                }
+            }
         } else {
             isAuthenticated = false
+            isLoading = false
         }
-
-        isLoading = false
     }
 
     // MARK: - Sign Up

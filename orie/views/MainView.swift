@@ -315,8 +315,8 @@ var body: some View {
                             // Input field
                             FoodInputField(
                                 text: $currentInput,
-                                onSubmit: {
-                                    addFoodEntry()
+                                onSubmit: { foodName in
+                                    addFoodEntry(foodName: foodName)
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                         withAnimation {
                                             proxy.scrollTo("inputField", anchor: .top)
@@ -454,12 +454,12 @@ var body: some View {
         }
     }
 
-    private func addFoodEntry() {
+    private func addFoodEntry(foodName: String) {
         guard let accessToken = authManager.getAccessToken() else { return }
+        guard !foodName.isEmpty else { return }
 
-        let newEntry = FoodEntry(foodName: currentInput, entryDate: selectedDate)
+        let newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
         foodEntries.append(newEntry)
-        currentInput = ""
 
         Task {
             do {

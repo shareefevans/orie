@@ -32,6 +32,7 @@ struct MainView: View {
     @State private var dailyProteinGoal: Int = 150   // Default fallback
     @State private var dailyCarbsGoal: Int = 250     // Default fallback
     @State private var dailyFatsGoal: Int = 65       // Default fallback
+    @State private var dailySugarGoal: Int = 50      // Default fallback
 
     // Computed property to filter entries for selected date
     private var filteredEntries: [FoodEntry] {
@@ -77,6 +78,11 @@ struct MainView: View {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.fats ?? 0)
         })
+    }
+
+    // Consumed sugar (placeholder - FoodEntry doesn't track sugar yet)
+    private var consumedSugar: Int {
+        0
     }
 
     // Check if selected date is today
@@ -194,7 +200,9 @@ var body: some View {
                             consumedCarbs: consumedCarbs,
                             dailyCarbsGoal: dailyCarbsGoal,
                             consumedFats: consumedFats,
-                            dailyFatsGoal: dailyFatsGoal
+                            dailyFatsGoal: dailyFatsGoal,
+                            consumedSugar: consumedSugar,
+                            dailySugarGoal: dailySugarGoal
                         )
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -456,6 +464,7 @@ var body: some View {
                 dailyProteinGoal = 150   // Reset to default
                 dailyCarbsGoal = 250     // Reset to default
                 dailyFatsGoal = 65       // Reset to default
+                dailySugarGoal = 50      // Reset to default
             }
         }
         .onChange(of: scenePhase) { _, newPhase in

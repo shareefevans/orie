@@ -25,7 +25,7 @@ struct MacroCircularCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(.gray)
                 .fontWeight(.medium)
 

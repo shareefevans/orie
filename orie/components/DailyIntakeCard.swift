@@ -23,7 +23,7 @@ struct DailyIntakeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Daily intake")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(.gray)
                 .fontWeight(.medium)
 
@@ -56,7 +56,7 @@ struct DailyIntakeCard: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 160)
+        .frame(height: 180)
         .background(Color.white)
         .cornerRadius(32)
     }

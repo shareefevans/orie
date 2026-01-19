@@ -13,7 +13,7 @@ struct BurnedCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Burned")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(.gray)
                 .fontWeight(.medium)
 
@@ -48,7 +48,7 @@ struct BurnedCard: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 160)
+        .frame(height: 180)
         .background(Color.white)
         .cornerRadius(32)
     }

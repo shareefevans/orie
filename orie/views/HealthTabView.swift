@@ -17,34 +17,60 @@ struct HealthTabView: View {
     let dailyCarbsGoal: Int
     let consumedFats: Int
     let dailyFatsGoal: Int
+    let consumedSugar: Int
+    let dailySugarGoal: Int
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Daily Intake & Burned Cards (side by side)
-            HStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
+            // Left column: Daily Intake, Sugar, Burned
+            VStack(spacing: 8) {
                 DailyIntakeCard(consumed: consumedCalories, goal: dailyCalorieGoal)
+
+                SugarCard(consumed: consumedSugar)
+
                 BurnedCard(burned: burnedCalories)
             }
-            .padding(.horizontal, 16)
-            .listRowInsets(EdgeInsets())
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
-            // Macros Card (full width with 3 pie charts)
-            MacrosCard(
-                proteinConsumed: consumedProtein,
-                proteinGoal: dailyProteinGoal,
-                fatsConsumed: consumedFats,
-                fatsGoal: dailyFatsGoal,
-                carbsConsumed: consumedCarbs,
-                carbsGoal: dailyCarbsGoal
-            )
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .listRowInsets(EdgeInsets())
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
+            // Right column: Protein, Carbs, Fats
+            VStack(spacing: 8) {
+                SingleMacroCard(
+                    title: "Protein",
+                    consumed: consumedProtein,
+                    goal: dailyProteinGoal,
+                    iconName: "hexagon.fill",
+                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                    gradientColors: [
+                        Color(red: 75/255, green: 78/255, blue: 255/255),
+                        Color(red: 106/255, green: 118/255, blue: 255/255)
+                    ]
+                )
+
+                SingleMacroCard(
+                    title: "Carbs",
+                    consumed: consumedCarbs,
+                    goal: dailyCarbsGoal,
+                    iconName: "square.fill",
+                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                    gradientColors: [
+                        Color(red: 75/255, green: 78/255, blue: 255/255),
+                        Color(red: 106/255, green: 118/255, blue: 255/255)
+                    ]
+                )
+
+                SingleMacroCard(
+                    title: "Fats",
+                    consumed: consumedFats,
+                    goal: dailyFatsGoal,
+                    iconName: "circle.fill",
+                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                    gradientColors: [
+                        Color(red: 75/255, green: 78/255, blue: 255/255),
+                        Color(red: 106/255, green: 118/255, blue: 255/255)
+                    ]
+                )
+            }
         }
+        .padding(.horizontal, 16)
     }
 }
 
@@ -58,7 +84,9 @@ struct HealthTabView: View {
         consumedCarbs: 120,
         dailyCarbsGoal: 250,
         consumedFats: 30,
-        dailyFatsGoal: 65
+        dailyFatsGoal: 65,
+        consumedSugar: 0,
+        dailySugarGoal: 50
     )
     .background(Color.gray.opacity(0.1))
 }

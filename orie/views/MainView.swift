@@ -340,7 +340,18 @@ var body: some View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     }
-                    
+
+                    // Activity Tab Content
+                    if selectedTab == "activity" {
+                        ActivityTabView(
+                            burnedCalories: 0,
+                            dailyBurnGoal: 500
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+
                     // Bottom padding
                     Color.clear
                         .frame(height: 120)

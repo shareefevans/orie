@@ -21,7 +21,13 @@ struct MacrosCard: View {
             MacroItem(
                 title: "Protein",
                 consumed: proteinConsumed,
-                goal: proteinGoal
+                goal: proteinGoal,
+                iconName: "fish.fill",
+                iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                gradientColors: [
+                    Color(red: 75/255, green: 78/255, blue: 255/255),
+                    Color(red: 106/255, green: 118/255, blue: 255/255)
+                ]
             )
 
             Spacer()
@@ -30,7 +36,13 @@ struct MacrosCard: View {
             MacroItem(
                 title: "Fats",
                 consumed: fatsConsumed,
-                goal: fatsGoal
+                goal: fatsGoal,
+                iconName: "drop.fill",
+                iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                gradientColors: [
+                    Color(red: 75/255, green: 78/255, blue: 255/255),
+                    Color(red: 106/255, green: 118/255, blue: 255/255)
+                ]
             )
 
             Spacer()
@@ -39,7 +51,13 @@ struct MacrosCard: View {
             MacroItem(
                 title: "Carbs",
                 consumed: carbsConsumed,
-                goal: carbsGoal
+                goal: carbsGoal,
+                iconName: "tree.fill",
+                iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
+                gradientColors: [
+                    Color(red: 75/255, green: 78/255, blue: 255/255),
+                    Color(red: 106/255, green: 118/255, blue: 255/255)
+                ]
             )
         }
         .padding(.horizontal, 24)
@@ -54,6 +72,9 @@ struct MacroItem: View {
     let title: String
     let consumed: Int
     let goal: Int
+    let iconName: String
+    let iconColor: Color
+    let gradientColors: [Color]
 
     private var progress: Double {
         guard goal > 0 else { return 0 }
@@ -62,12 +83,24 @@ struct MacroItem: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Pie chart
-            CircularProgressChart(
-                progress: progress,
-                size: 38,
-                lineWidth: 6
-            )
+            // Pie chart with centered icon
+            ZStack {
+                CircularProgressChart(
+                    progress: progress,
+                    size: 56,
+                    lineWidth: 6,
+                    gradientColors: gradientColors
+                )
+
+                // Centered icon with light background circle
+                Circle()
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: iconName)
+                    .font(.system(size: 12))
+                    .foregroundColor(iconColor)
+            }
 
             // Macro type label
             Text(title)

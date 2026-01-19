@@ -23,13 +23,16 @@ struct FoodInputField: View {
                 .font(.system(size: 15))
                 .lineLimit(1...5)
                 .focused($isFocused)
-                .onSubmit {
-                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                    text = ""
-                    if !trimmed.isEmpty {
-                        onSubmit(trimmed)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isFocused = true
+                .onChange(of: text) { oldValue, newValue in
+                    if newValue.contains("\n") {
+                        let trimmed = newValue.replacingOccurrences(of: "\n", with: "")
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        text = ""
+                        if !trimmed.isEmpty {
+                            onSubmit(trimmed)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isFocused = true
+                            }
                         }
                     }
                 }

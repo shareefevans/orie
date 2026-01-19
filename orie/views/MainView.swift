@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var foodEntries: [FoodEntry] = []
     @State private var currentInput = ""
@@ -325,8 +326,8 @@ var body: some View {
                                 },
                                 isFocused: $isInputFocused
                             )
-                            .id("inputField")
                             }
+                            .id(filteredEntries.map { $0.id.uuidString }.joined())
                             .padding(.top, 16)
                             .padding(.horizontal, 24)
                             .padding(.bottom, 16)
@@ -360,38 +361,33 @@ var body: some View {
             }
 
             // 🔝 Floating Top Navigation Bar
-            VStack(spacing: 0) {
-                TopNavigationBar(
-                    showAwards: $showAwards,
-                    showProfile: $showProfile,
-                    showDateSelection: $showDateSelection,
-                    showNotifications: $showNotifications,
-                    isDateSelectionMode: $isDateSelectionMode,
-                    selectedDate: $selectedDate,
-                    isToday: isToday,
-                    isInputFocused: Binding(
-                        get: { isInputFocused },
-                        set: { isInputFocused = $0 }
-                    )
+            TopNavigationBar(
+                showAwards: $showAwards,
+                showProfile: $showProfile,
+                showDateSelection: $showDateSelection,
+                showNotifications: $showNotifications,
+                isDateSelectionMode: $isDateSelectionMode,
+                selectedDate: $selectedDate,
+                isToday: isToday,
+                isInputFocused: Binding(
+                    get: { isInputFocused },
+                    set: { isInputFocused = $0 }
                 )
-                Spacer()
-            }
+            )
             .background(
-                VStack {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(.systemBackground),
-                            Color(.systemBackground).opacity(0),
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 100)
-                    Spacer()
-                }
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(.systemBackground),
+                        Color(.systemBackground).opacity(0),
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 100)
+                .offset(y: -10)
+                .allowsHitTesting(false)
                 .ignoresSafeArea(edges: .top)
             )
-
 
             // Bottom fade overlay
             VStack {
@@ -405,8 +401,8 @@ var body: some View {
                     endPoint: .bottom
                 )
                 .frame(height: 100)
-                .allowsHitTesting(false)
             }
+            .allowsHitTesting(false)
             .ignoresSafeArea(edges: .bottom)
         }
         .sheet(isPresented: $showAwards) {
@@ -450,6 +446,12 @@ var body: some View {
                 dailyProteinGoal = 150   // Reset to default
                 dailyCarbsGoal = 250     // Reset to default
                 dailyFatsGoal = 65       // Reset to default
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // Reload entries when app becomes active to refresh view state
+                loadFoodEntries()
             }
         }
     }
@@ -543,6 +545,8 @@ var body: some View {
                         accessToken: accessToken,
                         id: dbId
                     )
+                    // Reload entries to refresh view state
+                    loadFoodEntries()
                 } catch {
                     print("Failed to delete entry: \(error)")
                 }

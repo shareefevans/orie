@@ -44,7 +44,7 @@ struct MacroCircularCard: View {
 
             Text("\(remaining)g remaining")
                 .font(.system(size: 12))
-                .foregroundColor(.gray)
+                .foregroundColor(remaining > 0 ? .yellow : .red)
                 .padding(.top, 4)
 
             Spacer()
@@ -54,7 +54,7 @@ struct MacroCircularCard: View {
                 CircularProgressChart(progress: progress)
                 Spacer()
                 Text("\(goal)g")
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                     .foregroundColor(.black)
             }
             .padding(.top, 48)

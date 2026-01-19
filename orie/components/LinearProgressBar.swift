@@ -12,7 +12,7 @@ struct LinearProgressBar: View {
     let minLabel: String
     let maxLabel: String
     var height: CGFloat = 6
-    var labelSize: CGFloat = 10
+    var labelSize: CGFloat = 12
     var gradientColors: [Color] = [
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)

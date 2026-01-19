@@ -46,11 +46,11 @@ struct BurnedCard: View {
                 Spacer()
             }
         }
-        .padding(20)
+        .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 160)
         .background(Color.white)
-        .cornerRadius(24)
+        .cornerRadius(32)
     }
 }
 

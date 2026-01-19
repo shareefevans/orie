@@ -331,7 +331,6 @@ var body: some View {
                             .padding(.top, 16)
                             .padding(.horizontal, 24)
                             .padding(.bottom, 16)
-                            .frame(minHeight: 200)
                             .frame(maxWidth: .infinity)
                             .background(Color.white)
                             .cornerRadius(32)

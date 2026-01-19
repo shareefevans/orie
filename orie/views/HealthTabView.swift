@@ -30,29 +30,15 @@ struct HealthTabView: View {
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
 
-            // Protein Card (full width)
-            ProteinCard(consumed: consumedProtein, goal: dailyProteinGoal)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-            // Carbs & Fats Cards (side by side)
-            HStack(spacing: 8) {
-                MacroCircularCard(
-                    title: "Carbohydrates",
-                    consumed: consumedCarbs,
-                    goal: dailyCarbsGoal,
-                    unit: "grams"
-                )
-                MacroCircularCard(
-                    title: "Fats",
-                    consumed: consumedFats,
-                    goal: dailyFatsGoal,
-                    unit: "grams"
-                )
-            }
+            // Macros Card (full width with 3 pie charts)
+            MacrosCard(
+                proteinConsumed: consumedProtein,
+                proteinGoal: dailyProteinGoal,
+                fatsConsumed: consumedFats,
+                fatsGoal: dailyFatsGoal,
+                carbsConsumed: consumedCarbs,
+                carbsGoal: dailyCarbsGoal
+            )
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .listRowInsets(EdgeInsets())

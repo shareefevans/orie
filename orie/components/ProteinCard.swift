@@ -42,7 +42,7 @@ struct ProteinCard: View {
 
             Text("\(remaining)g remaining")
                 .font(.system(size: 12))
-                .foregroundColor(.gray)
+                .foregroundColor(remaining > 0 ? .yellow : .red)
                 .padding(.top, 4)
 
             Spacer()

@@ -18,6 +18,14 @@ struct ProfileSheet: View {
     @State private var dailyCarbs = 0
     @State private var dailyFats = 0
     @State private var isLoading = true
+    
+    // Personal data
+    @State private var age = 0
+    @State private var weight = 0
+    @State private var height = 0
+    @State private var bodyFat = 0
+    @State private var gender = ""
+    
 
     // Settings
     @State private var locationEnabled = true
@@ -26,57 +34,121 @@ struct ProfileSheet: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Header - Settings and Name on the left
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Settings")
-                                .font(.title)
-                                .fontWeight(.semibold)
-                                .foregroundColor(
-                                    Color(
-                                        red: 69 / 255,
-                                        green: 69 / 255,
-                                        blue: 69 / 255
-                                    )
+                VStack(spacing: 8) {
+                    
+                    // Header - Settings and Name centered
+                    VStack(alignment: .center, spacing: 2) {
+                        Text("Settings")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                            .foregroundColor(
+                                Color(
+                                    red: 0 / 255,
+                                    green: 0 / 255,
+                                    blue: 0 / 255
                                 )
-                            
-                            Text(userName)
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
+                            )
+
+                        Text(userName.isEmpty ? "User logged Out" : userName)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .padding(.bottom, 16)
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.top, 8)
                     .padding(.bottom, 8)
-                    
-                    // Macronutrients Section
+
+                    // Feedback and Share buttons
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            // Feedback action
+                        }) {
+                            Text("Feedback")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                        }
+                        .glassEffect(.regular.interactive())
+
+                        Button(action: {
+                            // Share action
+                        }) {
+                            Text("Share")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color.yellow)
+                                .cornerRadius(100)
+                        }
+                        .glassEffect(.regular.interactive())
+                    }
+
+                    // Body Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            // Emoji/Icon placeholder
-                            Image("AwardPurpleOne")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 56, height: 56)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Daily Macros")
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Body")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(
                                         Color(
-                                            red: 69 / 255,
-                                            green: 69 / 255,
-                                            blue: 69 / 255
+                                            red: 0 / 255,
+                                            green: 0 / 255,
+                                            blue: 0 / 255
                                         )
                                     )
                                 
-                                Text("Set your daily calorie and macro goals to track your nutrition targets.")
+                                Text("Set up your body composition below.")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                         }
                         .padding(.bottom, 8)
+                        
+                        Divider()
+                        
+                        // Macro rows
+                        MacroRow(label: "Age", value: $age, unit : "yrs", onSave: saveProfile)
+                        Divider()
+                        MacroRow(label: "Weight", value: $weight, unit: "kg", onSave: saveProfile)
+                        Divider()
+                        MacroRow(label: "Height", value: $height, unit: "cm", onSave: saveProfile)
+                        Divider()
+                        MacroRow(label: "Body Fat", value: $bodyFat, unit: "%", onSave: saveProfile)
+                    }
+                    .padding(24)
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    
+                    // Macronutrients Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Macros")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(
+                                        Color(
+                                            red: 0 / 255,
+                                            green: 0 / 255,
+                                            blue: 0 / 255
+                                        )
+                                    )
+                                
+                                Text("Set your daily calorie and macro goals.")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.bottom, 8)
+                        
+                        Divider()
                         
                         // Macro rows
                         MacroRow(label: "Calories", value: $dailyCalories, unit: "c", onSave: saveProfile)
@@ -94,31 +166,28 @@ struct ProfileSheet: View {
                     // App Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 16) {
-                            // App icon placeholder
-                            Image("AppLogo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 48, height: 48)
                             
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("App Settings")
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("App")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(
                                         Color(
-                                            red: 69 / 255,
-                                            green: 69 / 255,
-                                            blue: 69 / 255
+                                            red: 0 / 255,
+                                            green: 0 / 255,
+                                            blue: 0 / 255
                                         )
                                     )
                                 
-                                Text("Manage your app preferences, permissions, and account settings.")
+                                Text("Manage your app settings.")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                                     .lineLimit(2)
                             }
                         }
                         .padding(.bottom, 8)
+                        
+                        Divider()
                         
                         // Settings toggles
                         HStack {
@@ -134,6 +203,17 @@ struct ProfileSheet: View {
                         
                         HStack {
                             Text("Notifications")
+                                .font(.footnote)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Toggle("", isOn: $notificationsEnabled)
+                                .labelsHidden()
+                        }
+                        
+                        Divider()
+                        
+                        HStack {
+                            Text("Colour Mode")
                                 .font(.footnote)
                                 .fontWeight(.medium)
                             Spacer()
@@ -206,6 +286,9 @@ struct ProfileSheet: View {
                 let profile = try await AuthService.getProfile(accessToken: accessToken)
                 await MainActor.run {
                     userName = profile.fullName ?? ""
+                    age = profile.age ?? 0
+                    weight = Int(profile.weight ?? 0)
+                    height = Int(profile.height ?? 0)
                     dailyCalories = profile.dailyCalories ?? 0
                     dailyProtein = profile.dailyProtein ?? 0
                     dailyCarbs = profile.dailyCarbs ?? 0
@@ -226,6 +309,9 @@ struct ProfileSheet: View {
             do {
                 _ = try await AuthService.updateProfile(
                     accessToken: accessToken,
+                    age: age > 0 ? age : nil,
+                    height: height > 0 ? Double(height) : nil,
+                    weight: weight > 0 ? Double(weight) : nil,
                     dailyCalories: dailyCalories > 0 ? dailyCalories : nil,
                     dailyProtein: dailyProtein > 0 ? dailyProtein : nil,
                     dailyCarbs: dailyCarbs > 0 ? dailyCarbs : nil,

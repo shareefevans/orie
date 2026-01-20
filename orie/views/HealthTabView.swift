@@ -19,55 +19,55 @@ struct HealthTabView: View {
     let dailyFatsGoal: Int
     let consumedSugar: Int
     let dailySugarGoal: Int
+    let meals: [MealBubble]
+
+    // Dot colors for macros
+    private let proteinDotColor = Color(red: 55/255, green: 48/255, blue: 163/255)    // Dark blue
+    private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)    // Light blue
+    private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)      // Yellow
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            // Left column: Daily Intake, Sugar, Burned
-            VStack(spacing: 8) {
-                DailyIntakeCard(consumed: consumedCalories, goal: dailyCalorieGoal)
+        VStack(spacing: 8) {
+            // Row 1: Daily Intake (full width)
+            DailyIntakeCard(
+                consumed: consumedCalories,
+                goal: dailyCalorieGoal,
+                meals: meals
+            )
 
-                SugarCard(consumed: consumedSugar)
-
-                BurnedCard(burned: burnedCalories)
-            }
-
-            // Right column: Protein, Carbs, Fats
-            VStack(spacing: 8) {
-                SingleMacroCard(
+            // Row 2: Protein (left) | Carbs (right)
+            HStack(spacing: 8) {
+                MacroDotCard(
                     title: "Protein",
                     consumed: consumedProtein,
                     goal: dailyProteinGoal,
-                    iconName: "hexagon.fill",
-                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
-                    gradientColors: [
-                        Color(red: 75/255, green: 78/255, blue: 255/255),
-                        Color(red: 106/255, green: 118/255, blue: 255/255)
-                    ]
+                    dotColor: proteinDotColor
                 )
 
-                SingleMacroCard(
+                MacroDotCard(
                     title: "Carbs",
                     consumed: consumedCarbs,
                     goal: dailyCarbsGoal,
-                    iconName: "square.fill",
-                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
-                    gradientColors: [
-                        Color(red: 75/255, green: 78/255, blue: 255/255),
-                        Color(red: 106/255, green: 118/255, blue: 255/255)
-                    ]
+                    dotColor: carbsDotColor
                 )
+            }
 
-                SingleMacroCard(
+            // Row 3: Fats (left) | Burned + Sugar stacked (right)
+            HStack(spacing: 8) {
+                MacroDotCard(
                     title: "Fats",
                     consumed: consumedFats,
                     goal: dailyFatsGoal,
-                    iconName: "circle.fill",
-                    iconColor: Color(red: 106/255, green: 118/255, blue: 255/255),
-                    gradientColors: [
-                        Color(red: 75/255, green: 78/255, blue: 255/255),
-                        Color(red: 106/255, green: 118/255, blue: 255/255)
-                    ]
+                    dotColor: fatsDotColor
                 )
+
+                // Burned and Sugar stacked vertically
+                VStack(spacing: 8) {
+                    BurnedMiniCard(burned: burnedCalories)
+                    SugarMiniCard(consumed: consumedSugar)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
             }
         }
         .padding(.horizontal, 16)
@@ -86,7 +86,21 @@ struct HealthTabView: View {
         consumedFats: 30,
         dailyFatsGoal: 65,
         consumedSugar: 0,
-        dailySugarGoal: 50
+        dailySugarGoal: 50,
+        meals: [
+            MealBubble(
+                timestamp: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
+                protein: 20,
+                carbs: 35,
+                fats: 15
+            ),
+            MealBubble(
+                timestamp: Calendar.current.date(bySettingHour: 12, minute: 30, second: 0, of: Date())!,
+                protein: 35,
+                carbs: 25,
+                fats: 18
+            )
+        ]
     )
     .background(Color.gray.opacity(0.1))
 }

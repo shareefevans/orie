@@ -10,6 +10,7 @@ import SwiftUI
 struct DailyIntakeCard: View {
     let consumed: Int
     let goal: Int
+    let meals: [MealBubble]
 
     private var remaining: Int {
         goal - consumed
@@ -23,7 +24,7 @@ struct DailyIntakeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Daily intake")
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundColor(.gray)
                 .fontWeight(.medium)
 
@@ -41,29 +42,58 @@ struct DailyIntakeCard: View {
             .padding(.top, 4)
 
             Text("\(remaining) remaining")
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundColor(remaining > 0 ? .yellow : .red)
                 .padding(.top, 4)
 
-            Spacer()
+            // Meal Progress bar with labels above
+            VStack(spacing: 8) {
+                HStack {
+                    Text("0")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                    Spacer()
+                    Text(goal.formatted())
+                        .font(.system(size: 12))
+                        .foregroundColor(.black)
+                }
 
-            // Progress bar
-            LinearProgressBar(
-                progress: progress,
-                minLabel: "0",
-                maxLabel: goal.formatted()
-            )
+                MealProgressBar(
+                    progress: progress,
+                    meals: meals,
+                    height: 6
+                )
+            }
+            .padding(.top, 32)
         }
-        .padding(24)
+        .padding(.top, 32)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 32)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 180)
         .background(Color.white)
         .cornerRadius(32)
     }
 }
 
 #Preview {
-    DailyIntakeCard(consumed: 1500, goal: 2300)
-        .padding()
-        .background(Color.gray.opacity(0.1))
+    DailyIntakeCard(
+        consumed: 1500,
+        goal: 2300,
+        meals: [
+            MealBubble(
+                timestamp: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
+                protein: 20,
+                carbs: 35,
+                fats: 15
+            ),
+            MealBubble(
+                timestamp: Calendar.current.date(bySettingHour: 12, minute: 30, second: 0, of: Date())!,
+                protein: 35,
+                carbs: 25,
+                fats: 18
+            )
+        ]
+    )
+    .padding()
+    .background(Color.gray.opacity(0.1))
 }

@@ -215,7 +215,8 @@ var body: some View {
                             consumedFats: consumedFats,
                             dailyFatsGoal: dailyFatsGoal,
                             consumedSugar: consumedSugar,
-                            dailySugarGoal: dailySugarGoal
+                            dailySugarGoal: dailySugarGoal,
+                            meals: mealBubbles
                         )
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)

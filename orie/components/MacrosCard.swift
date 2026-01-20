@@ -146,6 +146,83 @@ struct SingleMacroCard: View {
     }
 }
 
+struct MacroDotCard: View {
+    let title: String
+    let consumed: Int
+    let goal: Int
+    let dotColor: Color
+
+    // Original gradient blue colors
+    private let gradientColors = [
+        Color(red: 75/255, green: 78/255, blue: 255/255),
+        Color(red: 106/255, green: 118/255, blue: 255/255)
+    ]
+
+    private var remaining: Int {
+        goal - consumed
+    }
+
+    private var progress: Double {
+        guard goal > 0 else { return 0 }
+        return min(Double(consumed) / Double(goal), 1.0)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Title with colored dot
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 6, height: 6)
+
+                Text(title)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .fontWeight(.medium)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(consumed.formatted())
+                    .font(.system(size: 24))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.black)
+
+                Text("g")
+                    .font(.system(size: 14))
+                    .foregroundColor(.black)
+                    .fontWeight(.regular)
+            }
+            .padding(.top, 4)
+
+            Text("\(remaining)g left")
+                .font(.system(size: 12))
+                .foregroundColor(remaining > 0 ? .yellow : .red)
+                .padding(.top, 4)
+
+            Spacer()
+
+            // Pie chart with goal below
+            VStack(alignment: .leading, spacing: 8) {
+                CircularProgressChart(
+                    progress: progress,
+                    size: 28,
+                    lineWidth: 5,
+                    gradientColors: gradientColors
+                )
+
+                Text("\(goal)g")
+                    .font(.system(size: 12))
+                    .foregroundColor(.black)
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 180)
+        .background(Color.white)
+        .cornerRadius(32)
+    }
+}
+
 struct SugarCard: View {
     let consumed: Int
 
@@ -190,6 +267,82 @@ struct SugarCard: View {
         .frame(height: 180)
         .background(Color.white)
         .cornerRadius(32)
+    }
+}
+
+struct BurnedMiniCard: View {
+    let burned: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Flame icon
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.15))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.orange)
+            }
+
+            // Value and label
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(burned.formatted())
+                    .font(.system(size: 20))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+
+                Text("burned")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .fontWeight(.medium)
+            }
+
+            Spacer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(20)
+    }
+}
+
+struct SugarMiniCard: View {
+    let consumed: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Heart icon
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.15))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.red)
+            }
+
+            // Value and label
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(consumed.formatted())
+                    .font(.system(size: 20))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.red)
+
+                Text("sugar")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .fontWeight(.medium)
+            }
+
+            Spacer()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(20)
     }
 }
 

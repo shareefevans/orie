@@ -65,8 +65,15 @@ struct FoodInputField: View {
                     .foregroundColor(isRecording ? .white : .gray)
                     .frame(width: 32, height: 32)
                     .background(isRecording ? Color.yellow : Color(white: 0.9))
-                    .cornerRadius(8)
+                    .clipShape(Circle())
+                    .scaleEffect(isRecording ? 1.1 : 1.0)
+                    .animation(
+                        isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
+                        value: isRecording
+                    )
             }
+            .buttonStyle(BorderlessButtonStyle())
+            .contentShape(Circle())
             #endif
         }
         .padding(.vertical, 12)
@@ -153,16 +160,26 @@ struct FoodInputField: View {
     }
 
     private func stopRecording() {
+        // Stop the audio engine first
         audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+
+        // Cancel the recognition task to prevent further text updates
+        recognitionTask?.cancel()
+        recognitionTask = nil
         recognitionRequest?.endAudio()
+        recognitionRequest = nil
+
         isRecording = false
 
         // Submit the text if not empty
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
-            text = ""
             onSubmit(trimmed)
         }
+
+        // Clear text after submission
+        text = ""
     }
     #endif
 }

@@ -23,8 +23,7 @@ struct MainView: View {
     @State private var isDateSelectionMode = false
     @FocusState private var isInputFocused: Bool
 
-    // Animated progress for consumed tab
-    @State private var animatedCalorieProgress: Double = 0
+    // Consumed tab refresh ID
     @State private var consumedTabId: UUID = UUID()
 
     // Daily goals from user profile
@@ -83,6 +82,20 @@ struct MainView: View {
     // Consumed sugar (placeholder - FoodEntry doesn't track sugar yet)
     private var consumedSugar: Int {
         0
+    }
+
+    // Convert food entries to meal bubbles for the progress bar
+    private var mealBubbles: [MealBubble] {
+        filteredEntries
+            .filter { !$0.isLoading }
+            .map { entry in
+                MealBubble(
+                    timestamp: entry.timestamp,
+                    protein: entry.protein ?? 0,
+                    carbs: entry.carbs ?? 0,
+                    fats: entry.fats ?? 0
+                )
+            }
     }
 
     // Check if selected date is today
@@ -237,7 +250,7 @@ var body: some View {
                                     .foregroundColor(remainingCalories > 0 ? .yellow : .red)
                                     .padding(.top, 4)
 
-                                // Progress bar
+                                // Progress bar with meal bubbles
                                 VStack(spacing: 8) {
                                     HStack {
                                         Text("0")
@@ -251,46 +264,11 @@ var body: some View {
                                             .foregroundColor(.black)
                                     }
 
-                                    GeometryReader { geometry in
-                                        HStack(spacing: 0) {
-                                            // Blue progress (expanding)
-                                            if animatedCalorieProgress > 0 {
-                                                RoundedRectangle(cornerRadius: 3)
-                                                    .fill(
-                                                        LinearGradient(
-                                                            gradient: Gradient(colors: [
-                                                                Color(red: 75/255, green: 78/255, blue: 255/255),
-                                                                Color(red: 106/255, green: 118/255, blue: 255/255)
-                                                            ]),
-                                                            startPoint: .top,
-                                                            endPoint: .bottom
-                                                        )
-                                                    )
-                                                    .frame(width: geometry.size.width * min(animatedCalorieProgress, 1.0), height: 6)
-                                            }
-
-                                            // Grey bar (contracting)
-                                            if animatedCalorieProgress < 1.0 {
-                                                RoundedRectangle(cornerRadius: 3)
-                                                    .fill(Color.gray.opacity(0.3))
-                                                    .frame(width: geometry.size.width * (1.0 - min(animatedCalorieProgress, 1.0)), height: 6)
-                                            }
-                                        }
-                                    }
-                                    .frame(height: 6)
+                                    MealProgressBar(
+                                        progress: calorieProgress,
+                                        meals: mealBubbles
+                                    )
                                     .id(consumedTabId)
-                                    .onAppear {
-                                        animatedCalorieProgress = 0
-
-                                        withAnimation(.easeOut(duration: 0.8)) {
-                                            animatedCalorieProgress = calorieProgress
-                                        }
-                                    }
-                                    .onChange(of: calorieProgress) { _, newValue in
-                                        withAnimation(.easeOut(duration: 0.8)) {
-                                            animatedCalorieProgress = newValue
-                                        }
-                                    }
                                     .onChange(of: selectedTab) { _, newTab in
                                         if newTab == "consumed" {
                                             consumedTabId = UUID()

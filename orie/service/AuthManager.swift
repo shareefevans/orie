@@ -137,6 +137,13 @@ class AuthManager: ObservableObject {
         isAuthenticated = false
     }
 
+    /// Handle session expiration (401 response) - logs out locally without server call
+    func handleSessionExpired() {
+        clearSession()
+        currentUser = nil
+        isAuthenticated = false
+    }
+
     // MARK: - Session Management
 
     private func saveSession(_ session: AuthService.Session) {

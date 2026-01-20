@@ -7,6 +7,12 @@
 
 import Foundation
 
+enum APIError: Error {
+    case sessionExpired
+    case badResponse
+    case badURL
+}
+
 class FoodEntryService {
     static let baseURL = APIService.baseURL
     
@@ -67,12 +73,19 @@ class FoodEntryService {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         
         let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode < 400 else {
-            throw URLError(.badServerResponse)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
         }
-        
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
+        }
+
         let result = try JSONDecoder().decode(FoodEntriesResponse.self, from: data)
         return result.entries
     }
@@ -103,18 +116,25 @@ class FoodEntryService {
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode < 400 else {
-            throw URLError(.badServerResponse)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
         }
-        
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
+        }
+
         let result = try JSONDecoder().decode(FoodEntryResponse.self, from: data)
         return result.entry
     }
-    
+
     static func updateFoodEntry(accessToken: String, id: String, timestamp: Date) async throws -> FoodEntryDB {
         guard let url = URL(string: "\(baseURL)/api/food-entries/\(id)") else {
             throw URLError(.badURL)
@@ -133,32 +153,46 @@ class FoodEntryService {
         ]
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode < 400 else {
-            throw URLError(.badServerResponse)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
         }
-        
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
+        }
+
         let result = try JSONDecoder().decode(FoodEntryResponse.self, from: data)
         return result.entry
     }
-    
+
     static func deleteFoodEntry(accessToken: String, id: String) async throws {
         guard let url = URL(string: "\(baseURL)/api/food-entries/\(id)") else {
             throw URLError(.badURL)
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        
+
         let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode < 400 else {
-            throw URLError(.badServerResponse)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
         }
     }
 }

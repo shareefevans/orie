@@ -19,7 +19,7 @@ struct FoodInputField: View {
                 .foregroundColor(.yellow)
                 .frame(width: 90, alignment: .leading)
 
-            TextField("Tap to Enter Food/s...", text: $text, axis: .vertical)
+            TextField("Tap to Enter...", text: $text, axis: .vertical)
                 .font(.system(size: 15))
                 .lineLimit(1...5)
                 .focused($isFocused)

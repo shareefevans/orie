@@ -511,6 +511,10 @@ var body: some View {
                         foodEntries[index].dbId = dbEntry.id
                     }
                 }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
             } catch {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
@@ -521,7 +525,7 @@ var body: some View {
             }
         }
     }
-    
+
     private func updateEntryTime(_ entryId: UUID, newTime: Date) {
         guard let accessToken = authManager.getAccessToken(),
               let index = foodEntries.firstIndex(where: { $0.id == entryId }),
@@ -538,6 +542,10 @@ var body: some View {
                     id: dbId,
                     timestamp: newTime
                 )
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
             } catch {
                 print("Failed to update entry time: \(error)")
             }
@@ -566,6 +574,10 @@ var body: some View {
                     )
                     // Reload entries to refresh view state
                     loadFoodEntries()
+                } catch APIError.sessionExpired {
+                    await MainActor.run {
+                        authManager.handleSessionExpired()
+                    }
                 } catch {
                     print("Failed to delete entry: \(error)")
                 }
@@ -631,6 +643,10 @@ var body: some View {
 
                         return entry
                     }
+                }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
                 }
             } catch {
                 print("Failed to load food entries: \(error)")

@@ -24,6 +24,7 @@ enum ExerciseCategory: String, CaseIterable {
 struct ActivityTabView: View {
     let burnedCalories: Int
     let dailyBurnGoal: Int
+    var isDark: Bool = false
 
     @State private var selectedActivities: Set<UUID> = []
 
@@ -87,7 +88,7 @@ struct ActivityTabView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Burned calories")
                     .font(.system(size: 14))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.secondaryText(isDark))
                     .fontWeight(.medium)
 
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -113,7 +114,8 @@ struct ActivityTabView: View {
                     gradientColors: [
                         Color(red: 255/255, green: 140/255, blue: 50/255),
                         Color(red: 255/255, green: 180/255, blue: 100/255)
-                    ]
+                    ],
+                    isDark: isDark
                 )
             }
             .padding(.top, 32)
@@ -121,7 +123,7 @@ struct ActivityTabView: View {
             .padding(.bottom, 32)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 180)
-            .background(Color.white)
+            .background(Color.cardBackground(isDark))
             .cornerRadius(32)
             .padding(.horizontal, 16)
 
@@ -131,7 +133,7 @@ struct ActivityTabView: View {
                     // Category heading
                     Text(category.rawValue)
                         .font(.system(size: 14))
-                        .foregroundColor(.gray)
+                        .foregroundColor(Color.secondaryText(isDark))
                         .fontWeight(.medium)
                         .padding(.leading, 8)
                         .padding(.top, 24)
@@ -142,6 +144,7 @@ struct ActivityTabView: View {
                             ExerciseActivityButton(
                                 exercise: exercise,
                                 isSelected: selectedActivities.contains(exercise.id),
+                                isDark: isDark,
                                 onTap: {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                         if selectedActivities.contains(exercise.id) {
@@ -164,6 +167,7 @@ struct ActivityTabView: View {
 struct ExerciseActivityButton: View {
     let exercise: ExerciseActivity
     let isSelected: Bool
+    var isDark: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -172,34 +176,34 @@ struct ExerciseActivityButton: View {
                 // Icon
                 Image(systemName: exercise.iconName)
                     .font(.system(size: 18))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.iconColor(isDark))
                     .frame(width: 24)
 
                 // Activity name
                 Text(exercise.name)
                     .font(.system(size: 16))
                     .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
 
                 Spacer()
 
                 // Selection circle
                 ZStack {
                     Circle()
-                        .fill(isSelected ? Color.yellow : Color.gray.opacity(0.1))
+                        .fill(isSelected ? Color.yellow : Color.chartBackground(isDark))
                         .frame(width: 24, height: 24)
 
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(isDark ? .black : .white)
                     }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
             .frame(maxWidth: .infinity)
-            .background(Color.white)
+            .background(Color.cardBackground(isDark))
             .clipShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())

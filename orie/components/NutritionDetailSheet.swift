@@ -10,6 +10,7 @@ import SwiftUI
 struct NutritionDetailSheet: View {
     @Environment(\.dismiss) var dismiss
     let entry: FoodEntry
+    var isDark: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +18,7 @@ struct NutritionDetailSheet: View {
             HStack {
                 Text("nutritional information")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.secondaryText(isDark))
 
                 Spacer()
 
@@ -39,13 +40,7 @@ struct NutritionDetailSheet: View {
                 Text(entry.foodName)
                     .font(.title2)
                     .fontWeight(.semibold)
-                    .foregroundColor(
-                        Color(
-                            red: 69 / 255,
-                            green: 69 / 255,
-                            blue: 69 / 255
-                        )
-                    )
+                    .foregroundColor(Color.primaryText(isDark))
                     .lineLimit(nil)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -69,17 +64,17 @@ struct NutritionDetailSheet: View {
                                                 .aspectRatio(contentMode: .fit)
                                         } placeholder: {
                                             Image(systemName: "globe")
-                                                .foregroundColor(.secondary)
+                                                .foregroundColor(Color.secondaryText(isDark))
                                         }
                                         .frame(width: 16, height: 16)
 
                                         Text(source.name)
                                             .font(.footnote)
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(Color.primaryText(isDark))
                                     }
                                     .padding(.horizontal, 16)
                                     .frame(height: 50)
-                                    .background(Color.white)
+                                    .background(Color.cardBackground(isDark))
                                     .clipShape(RoundedRectangle(cornerRadius: 100))
                                     .glassEffect(.regular.interactive())
                                 }
@@ -97,12 +92,12 @@ struct NutritionDetailSheet: View {
                     HStack(spacing: 0) {
                         Text("Breakdown")
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color.secondaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text("Totals")
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color.secondaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
@@ -112,12 +107,12 @@ struct NutritionDetailSheet: View {
                     HStack(spacing: 0) {
                         Text("Calories")
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text("\(entry.calories ?? 0)")
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
@@ -125,12 +120,12 @@ struct NutritionDetailSheet: View {
                     HStack(spacing: 0) {
                         Text("Protein")
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.protein ?? 0))
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
@@ -138,12 +133,12 @@ struct NutritionDetailSheet: View {
                     HStack(spacing: 0) {
                         Text("Carbs")
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.carbs ?? 0))
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
@@ -151,12 +146,12 @@ struct NutritionDetailSheet: View {
                     HStack(spacing: 0) {
                         Text("Fat")
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.fats ?? 0))
                             .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
@@ -169,11 +164,13 @@ struct NutritionDetailSheet: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 24)
         .padding(.top, 32)
+        .background(Color.cardBackground(isDark))
     }
 }
 
 #Preview {
     NutritionDetailSheet(
-        entry: FoodEntry(foodName: "KFC Zinger Burger")
+        entry: FoodEntry(foodName: "KFC Zinger Burger"),
+        isDark: false
     )
 }

@@ -15,6 +15,7 @@ struct CircularProgressChart: View {
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
     ]
+    var isDark: Bool = false
     var animationDuration: Double = 0.8
     var animationDelay: Double = 0
 
@@ -24,7 +25,7 @@ struct CircularProgressChart: View {
         ZStack {
             // Background circle
             Circle()
-                .stroke(Color.gray.opacity(0.3), lineWidth: lineWidth)
+                .stroke(Color.chartBackground(isDark), lineWidth: lineWidth)
                 .frame(width: size, height: size)
 
             // Progress circle

@@ -9,7 +9,10 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.scenePhase) private var scenePhase
+
+    private var isDark: Bool { themeManager.isDarkMode }
 
     @State private var foodEntries: [FoodEntry] = []
     @State private var currentInput = ""
@@ -106,7 +109,7 @@ struct MainView: View {
 var body: some View {
         ZStack(alignment: .top) {
             // Background color
-            Color(red: 247/255, green: 247/255, blue: 247/255)
+            Color.appBackground(isDark)
                 .ignoresSafeArea()
 
             // Main scrollable content
@@ -129,6 +132,7 @@ var body: some View {
                                         DateButton(
                                             date: date,
                                             isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
+                                            isDark: isDark,
                                             action: {
                                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                                     selectedDate = date
@@ -179,18 +183,21 @@ var body: some View {
                             TabButton(
                                 title: "Health",
                                 isSelected: selectedTab == "health",
+                                isDark: isDark,
                                 action: { selectedTab = "health" }
                             )
 
                             TabButton(
                                 title: "Consumed",
                                 isSelected: selectedTab == "consumed",
+                                isDark: isDark,
                                 action: { selectedTab = "consumed" }
                             )
 
                             TabButton(
                                 title: "Activity",
                                 isSelected: selectedTab == "activity",
+                                isDark: isDark,
                                 action: { selectedTab = "activity" }
                             )
                         }
@@ -216,7 +223,8 @@ var body: some View {
                             dailyFatsGoal: dailyFatsGoal,
                             consumedSugar: consumedSugar,
                             dailySugarGoal: dailySugarGoal,
-                            meals: mealBubbles
+                            meals: mealBubbles,
+                            isDark: isDark
                         )
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -230,18 +238,18 @@ var body: some View {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Daily intake")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Color.secondaryText(isDark))
                                     .fontWeight(.medium)
 
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                                     Text(consumedCalories.formatted())
                                         .font(.system(size: 24))
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(Color.primaryText(isDark))
 
                                     Text("cal")
                                         .font(.system(size: 14))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(Color.primaryText(isDark))
                                         .fontWeight(.regular)
                                 }
                                 .padding(.top, 4)
@@ -256,18 +264,19 @@ var body: some View {
                                     HStack {
                                         Text("0")
                                             .font(.system(size: 12))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(Color.secondaryText(isDark))
 
                                         Spacer()
 
                                         Text(dailyCalorieGoal.formatted())
                                             .font(.system(size: 12))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(Color.primaryText(isDark))
                                     }
 
                                     MealProgressBar(
                                         progress: calorieProgress,
-                                        meals: mealBubbles
+                                        meals: mealBubbles,
+                                        isDark: isDark
                                     )
                                     .id(consumedTabId)
                                     .onChange(of: selectedTab) { _, newTab in
@@ -282,7 +291,7 @@ var body: some View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 32)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
+                            .background(Color.cardBackground(isDark))
                             .cornerRadius(32)
 
                             // Food Entries Card
@@ -291,6 +300,7 @@ var body: some View {
                             ForEach(filteredEntries.sorted()) { entry in
                                 FoodEntryRow(
                                     entry: entry,
+                                    isDark: isDark,
                                     onTimeChange: { newTime in
                                         updateEntryTime(entry.id, newTime: newTime)
                                     },
@@ -303,6 +313,7 @@ var body: some View {
                             // Input field
                             FoodInputField(
                                 text: $currentInput,
+                                isDark: isDark,
                                 onSubmit: { foodName in
                                     addFoodEntry(foodName: foodName)
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -319,7 +330,7 @@ var body: some View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 16)
                             .frame(maxWidth: .infinity)
-                            .background(Color.white)
+                            .background(Color.cardBackground(isDark))
                             .cornerRadius(32)
                         }
                         .padding(.horizontal, 16)
@@ -332,7 +343,8 @@ var body: some View {
                     if selectedTab == "activity" {
                         ActivityTabView(
                             burnedCalories: 0,
-                            dailyBurnGoal: 500
+                            dailyBurnGoal: 500,
+                            isDark: isDark
                         )
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -366,6 +378,7 @@ var body: some View {
                 isDateSelectionMode: $isDateSelectionMode,
                 selectedDate: $selectedDate,
                 isToday: isToday,
+                isDark: isDark,
                 isInputFocused: Binding(
                     get: { isInputFocused },
                     set: { isInputFocused = $0 }
@@ -374,8 +387,8 @@ var body: some View {
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color(.systemBackground),
-                        Color(.systemBackground).opacity(0),
+                        Color.appBackground(isDark),
+                        Color.appBackground(isDark).opacity(0),
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
@@ -391,8 +404,8 @@ var body: some View {
                 Spacer()
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color(red: 247/255, green: 247/255, blue: 247/255).opacity(0),
-                        Color(red: 247/255, green: 247/255, blue: 247/255)
+                        Color.appBackground(isDark).opacity(0),
+                        Color.appBackground(isDark)
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
@@ -410,6 +423,7 @@ var body: some View {
         }) {
             ProfileSheet()
                 .environmentObject(authManager)
+                .environmentObject(themeManager)
         }
         .sheet(isPresented: $showNotifications) {
             NotificationSheet()
@@ -656,6 +670,7 @@ var body: some View {
 struct TabButton: View {
     let title: String
     let isSelected: Bool
+    let isDark: Bool
     let action: () -> Void
 
     var body: some View {
@@ -664,12 +679,12 @@ struct TabButton: View {
                 Text(title)
                     .font(isSelected ? .system(size: 16) : .system(size: 14))
                     .fontWeight(isSelected ? .semibold : .medium)
-                    .foregroundColor(isSelected ? .black : .gray)
+                    .foregroundColor(isSelected ? Color.primaryText(isDark) : Color.secondaryText(isDark))
                     .offset(y: isSelected ? -6 : 0)
 
-                // Small black dot beneath selected tab
+                // Small dot beneath selected tab
                 Circle()
-                    .fill(isSelected ? Color.black : Color.clear)
+                    .fill(isSelected ? Color.primaryText(isDark) : Color.clear)
                     .frame(width: 4, height: 4)
             }
         }
@@ -681,7 +696,15 @@ struct TabButton: View {
 struct DateButton: View {
     let date: Date
     let isSelected: Bool
+    let isDark: Bool
     let action: () -> Void
+
+    init(date: Date, isSelected: Bool, isDark: Bool = false, action: @escaping () -> Void) {
+        self.date = date
+        self.isSelected = isSelected
+        self.isDark = isDark
+        self.action = action
+    }
 
     private var dayNumber: Int {
         Calendar.current.component(.day, from: date)
@@ -728,12 +751,12 @@ struct DateButton: View {
                 Text(displayText)
                     .font(isSelected ? .system(size: 16) : .system(size: 14))
                     .fontWeight(isSelected ? .semibold : .medium)
-                    .foregroundColor(isSelected ? .black : .gray)
+                    .foregroundColor(isSelected ? (isDark ? .white : .black) : Color.tertiaryText(isDark))
                     .offset(y: isSelected ? -6 : 0)
 
-                // Small black dot beneath selected date
+                // Small dot beneath selected date
                 Circle()
-                    .fill(isSelected ? Color.black : Color.clear)
+                    .fill(isSelected ? (isDark ? Color.white : Color.black) : Color.clear)
                     .frame(width: 4, height: 4)
             }
             .padding(.top, 8)
@@ -745,4 +768,5 @@ struct DateButton: View {
 #Preview {
     MainView()
         .environmentObject(AuthManager())
+        .environmentObject(ThemeManager())
 }

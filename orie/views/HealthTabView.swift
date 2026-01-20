@@ -20,6 +20,7 @@ struct HealthTabView: View {
     let consumedSugar: Int
     let dailySugarGoal: Int
     let meals: [MealBubble]
+    var isDark: Bool = false
 
     // Dot colors for macros
     private let proteinDotColor = Color(red: 55/255, green: 48/255, blue: 163/255)    // Dark blue
@@ -32,7 +33,8 @@ struct HealthTabView: View {
             DailyIntakeCard(
                 consumed: consumedCalories,
                 goal: dailyCalorieGoal,
-                meals: meals
+                meals: meals,
+                isDark: isDark
             )
 
             // Row 2: Protein (left) | Carbs (right)
@@ -41,14 +43,16 @@ struct HealthTabView: View {
                     title: "Protein",
                     consumed: consumedProtein,
                     goal: dailyProteinGoal,
-                    dotColor: proteinDotColor
+                    dotColor: proteinDotColor,
+                    isDark: isDark
                 )
 
                 MacroDotCard(
                     title: "Carbs",
                     consumed: consumedCarbs,
                     goal: dailyCarbsGoal,
-                    dotColor: carbsDotColor
+                    dotColor: carbsDotColor,
+                    isDark: isDark
                 )
             }
 
@@ -58,13 +62,14 @@ struct HealthTabView: View {
                     title: "Fats",
                     consumed: consumedFats,
                     goal: dailyFatsGoal,
-                    dotColor: fatsDotColor
+                    dotColor: fatsDotColor,
+                    isDark: isDark
                 )
 
                 // Burned and Sugar stacked vertically
                 VStack(spacing: 8) {
-                    BurnedMiniCard(burned: burnedCalories)
-                    SugarMiniCard(consumed: consumedSugar)
+                    BurnedMiniCard(burned: burnedCalories, isDark: isDark)
+                    SugarMiniCard(consumed: consumedSugar, isDark: isDark)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 180)

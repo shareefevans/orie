@@ -15,6 +15,7 @@ struct TopNavigationBar: View {
     @Binding var isDateSelectionMode: Bool
     @Binding var selectedDate: Date
     var isToday: Bool
+    var isDark: Bool = false
     @Binding var isInputFocused: Bool
 
     @Namespace private var animation
@@ -31,12 +32,12 @@ struct TopNavigationBar: View {
                     HStack(spacing: 8) {
                         Image(systemName: "figure.run")
                             .font(.system(size: 20))
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color.iconColor(isDark))
                             .frame(width: 24)
                         if !isDateSelectionMode {
                             Text(isToday ? "Today" : formatSelectedDate(selectedDate))
                                 .font(.callout.bold())
-                                .foregroundColor(.primary)
+                                .foregroundColor(Color.primaryText(isDark))
                         }
                     }
                     .padding(.horizontal, 16)
@@ -53,7 +54,7 @@ struct TopNavigationBar: View {
                     }) {
                         Image(systemName: "xmark")
                             .font(.callout)
-                            .foregroundColor(.white)
+                            .foregroundColor(isDark ? .black : .white)
                             .frame(width: 50, height: 50)
                             .background(Color.yellow)
                             .clipShape(Circle())
@@ -64,40 +65,40 @@ struct TopNavigationBar: View {
             }
 
             Spacer()
-            
+
             // Right side - Grouped buttons (bell, settings, trophy)
             HStack(spacing: 0) {
-                
+
                 Button(action: {
                     showAwards = true
                 }) {
                     Image(systemName: "trophy")
                         .font(.callout)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Color.iconColor(isDark))
                         .frame(width: 50, height: 50)
                 }
-                
+
                 Button(action: {
                     showNotifications = true
                 }) {
                     Image(systemName: "bell")
                         .font(.callout)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Color.iconColor(isDark))
                         .frame(width: 50, height: 50)
                 }
-                
+
                 Button(action: {
                     showProfile = true
                 }) {
                     Image(systemName: "gearshape")
                         .font(.callout)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Color.iconColor(isDark))
                         .frame(width: 44, height: 44)
                 }
-                
+
             }
             .glassEffect(.regular.interactive())
-            
+
             // Keyboard dismiss button (only shows when keyboard is open)
             if isInputFocused {
                 Button(action: {
@@ -105,7 +106,7 @@ struct TopNavigationBar: View {
                 }) {
                     Image(systemName: "checkmark")
                         .font(.callout)
-                        .foregroundColor(.white)
+                        .foregroundColor(isDark ? .black : .white)
                         .frame(width: 50, height: 50)
                         .background(Color.yellow)
                         .clipShape(Circle())
@@ -119,7 +120,7 @@ struct TopNavigationBar: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isInputFocused)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDateSelectionMode)
     }
-    
+
     private func formatSelectedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM dd"
@@ -136,6 +137,7 @@ struct TopNavigationBar: View {
         isDateSelectionMode: .constant(false),
         selectedDate: .constant(Date()),
         isToday: true,
+        isDark: false,
         isInputFocused: .constant(false)
     )
 }

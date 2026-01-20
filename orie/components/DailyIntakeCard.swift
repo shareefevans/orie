@@ -11,6 +11,7 @@ struct DailyIntakeCard: View {
     let consumed: Int
     let goal: Int
     let meals: [MealBubble]
+    var isDark: Bool = false
 
     private var remaining: Int {
         goal - consumed
@@ -25,18 +26,18 @@ struct DailyIntakeCard: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Daily intake")
                 .font(.system(size: 14))
-                .foregroundColor(.gray)
+                .foregroundColor(Color.secondaryText(isDark))
                 .fontWeight(.medium)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(consumed.formatted())
                     .font(.system(size: 24))
                     .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
 
                 Text("cal")
                     .font(.system(size: 14))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
                     .fontWeight(.regular)
             }
             .padding(.top, 4)
@@ -51,17 +52,18 @@ struct DailyIntakeCard: View {
                 HStack {
                     Text("0")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(Color.secondaryText(isDark))
                     Spacer()
                     Text(goal.formatted())
                         .font(.system(size: 12))
-                        .foregroundColor(.black)
+                        .foregroundColor(Color.primaryText(isDark))
                 }
 
                 MealProgressBar(
                     progress: progress,
                     meals: meals,
-                    height: 6
+                    height: 6,
+                    isDark: isDark
                 )
             }
             .padding(.top, 32)
@@ -70,7 +72,7 @@ struct DailyIntakeCard: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 32)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }
 }

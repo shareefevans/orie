@@ -13,6 +13,7 @@ import AVFoundation
 
 struct FoodInputField: View {
     @Binding var text: String
+    var isDark: Bool = false
     var onSubmit: (String) -> Void
     @FocusState.Binding var isFocused: Bool
 
@@ -31,23 +32,31 @@ struct FoodInputField: View {
                 .foregroundColor(.yellow)
                 .frame(width: 90, alignment: .leading)
 
-            TextField("Tap to Enter...", text: $text, axis: .vertical)
-                .font(.system(size: 15))
-                .lineLimit(1...5)
-                .focused($isFocused)
-                .onChange(of: text) { oldValue, newValue in
-                    if newValue.contains("\n") {
-                        let trimmed = newValue.replacingOccurrences(of: "\n", with: "")
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        text = ""
-                        if !trimmed.isEmpty {
-                            onSubmit(trimmed)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isFocused = true
+            ZStack(alignment: .leading) {
+                if text.isEmpty {
+                    Text("Tap to Enter...")
+                        .font(.system(size: 15))
+                        .foregroundColor(Color.placeholderText(isDark))
+                }
+                TextField("", text: $text, axis: .vertical)
+                    .font(.system(size: 15))
+                    .foregroundColor(Color.primaryText(isDark))
+                    .lineLimit(1...5)
+                    .focused($isFocused)
+                    .onChange(of: text) { oldValue, newValue in
+                        if newValue.contains("\n") {
+                            let trimmed = newValue.replacingOccurrences(of: "\n", with: "")
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                            text = ""
+                            if !trimmed.isEmpty {
+                                onSubmit(trimmed)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isFocused = true
+                                }
                             }
                         }
                     }
-                }
+            }
 
             Spacer()
 
@@ -62,9 +71,9 @@ struct FoodInputField: View {
             }) {
                 Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
                     .font(.system(size: 14))
-                    .foregroundColor(isRecording ? .white : .gray)
-                    .frame(width: 32, height: 32)
-                    .background(isRecording ? Color.yellow : Color(white: 0.9))
+                    .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
+                    .frame(width: 44, height: 44)
+                    .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
                     .clipShape(Circle())
                     .scaleEffect(isRecording ? 1.1 : 1.0)
                     .animation(

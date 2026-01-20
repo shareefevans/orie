@@ -23,6 +23,7 @@ struct MealProgressBar: View {
     let progress: Double
     let meals: [MealBubble]
     var height: CGFloat = 6
+    var isDark: Bool = false
     var animationDuration: Double = 0.8
     var animationDelay: Double = 0
 
@@ -35,7 +36,9 @@ struct MealProgressBar: View {
     private let timeColor = Color(red: 106/255, green: 118/255, blue: 255/255)
 
     // Unfilled color
-    private let unfilledColor = Color.gray.opacity(0.3)
+    private var unfilledColor: Color {
+        Color.chartBackground(isDark)
+    }
 
     @State private var animatedProgress: Double = 0
 

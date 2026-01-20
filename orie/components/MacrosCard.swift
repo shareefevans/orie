@@ -151,6 +151,7 @@ struct MacroDotCard: View {
     let consumed: Int
     let goal: Int
     let dotColor: Color
+    var isDark: Bool = false
 
     // Original gradient blue colors
     private let gradientColors = [
@@ -177,7 +178,7 @@ struct MacroDotCard: View {
 
                 Text(title)
                     .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.secondaryText(isDark))
                     .fontWeight(.medium)
             }
 
@@ -185,11 +186,11 @@ struct MacroDotCard: View {
                 Text(consumed.formatted())
                     .font(.system(size: 24))
                     .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
 
                 Text("g")
                     .font(.system(size: 14))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
                     .fontWeight(.regular)
             }
             .padding(.top, 4)
@@ -207,18 +208,19 @@ struct MacroDotCard: View {
                     progress: progress,
                     size: 28,
                     lineWidth: 5,
-                    gradientColors: gradientColors
+                    gradientColors: gradientColors,
+                    isDark: isDark
                 )
 
                 Text("\(goal)g")
                     .font(.system(size: 12))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 180)
-        .background(Color.white)
+        .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }
 }
@@ -272,6 +274,7 @@ struct SugarCard: View {
 
 struct BurnedMiniCard: View {
     let burned: Int
+    var isDark: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -295,7 +298,7 @@ struct BurnedMiniCard: View {
 
                 Text("burned")
                     .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.secondaryText(isDark))
                     .fontWeight(.medium)
             }
 
@@ -303,13 +306,14 @@ struct BurnedMiniCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.cardBackground(isDark))
         .cornerRadius(20)
     }
 }
 
 struct SugarMiniCard: View {
     let consumed: Int
+    var isDark: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -333,7 +337,7 @@ struct SugarMiniCard: View {
 
                 Text("sugar")
                     .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.secondaryText(isDark))
                     .fontWeight(.medium)
             }
 
@@ -341,7 +345,7 @@ struct SugarMiniCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.cardBackground(isDark))
         .cornerRadius(20)
     }
 }

@@ -10,6 +10,7 @@ import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var isSignUp = false
     @State private var email = ""
@@ -19,10 +20,12 @@ struct LoginView: View {
     @State private var showOAuthSheet = false
     @State private var oauthURL: URL?
 
+    private var isDark: Bool { themeManager.isDarkMode }
+
     var body: some View {
         ZStack {
             // Background
-            Color(red: 247/255, green: 247/255, blue: 247/255)
+            Color.appBackground(isDark)
                 .ignoresSafeArea()
 
             ScrollView {
@@ -34,11 +37,11 @@ struct LoginView: View {
                     VStack(spacing: 8) {
                         Text("orie")
                             .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(Color(red: 69/255, green: 69/255, blue: 69/255))
+                            .foregroundColor(Color.primaryText(isDark))
 
                         Text(isSignUp ? "Create your account" : "Welcome back")
                             .font(.system(size: 16))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color.secondaryText(isDark))
                     }
                     .padding(.bottom, 32)
 
@@ -49,6 +52,7 @@ struct LoginView: View {
                             AuthTextField(
                                 placeholder: "Full Name",
                                 text: $fullName,
+                                isDark: isDark,
                                 isSecure: false
                             )
                         }
@@ -57,6 +61,7 @@ struct LoginView: View {
                         AuthTextField(
                             placeholder: "Email",
                             text: $email,
+                            isDark: isDark,
                             isSecure: false,
                             keyboardType: .emailAddress,
                             autocapitalization: .never
@@ -66,6 +71,7 @@ struct LoginView: View {
                         AuthTextField(
                             placeholder: "Password",
                             text: $password,
+                            isDark: isDark,
                             isSecure: true
                         )
 
@@ -87,13 +93,13 @@ struct LoginView: View {
                             HStack {
                                 if isLoading {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
                                 } else {
                                     Text(isSignUp ? "Sign Up" : "Log In")
                                         .font(.system(size: 16, weight: .semibold))
                                 }
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(isDark ? .black : .white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                             .background(Color.yellow)
@@ -104,23 +110,23 @@ struct LoginView: View {
                         .padding(.top, 8)
                     }
                     .padding(24)
-                    .background(Color.white)
+                    .background(Color.cardBackground(isDark))
                     .cornerRadius(32)
                     .padding(.horizontal, 16)
 
                     // Divider
                     HStack {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.secondaryText(isDark).opacity(0.3))
                             .frame(height: 1)
 
                         Text("or")
                             .font(.system(size: 14))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color.secondaryText(isDark))
                             .padding(.horizontal, 16)
 
                         Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.secondaryText(isDark).opacity(0.3))
                             .frame(height: 1)
                     }
                     .padding(.horizontal, 32)
@@ -131,8 +137,8 @@ struct LoginView: View {
                         SocialLoginButton(
                             title: "Continue with Google",
                             icon: "g.circle.fill",
-                            backgroundColor: Color.white,
-                            textColor: .black
+                            backgroundColor: Color.cardBackground(isDark),
+                            textColor: Color.primaryText(isDark)
                         ) {
                             Task {
                                 await handleGoogleSignIn()
@@ -143,8 +149,8 @@ struct LoginView: View {
                         SocialLoginButton(
                             title: "Continue with Apple",
                             icon: "apple.logo",
-                            backgroundColor: Color.black,
-                            textColor: .white
+                            backgroundColor: isDark ? Color.white : Color.black,
+                            textColor: isDark ? .black : .white
                         ) {
                             Task {
                                 await handleAppleSignIn()
@@ -162,10 +168,10 @@ struct LoginView: View {
                     }) {
                         HStack(spacing: 4) {
                             Text(isSignUp ? "Already have an account?" : "Don't have an account?")
-                                .foregroundColor(.gray)
+                                .foregroundColor(Color.secondaryText(isDark))
 
                             Text(isSignUp ? "Log In" : "Sign Up")
-                                .foregroundColor(Color(red: 69/255, green: 69/255, blue: 69/255))
+                                .foregroundColor(Color.primaryText(isDark))
                                 .fontWeight(.semibold)
                         }
                         .font(.system(size: 14))
@@ -236,6 +242,7 @@ struct LoginView: View {
 struct AuthTextField: View {
     let placeholder: String
     @Binding var text: String
+    var isDark: Bool = false
     var isSecure: Bool = false
     var keyboardType: UIKeyboardType = .default
     var autocapitalization: TextInputAutocapitalization = .sentences
@@ -247,9 +254,11 @@ struct AuthTextField: View {
             if isSecure && !isPasswordVisible {
                 SecureField(placeholder, text: $text)
                     .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
             } else {
                 TextField(placeholder, text: $text)
                     .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
                     .keyboardType(keyboardType)
                     .textInputAutocapitalization(autocapitalization)
             }
@@ -257,13 +266,13 @@ struct AuthTextField: View {
             if isSecure {
                 Button(action: { isPasswordVisible.toggle() }) {
                     Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
-                        .foregroundColor(.gray)
+                        .foregroundColor(Color.secondaryText(isDark))
                 }
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(Color(red: 247/255, green: 247/255, blue: 247/255))
+        .background(Color.appBackground(isDark))
         .cornerRadius(16)
     }
 }
@@ -343,4 +352,5 @@ struct OAuthWebView: UIViewRepresentable {
 #Preview {
     LoginView()
         .environmentObject(AuthManager())
+        .environmentObject(ThemeManager())
 }

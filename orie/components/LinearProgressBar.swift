@@ -17,6 +17,7 @@ struct LinearProgressBar: View {
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
     ]
+    var isDark: Bool = false
     var animationDuration: Double = 0.8
     var animationDelay: Double = 0
 
@@ -27,18 +28,18 @@ struct LinearProgressBar: View {
             HStack {
                 Text(minLabel)
                     .font(.system(size: labelSize))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.secondaryText(isDark))
 
                 Spacer()
 
                 Text(maxLabel)
                     .font(.system(size: labelSize))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color.primaryText(isDark))
             }
 
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    // Blue progress bar (expanding)
+                    // Colored progress bar (expanding)
                     if animatedProgress > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(
@@ -54,7 +55,7 @@ struct LinearProgressBar: View {
                     // Grey bar (contracting)
                     if animatedProgress < 1.0 {
                         RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.chartBackground(isDark))
                             .frame(width: geometry.size.width * (1.0 - min(animatedProgress, 1.0)), height: height)
                     }
                 }

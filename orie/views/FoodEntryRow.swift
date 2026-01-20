@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FoodEntryRow: View {
     let entry: FoodEntry
+    var isDark: Bool = false
     var onTimeChange: (Date) -> Void
     var onDelete: (() -> Void)?
 
@@ -19,8 +20,9 @@ struct FoodEntryRow: View {
     @State private var offset: CGFloat = 0
     @State private var showDeleteButton = false
 
-    init(entry: FoodEntry, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil) {
+    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil) {
         self.entry = entry
+        self.isDark = isDark
         self.onTimeChange = onTimeChange
         self.onDelete = onDelete
         _selectedTime = State(initialValue: entry.timestamp)
@@ -65,7 +67,7 @@ struct FoodEntryRow: View {
                 }) {
                     Text(entry.foodName)
                         .font(.subheadline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(Color.primaryText(isDark))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(nil)
@@ -98,12 +100,12 @@ struct FoodEntryRow: View {
                 } else if let calories = entry.calories {
                     Text("\(calories) cal")
                         .font(.system(size: 14))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.secondaryText(isDark))
                         .frame(width: 90, alignment: .trailing)
                 }
             }
             .padding(.vertical, 12)
-            .background(Color.white)
+            .background(Color.cardBackground(isDark))
             .offset(x: offset)
             .simultaneousGesture(
                 DragGesture(minimumDistance: 20)
@@ -130,6 +132,7 @@ struct FoodEntryRow: View {
         .sheet(isPresented: $showTimePicker) {
             TimePickerSheet(
                 selectedTime: $selectedTime,
+                isDark: isDark,
                 onDone: {
                     onTimeChange(selectedTime)
                     showTimePicker = false
@@ -139,7 +142,7 @@ struct FoodEntryRow: View {
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showNutritionDetail) {
-            NutritionDetailSheet(entry: entry)
+            NutritionDetailSheet(entry: entry, isDark: isDark)
                 .presentationDetents([.height(400)])
                 .presentationDragIndicator(.visible)
         }
@@ -155,6 +158,7 @@ struct FoodEntryRow: View {
 // Time Picker Sheet
 struct TimePickerSheet: View {
     @Binding var selectedTime: Date
+    var isDark: Bool = false
     var onDone: () -> Void
 
     var body: some View {
@@ -164,7 +168,7 @@ struct TimePickerSheet: View {
                 Button("Set Time") {
                     onDone()
                 }
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.secondaryText(isDark))
                 .padding(.vertical, 12)
                 .padding(.horizontal, 20)
 
@@ -196,5 +200,6 @@ struct TimePickerSheet: View {
 
             Spacer()
         }
+        .background(Color.cardBackground(isDark))
     }
 }

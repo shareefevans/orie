@@ -133,15 +133,11 @@ struct MonthTab: View {
             Text(monthName(month))
                 .font(.footnote)
                 .foregroundColor(isSelected ? .white : .primary)
-                .frame(width: 80, height: 50)
-                .background(isSelected ? Color.yellow : Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .glassEffect(.regular.interactive())
         }
         .buttonStyle(.plain)
         .frame(width: 80, height: 50)
         .background(isSelected ? Color.yellow : Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 100))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .glassEffect(.regular.interactive())
     }
     

@@ -72,4 +72,9 @@ extension Color {
     static func placeholderText(_ isDark: Bool) -> Color {
         isDark ? Color(white: 0.5) : Color.gray
     }
+
+    // Accent blue for Done buttons (consistent across light/dark mode)
+    static var accentBlue: Color {
+        Color(red: 0/255, green: 122/255, blue: 255/255)
+    }
 }

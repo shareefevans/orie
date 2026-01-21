@@ -33,7 +33,7 @@ struct MacrosSheet: View {
                     Text("Done")
                         .font(.callout)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color.accentBlue)
                 }
             }
             .padding(.horizontal, 8)

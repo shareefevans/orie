@@ -139,11 +139,13 @@ struct FoodEntryRow: View {
             )
             .presentationDetents([.height(300)])
             .presentationDragIndicator(.visible)
+            .presentationBackground(Color.cardBackground(isDark))
         }
         .sheet(isPresented: $showNutritionDetail) {
             NutritionDetailSheet(entry: entry, isDark: isDark)
                 .presentationDetents([.height(400)])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(Color.cardBackground(isDark))
         }
     }
 
@@ -177,6 +179,7 @@ struct TimePickerSheet: View {
                 Button("Done") {
                     onDone()
                 }
+                .foregroundColor(Color.accentBlue)
                 .fontWeight(.semibold)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 20)
@@ -195,6 +198,7 @@ struct TimePickerSheet: View {
             )
             .datePickerStyle(.wheel)
             .labelsHidden()
+            .colorScheme(isDark ? .dark : .light)
             .padding()
 
             Spacer()

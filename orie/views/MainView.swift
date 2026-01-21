@@ -419,6 +419,7 @@ var body: some View {
         }
         .sheet(isPresented: $showAwards) {
             AwardSheet()
+                .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showProfile, onDismiss: {
             loadUserProfile()  // Reload in case user updated their calorie goal
@@ -426,22 +427,25 @@ var body: some View {
             ProfileSheet()
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
+                .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showNotifications) {
             NotificationSheet()
                 .environmentObject(notificationManager)
                 .environmentObject(themeManager)
+                .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showDateSelection) {
             DateSelectionModal(selectedDate: $selectedDate)
                 .presentationDragIndicator(.visible)
+                .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showMacros) {
             MacrosSheet()
                 .presentationDetents([.height(200)])
                 .presentationDragIndicator(.visible)
                 .presentationContentInteraction(.scrolls)
-                .presentationBackground(.bar)
+                .presentationBackground(Color.cardBackground(isDark))
         }
         .onAppear {
             loadFoodEntries()

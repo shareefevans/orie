@@ -372,6 +372,7 @@ struct MacroRow: View {
             )
             .presentationDetents([.height(300)])
             .presentationDragIndicator(.visible)
+            .presentationBackground(Color.cardBackground(isDark))
         }
     }
 }
@@ -412,6 +413,7 @@ struct MacroPickerSheet: View {
                     }
                     onDone()
                 }
+                .foregroundColor(Color.accentBlue)
                 .fontWeight(.semibold)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 20)

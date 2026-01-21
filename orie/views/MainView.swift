@@ -10,6 +10,7 @@ import SwiftUI
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var notificationManager: NotificationManager
     @Environment(\.scenePhase) private var scenePhase
 
     private var isDark: Bool { themeManager.isDarkMode }
@@ -382,7 +383,8 @@ var body: some View {
                 isInputFocused: Binding(
                     get: { isInputFocused },
                     set: { isInputFocused = $0 }
-                )
+                ),
+                hasUnreadNotifications: notificationManager.unreadCount > 0
             )
             .background(
                 LinearGradient(
@@ -427,6 +429,8 @@ var body: some View {
         }
         .sheet(isPresented: $showNotifications) {
             NotificationSheet()
+                .environmentObject(notificationManager)
+                .environmentObject(themeManager)
         }
         .sheet(isPresented: $showDateSelection) {
             DateSelectionModal(selectedDate: $selectedDate)
@@ -769,4 +773,5 @@ struct DateButton: View {
     MainView()
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
+        .environmentObject(NotificationManager())
 }

@@ -61,20 +61,19 @@ struct FoodEntryRow: View {
                 }
                 .buttonStyle(.plain)
 
-                // Food name - Now clickable
-                Button(action: {
-                    showNutritionDetail = true
-                }) {
-                    Text(entry.foodName)
-                        .font(.subheadline)
-                        .foregroundColor(Color.primaryText(isDark))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .lineLimit(nil)
-                        .multilineTextAlignment(.leading)
-                }
-                .buttonStyle(.plain)
-                .disabled(entry.isLoading)
+                // Food name - Long press to open
+                Text(entry.foodName)
+                    .font(.subheadline)
+                    .foregroundColor(Color.primaryText(isDark))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
+                    .onLongPressGesture(minimumDuration: 0.5) {
+                        if !entry.isLoading {
+                            showNutritionDetail = true
+                        }
+                    }
 
                 // Calories (right)
                 if entry.isLoading {

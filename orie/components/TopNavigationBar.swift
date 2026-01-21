@@ -17,6 +17,7 @@ struct TopNavigationBar: View {
     var isToday: Bool
     var isDark: Bool = false
     @Binding var isInputFocused: Bool
+    var hasUnreadNotifications: Bool = false
 
     @Namespace private var animation
 
@@ -81,10 +82,19 @@ struct TopNavigationBar: View {
                 Button(action: {
                     showNotifications = true
                 }) {
-                    Image(systemName: "bell")
-                        .font(.callout)
-                        .foregroundColor(Color.iconColor(isDark))
-                        .frame(width: 50, height: 50)
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell")
+                            .font(.callout)
+                            .foregroundColor(Color.iconColor(isDark))
+                            .frame(width: 50, height: 50)
+
+                        if hasUnreadNotifications {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .offset(x: -14, y: 14)
+                        }
+                    }
                 }
 
                 Button(action: {
@@ -138,6 +148,7 @@ struct TopNavigationBar: View {
         selectedDate: .constant(Date()),
         isToday: true,
         isDark: false,
-        isInputFocused: .constant(false)
+        isInputFocused: .constant(false),
+        hasUnreadNotifications: true
     )
 }

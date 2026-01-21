@@ -37,12 +37,14 @@ struct FoodInputField: View {
                     Text("Tap to Enter...")
                         .font(.system(size: 15))
                         .foregroundColor(Color.placeholderText(isDark))
+                        .offset(x: -8)
                 }
                 TextField("", text: $text, axis: .vertical)
                     .font(.system(size: 15))
                     .foregroundColor(Color.primaryText(isDark))
                     .lineLimit(1...5)
                     .focused($isFocused)
+                    .offset(x: -8)
                     .onChange(of: text) { oldValue, newValue in
                         if newValue.contains("\n") {
                             let trimmed = newValue.replacingOccurrences(of: "\n", with: "")

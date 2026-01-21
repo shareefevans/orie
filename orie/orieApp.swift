@@ -11,6 +11,7 @@ import SwiftUI
 struct orieApp: App {
     @StateObject private var authManager = AuthManager()
     @StateObject private var themeManager = ThemeManager()
+    @StateObject private var notificationManager = NotificationManager()
 
     var body: some Scene {
         WindowGroup {
@@ -34,6 +35,13 @@ struct orieApp: App {
                     MainView()
                         .environmentObject(authManager)
                         .environmentObject(themeManager)
+                        .environmentObject(notificationManager)
+                        .onAppear {
+                            // Sync notifications when app opens
+                            Task {
+                                await notificationManager.syncSystemNotifications()
+                            }
+                        }
                 } else {
                     LoginView()
                         .environmentObject(authManager)

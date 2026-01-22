@@ -63,28 +63,44 @@ struct FoodInputField: View {
             Spacer()
 
             #if os(iOS)
-            // Voice-to-text button
-            Button(action: {
-                if isRecording {
-                    stopRecording()
-                } else {
-                    startRecording()
+            HStack(spacing: 8) {
+                // Camera button
+                Button(action: {
+                    // No functionality for now
+                }) {
+                    Image(systemName: "camera.macro")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .frame(width: 44, height: 44)
+                        .background(isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933))
+                        .clipShape(Circle())
                 }
-            }) {
-                Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
-                    .font(.system(size: 14))
-                    .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
-                    .frame(width: 44, height: 44)
-                    .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
-                    .clipShape(Circle())
-                    .scaleEffect(isRecording ? 1.1 : 1.0)
-                    .animation(
-                        isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
-                        value: isRecording
-                    )
+                .buttonStyle(BorderlessButtonStyle())
+                .contentShape(Circle())
+
+                // Voice-to-text button
+                Button(action: {
+                    if isRecording {
+                        stopRecording()
+                    } else {
+                        startRecording()
+                    }
+                }) {
+                    Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
+                        .font(.system(size: 14))
+                        .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
+                        .frame(width: 44, height: 44)
+                        .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
+                        .clipShape(Circle())
+                        .scaleEffect(isRecording ? 1.1 : 1.0)
+                        .animation(
+                            isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
+                            value: isRecording
+                        )
+                }
+                .buttonStyle(BorderlessButtonStyle())
+                .contentShape(Circle())
             }
-            .buttonStyle(BorderlessButtonStyle())
-            .contentShape(Circle())
             #endif
         }
         .padding(.vertical, 12)

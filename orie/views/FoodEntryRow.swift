@@ -12,6 +12,8 @@ struct FoodEntryRow: View {
     var isDark: Bool = false
     var onTimeChange: (Date) -> Void
     var onDelete: (() -> Void)?
+    var onFoodNameChange: ((String) -> Void)?
+    @Binding var isEditing: Bool
 
     @State private var showTimePicker = false
     @State private var showNutritionDetail = false
@@ -19,13 +21,18 @@ struct FoodEntryRow: View {
     @State private var sparkleScale: CGFloat = 1.0
     @State private var offset: CGFloat = 0
     @State private var showDeleteButton = false
+    @State private var editedFoodName: String
+    @FocusState private var isTextFieldFocused: Bool
 
-    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil) {
+    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
         self.entry = entry
         self.isDark = isDark
         self.onTimeChange = onTimeChange
         self.onDelete = onDelete
+        self.onFoodNameChange = onFoodNameChange
+        self._isEditing = isEditing
         _selectedTime = State(initialValue: entry.timestamp)
+        _editedFoodName = State(initialValue: entry.foodName)
     }
 
     var body: some View {
@@ -61,19 +68,47 @@ struct FoodEntryRow: View {
                 }
                 .buttonStyle(.plain)
 
-                // Food name - Long press to open
-                Text(entry.foodName)
-                    .font(.subheadline)
-                    .foregroundColor(Color.primaryText(isDark))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(nil)
-                    .multilineTextAlignment(.leading)
-                    .onLongPressGesture(minimumDuration: 0.5) {
-                        if !entry.isLoading {
-                            showNutritionDetail = true
+                // Food name - Tap to edit, long press for nutrition detail
+                if isEditing {
+                    TextField("", text: $editedFoodName, axis: .vertical)
+                        .font(.subheadline)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .focused($isTextFieldFocused)
+                        .onChange(of: editedFoodName) { _, newValue in
+                            // Detect Enter key press (newline character) and submit
+                            if newValue.contains("\n") {
+                                editedFoodName = newValue.replacingOccurrences(of: "\n", with: "")
+                                submitEdit()
+                            }
                         }
-                    }
+                        .onAppear {
+                            isTextFieldFocused = true
+                        }
+                } else {
+                    Text(entry.foodName)
+                        .font(.subheadline)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if !entry.isLoading {
+                                editedFoodName = entry.foodName
+                                isEditing = true
+                            }
+                        }
+                        .onLongPressGesture(minimumDuration: 0.5) {
+                            if !entry.isLoading {
+                                showNutritionDetail = true
+                            }
+                        }
+                }
 
                 // Calories (right)
                 if entry.isLoading {
@@ -147,6 +182,27 @@ struct FoodEntryRow: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.cardBackground(isDark))
         }
+        .onChange(of: isEditing) { oldValue, newValue in
+            if oldValue && !newValue && isTextFieldFocused {
+                // External dismiss (e.g., nav bar checkmark) - submit the edit
+                submitEdit()
+            }
+        }
+    }
+
+    private func submitEdit() {
+        let trimmedName = editedFoodName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty && trimmedName != entry.foodName {
+            onFoodNameChange?(trimmedName)
+        }
+        isEditing = false
+        isTextFieldFocused = false
+    }
+
+    private func cancelEdit() {
+        editedFoodName = entry.foodName
+        isEditing = false
+        isTextFieldFocused = false
     }
 
     private func formatTime(_ date: Date) -> String {

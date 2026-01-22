@@ -139,19 +139,62 @@ class FoodEntryService {
         guard let url = URL(string: "\(baseURL)/api/food-entries/\(id)") else {
             throw URLError(.badURL)
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        
+
         let iso8601 = ISO8601DateFormatter()
         let timestampString = iso8601.string(from: timestamp)
-        
+
         let body: [String: Any] = [
             "timestamp": timestampString
         ]
-        
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
+        }
+
+        let result = try JSONDecoder().decode(FoodEntryResponse.self, from: data)
+        return result.entry
+    }
+
+    static func updateFoodEntry(accessToken: String, id: String, entry: FoodEntry) async throws -> FoodEntryDB {
+        guard let url = URL(string: "\(baseURL)/api/food-entries/\(id)") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let iso8601 = ISO8601DateFormatter()
+        let timestampString = iso8601.string(from: entry.timestamp)
+
+        let body: [String: Any] = [
+            "food_name": entry.foodName,
+            "calories": entry.calories ?? NSNull(),
+            "protein": entry.protein ?? NSNull(),
+            "carbs": entry.carbs ?? NSNull(),
+            "fats": entry.fats ?? NSNull(),
+            "serving_size": entry.servingSize ?? NSNull(),
+            "timestamp": timestampString
+        ]
+
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)

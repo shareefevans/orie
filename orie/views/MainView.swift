@@ -26,6 +26,7 @@ struct MainView: View {
     @State private var selectedTab: String = "consumed"
     @State private var isDateSelectionMode = false
     @FocusState private var isInputFocused: Bool
+    @State private var editingEntryId: UUID? = nil
 
     // Consumed tab refresh ID
     @State private var consumedTabId: UUID = UUID()
@@ -307,7 +308,20 @@ var body: some View {
                                     },
                                     onDelete: {
                                         deleteFoodEntry(entry)
-                                    }
+                                    },
+                                    onFoodNameChange: { newFoodName in
+                                        updateFoodEntry(entry.id, newFoodName: newFoodName)
+                                    },
+                                    isEditing: Binding(
+                                        get: { editingEntryId == entry.id },
+                                        set: { isEditing in
+                                            if isEditing {
+                                                editingEntryId = entry.id
+                                            } else if editingEntryId == entry.id {
+                                                editingEntryId = nil
+                                            }
+                                        }
+                                    )
                                 )
                             }
 
@@ -381,8 +395,18 @@ var body: some View {
                 isToday: isToday,
                 isDark: isDark,
                 isInputFocused: Binding(
-                    get: { isInputFocused },
-                    set: { isInputFocused = $0 }
+                    get: { isInputFocused || editingEntryId != nil },
+                    set: { newValue in
+                        if !newValue {
+                            // Checkmark tapped - dismiss editing or input
+                            if editingEntryId != nil {
+                                editingEntryId = nil
+                            }
+                            isInputFocused = false
+                        } else {
+                            isInputFocused = newValue
+                        }
+                    }
                 ),
                 hasUnreadNotifications: notificationManager.unreadCount > 0
             )
@@ -549,6 +573,53 @@ var body: some View {
                 }
             } catch {
                 print("Failed to update entry time: \(error)")
+            }
+        }
+    }
+
+    private func updateFoodEntry(_ entryId: UUID, newFoodName: String) {
+        guard let accessToken = authManager.getAccessToken(),
+              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+              let dbId = foodEntries[index].dbId else { return }
+
+        // Set loading state and update food name
+        withAnimation {
+            foodEntries[index].foodName = newFoodName
+            foodEntries[index].isLoading = true
+        }
+
+        Task {
+            do {
+                // Fetch new nutrition data
+                let nutrition = try await APIService.getNutrition(for: newFoodName)
+
+                // Update local entry with new nutrition
+                await MainActor.run {
+                    foodEntries[index].calories = nutrition.calories
+                    foodEntries[index].protein = nutrition.protein
+                    foodEntries[index].carbs = nutrition.carbs
+                    foodEntries[index].fats = nutrition.fats
+                    foodEntries[index].servingSize = nutrition.servingSize
+                    foodEntries[index].imageUrl = nutrition.imageUrl
+                    foodEntries[index].sources = nutrition.sources
+                    foodEntries[index].isLoading = false
+                }
+
+                // Update in database
+                _ = try await FoodEntryService.updateFoodEntry(
+                    accessToken: accessToken,
+                    id: dbId,
+                    entry: foodEntries[index]
+                )
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Failed to update food entry: \(error)")
+                await MainActor.run {
+                    foodEntries[index].isLoading = false
+                }
             }
         }
     }

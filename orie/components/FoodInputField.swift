@@ -9,12 +9,14 @@ import SwiftUI
 #if os(iOS)
 import Speech
 import AVFoundation
+import UIKit
 #endif
 
 struct FoodInputField: View {
     @Binding var text: String
     var isDark: Bool = false
     var onSubmit: (String) -> Void
+    var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
     @FocusState.Binding var isFocused: Bool
 
     #if os(iOS)
@@ -23,6 +25,8 @@ struct FoodInputField: View {
     @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     @State private var recognitionTask: SFSpeechRecognitionTask?
     @State private var audioEngine = AVAudioEngine()
+    @State private var showCameraPicker = false
+    @State private var isAnalyzingImage = false
     #endif
 
     var body: some View {
@@ -66,17 +70,26 @@ struct FoodInputField: View {
             HStack(spacing: 8) {
                 // Camera button
                 Button(action: {
-                    // No functionality for now
+                    showCameraPicker = true
                 }) {
-                    Image(systemName: "camera.macro")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.secondaryText(isDark))
-                        .frame(width: 44, height: 44)
-                        .background(isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933))
-                        .clipShape(Circle())
+                    ZStack {
+                        Image(systemName: "camera.macro")
+                            .font(.system(size: 14))
+                            .foregroundColor(isAnalyzingImage ? .clear : Color.secondaryText(isDark))
+                            .frame(width: 44, height: 44)
+                            .background(isAnalyzingImage ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
+                            .clipShape(Circle())
+
+                        if isAnalyzingImage {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
+                                .scaleEffect(0.8)
+                        }
+                    }
                 }
                 .buttonStyle(BorderlessButtonStyle())
                 .contentShape(Circle())
+                .disabled(isAnalyzingImage)
 
                 // Voice-to-text button
                 Button(action: {
@@ -104,7 +117,45 @@ struct FoodInputField: View {
             #endif
         }
         .padding(.vertical, 12)
+        #if os(iOS)
+        .sheet(isPresented: $showCameraPicker) {
+            ImagePicker(sourceType: .camera) { image in
+                handleCapturedImage(image)
+            }
+            .ignoresSafeArea()
+        }
+        #endif
     }
+
+    #if os(iOS)
+    private func handleCapturedImage(_ image: UIImage) {
+        isAnalyzingImage = true
+
+        Task {
+            do {
+                // Convert image to base64
+                guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                    await MainActor.run { isAnalyzingImage = false }
+                    return
+                }
+                let base64String = imageData.base64EncodedString()
+
+                // Call the API
+                let result = try await APIService.analyzeImageWithNutrition(imageBase64: base64String)
+
+                await MainActor.run {
+                    isAnalyzingImage = false
+                    onImageAnalyzed?(result)
+                }
+            } catch {
+                print("Error analyzing image: \(error)")
+                await MainActor.run {
+                    isAnalyzingImage = false
+                }
+            }
+        }
+    }
+    #endif
 
     private func currentTime() -> String {
         let formatter = DateFormatter()
@@ -210,3 +261,43 @@ struct FoodInputField: View {
     }
     #endif
 }
+
+#if os(iOS)
+struct ImagePicker: UIViewControllerRepresentable {
+    let sourceType: UIImagePickerController.SourceType
+    let onImageCaptured: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: ImagePicker
+
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.onImageCaptured(image)
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+#endif

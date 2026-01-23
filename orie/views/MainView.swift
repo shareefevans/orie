@@ -337,6 +337,14 @@ var body: some View {
                                         }
                                     }
                                 },
+                                onImageAnalyzed: { result in
+                                    addFoodEntryFromImage(result: result)
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        withAnimation {
+                                            proxy.scrollTo("inputField", anchor: .top)
+                                        }
+                                    }
+                                },
                                 isFocused: $isInputFocused
                             )
                             }
@@ -547,6 +555,46 @@ var body: some View {
                         foodEntries[index].isLoading = false
                     }
                 }
+            }
+        }
+    }
+
+    private func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse) {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        // Create entry with data already populated from image analysis
+        var newEntry = FoodEntry(foodName: result.description, entryDate: selectedDate)
+        newEntry.calories = result.nutrition.calories
+        newEntry.protein = result.nutrition.protein
+        newEntry.carbs = result.nutrition.carbs
+        newEntry.fats = result.nutrition.fats
+        newEntry.servingSize = result.nutrition.servingSize
+        newEntry.imageUrl = result.nutrition.imageUrl
+        newEntry.sources = result.nutrition.sources
+        newEntry.isLoading = false
+
+        foodEntries.append(newEntry)
+
+        // Save to database
+        Task {
+            do {
+                let dbEntry = try await FoodEntryService.createFoodEntry(
+                    accessToken: accessToken,
+                    entry: newEntry
+                )
+
+                // Update with database ID
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].dbId = dbEntry.id
+                    }
+                }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Error saving image-analyzed entry: \(error)")
             }
         }
     }

@@ -10,7 +10,6 @@ import SwiftUI
 struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
-    @Binding var showDateSelection: Bool
     @Binding var showNotifications: Bool
     @Binding var isDateSelectionMode: Bool
     @Binding var selectedDate: Date
@@ -142,7 +141,6 @@ struct TopNavigationBar: View {
     TopNavigationBar(
         showAwards: .constant(false),
         showProfile: .constant(false),
-        showDateSelection: .constant(false),
         showNotifications: .constant(false),
         isDateSelectionMode: .constant(false),
         selectedDate: .constant(Date()),

@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct MainView: View {
+
+    // MARK: - ❇️ Environment & Theme
+
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var notificationManager: NotificationManager
@@ -15,81 +18,81 @@ struct MainView: View {
 
     private var isDark: Bool { themeManager.isDarkMode }
 
+    // MARK: - ❇️ UI State
+
     @State private var foodEntries: [FoodEntry] = []
     @State private var currentInput = ""
     @State private var showAwards = false
     @State private var showProfile = false
     @State private var showNotifications = false
-    @State private var showDateSelection = false
-    @State private var showMacros = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var selectedTab: String = "consumed"
     @State private var isDateSelectionMode = false
     @FocusState private var isInputFocused: Bool
     @State private var editingEntryId: UUID? = nil
-
-    // Consumed tab refresh ID
     @State private var consumedTabId: UUID = UUID()
 
-    // Daily goals from user profile
-    @State private var dailyCalorieGoal: Int = 2300  // Default fallback
-    @State private var dailyProteinGoal: Int = 150   // Default fallback
-    @State private var dailyCarbsGoal: Int = 250     // Default fallback
-    @State private var dailyFatsGoal: Int = 65       // Default fallback
-    @State private var dailySugarGoal: Int = 50      // Default fallback
+    // MARK: - ❇️ Default Daily Goals (from user profile)
 
-    // Computed property to filter entries for selected date
+    @State private var dailyCalorieGoal: Int = 2300
+    @State private var dailyProteinGoal: Int = 150
+    @State private var dailyCarbsGoal: Int = 250
+    @State private var dailyFatsGoal: Int = 65
+    @State private var dailySugarGoal: Int = 50
+
+    // MARK: - ❇️ Computed Properties
+
     private var filteredEntries: [FoodEntry] {
         foodEntries.filter { entry in
             Calendar.current.isDate(entry.entryDate, inSameDayAs: selectedDate)
         }
     }
 
-    // Computed property to calculate total calories from filtered entries
+    // 👉 Computed property to calculate total calories from filtered entries
     private var consumedCalories: Int {
         filteredEntries.reduce(0) { total, entry in
             total + (entry.calories ?? 0)
         }
     }
 
-    // Remaining calories
+    // 👉 Remaining calories
     private var remainingCalories: Int {
         dailyCalorieGoal - consumedCalories
     }
 
-    // Progress percentage (capped at 1.0)
+    // 👉 Progress percentage (capped at 1.0)
     private var calorieProgress: Double {
         guard dailyCalorieGoal > 0 else { return 0 }
         return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
     }
 
-    // Consumed protein
+    // 👉 Consumed protein
     private var consumedProtein: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.protein ?? 0)
         })
     }
 
-    // Consumed carbs
+    // 👉 Consumed carbs
     private var consumedCarbs: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.carbs ?? 0)
         })
     }
 
-    // Consumed fats
+    // 👉 Consumed fats
     private var consumedFats: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.fats ?? 0)
         })
     }
 
-    // Consumed sugar (placeholder - FoodEntry doesn't track sugar yet)
+    // 👉 Consumed sugar (placeholder - FoodEntry doesn't track sugar yet)
     private var consumedSugar: Int {
         0
     }
 
-    // Convert food entries to meal bubbles for the progress bar
+    // 👉 Convert food entries to meal bubbles for the progress bar
     private var mealBubbles: [MealBubble] {
         filteredEntries
             .filter { !$0.isLoading }
@@ -103,30 +106,32 @@ struct MainView: View {
             }
     }
 
-    // Check if selected date is today
+    // 👉 Check if selected date is today
     private var isToday: Bool {
         Calendar.current.isDateInToday(selectedDate)
     }
 
-var body: some View {
+    // MARK: - ❇️ Body
+
+    var body: some View {
         ZStack(alignment: .top) {
-            // Background color
+
+            // MARK: ❇️ Background
             Color.appBackground(isDark)
                 .ignoresSafeArea()
 
-            // Main scrollable content
+            // MARK: ❇️ Main Scrollable Content
             ScrollViewReader { proxy in
                 List {
-                    // Top padding spacer
+                    // 👉 Top padding spacer
                     Color.clear
                         .frame(height: 68)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
 
-                    // Tab buttons or Date selector
+                    // MARK: 👉 Tab Buttons / Date Selector
                     if isDateSelectionMode {
-                        // Horizontal date picker
                         ScrollViewReader { dateProxy in
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 24) {
@@ -180,7 +185,7 @@ var body: some View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     } else {
-                        // Regular tab buttons
+                        // 👉 Regular tab buttons
                         HStack(spacing: 32) {
                             TabButton(
                                 title: "Health",
@@ -211,7 +216,7 @@ var body: some View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // Health Tab Content
+                    // MARK: ❇️ Health Tab
                     if selectedTab == "health" {
                         HealthTabView(
                             consumedCalories: consumedCalories,
@@ -233,10 +238,11 @@ var body: some View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // Consumed Tab Content
+                    // MARK: ❇️ Consumed Tab
                     if selectedTab == "consumed" {
                         VStack(spacing: 8) {
-                            // Calorie Tracking Card
+
+                            // 👉 Calorie Tracking Card
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Daily intake")
                                     .font(.system(size: 14))
@@ -261,7 +267,7 @@ var body: some View {
                                     .foregroundColor(remainingCalories > 0 ? .yellow : .red)
                                     .padding(.top, 4)
 
-                                // Progress bar with meal bubbles
+                                // 👉 Progress bar with meal bubbles
                                 VStack(spacing: 8) {
                                     HStack {
                                         Text("0")
@@ -296,9 +302,10 @@ var body: some View {
                             .background(Color.cardBackground(isDark))
                             .cornerRadius(32)
 
-                            // Food Entries Card
+                            // 👉 Food Entries Card
                             VStack(spacing: 0) {
-                            // Food entries (sorted by time)
+
+                                // 👉 Food entries list
                             ForEach(filteredEntries.sorted()) { entry in
                                 FoodEntryRow(
                                     entry: entry,
@@ -325,7 +332,7 @@ var body: some View {
                                 )
                             }
 
-                            // Input field
+                            // 👉 Input field
                             FoodInputField(
                                 text: $currentInput,
                                 isDark: isDark,
@@ -362,7 +369,7 @@ var body: some View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // Activity Tab Content
+                    // MARK: ❇️ Activity Tab
                     if selectedTab == "activity" {
                         ActivityTabView(
                             burnedCalories: 0,
@@ -374,7 +381,7 @@ var body: some View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // Bottom padding
+                    // 👉 Bottom padding
                     Color.clear
                         .frame(height: 120)
                         .listRowInsets(EdgeInsets())
@@ -392,11 +399,10 @@ var body: some View {
                 }
             }
 
-            // 🔝 Floating Top Navigation Bar
+            // MARK: ❇️ Floating Navigation Bar
             TopNavigationBar(
                 showAwards: $showAwards,
                 showProfile: $showProfile,
-                showDateSelection: $showDateSelection,
                 showNotifications: $showNotifications,
                 isDateSelectionMode: $isDateSelectionMode,
                 selectedDate: $selectedDate,
@@ -433,7 +439,7 @@ var body: some View {
                 .ignoresSafeArea(edges: .top)
             )
 
-            // Bottom fade overlay
+            // MARK: ❇️ Bottom Fade Overlay
             VStack {
                 Spacer()
                 LinearGradient(
@@ -449,6 +455,8 @@ var body: some View {
             .allowsHitTesting(false)
             .ignoresSafeArea(edges: .bottom)
         }
+
+        // MARK: ❇️ Sheet Modifiers
         .sheet(isPresented: $showAwards) {
             AwardSheet()
                 .presentationBackground(Color.appBackground(isDark))
@@ -467,18 +475,8 @@ var body: some View {
                 .environmentObject(themeManager)
                 .presentationBackground(Color.appBackground(isDark))
         }
-        .sheet(isPresented: $showDateSelection) {
-            DateSelectionModal(selectedDate: $selectedDate)
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Color.appBackground(isDark))
-        }
-        .sheet(isPresented: $showMacros) {
-            MacrosSheet()
-                .presentationDetents([.height(200)])
-                .presentationDragIndicator(.visible)
-                .presentationContentInteraction(.scrolls)
-                .presentationBackground(Color.cardBackground(isDark))
-        }
+
+        // MARK: ❇️ Lifecycle Handlers
         .onAppear {
             loadFoodEntries()
             loadUserProfile()
@@ -491,7 +489,7 @@ var body: some View {
                 loadFoodEntries()
                 loadUserProfile()
             } else {
-                // Clear entries when user logs out
+                // 👉 Clear entries when user logs out
                 foodEntries = []
                 dailyCalorieGoal = 2300  // Reset to default
                 dailyProteinGoal = 150   // Reset to default
@@ -508,6 +506,8 @@ var body: some View {
         }
     }
 
+    // MARK: - ❇️ Food Entry Operations
+
     private func addFoodEntry(foodName: String) {
         guard let accessToken = authManager.getAccessToken() else { return }
         guard !foodName.isEmpty else { return }
@@ -517,10 +517,10 @@ var body: some View {
 
         Task {
             do {
-                // Get nutrition data
+                // 👉 Get nutrition data
                 let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
 
-                // Update local entry
+                // 👉 Update local entry
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].calories = nutrition.calories
@@ -533,13 +533,13 @@ var body: some View {
                         foodEntries[index].isLoading = false
                     }
 
-                    // Save to database
+                    // 👉 Save to database
                     let dbEntry = try await FoodEntryService.createFoodEntry(
                         accessToken: accessToken,
                         entry: foodEntries[index]
                     )
 
-                    // Update with database ID
+                    // 👉 Update with database ID
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
                     }
@@ -562,7 +562,7 @@ var body: some View {
     private func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse) {
         guard let accessToken = authManager.getAccessToken() else { return }
 
-        // Create entry with data already populated from image analysis
+        // 👉 Create entry with data already populated from image analysis
         var newEntry = FoodEntry(foodName: result.description, entryDate: selectedDate)
         newEntry.calories = result.nutrition.calories
         newEntry.protein = result.nutrition.protein
@@ -575,7 +575,7 @@ var body: some View {
 
         foodEntries.append(newEntry)
 
-        // Save to database
+        // 👉 Save to database
         Task {
             do {
                 let dbEntry = try await FoodEntryService.createFoodEntry(
@@ -583,7 +583,7 @@ var body: some View {
                     entry: newEntry
                 )
 
-                // Update with database ID
+                // 👉 Update with database ID
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
@@ -630,7 +630,7 @@ var body: some View {
               let index = foodEntries.firstIndex(where: { $0.id == entryId }),
               let dbId = foodEntries[index].dbId else { return }
 
-        // Set loading state and update food name
+        // 👉 Set loading state and update food name
         withAnimation {
             foodEntries[index].foodName = newFoodName
             foodEntries[index].isLoading = true
@@ -638,10 +638,10 @@ var body: some View {
 
         Task {
             do {
-                // Fetch new nutrition data
+                // 👉 Fetch new nutrition data
                 let nutrition = try await APIService.getNutrition(for: newFoodName)
 
-                // Update local entry with new nutrition
+                // 👉 Update local entry with new nutrition
                 await MainActor.run {
                     foodEntries[index].calories = nutrition.calories
                     foodEntries[index].protein = nutrition.protein
@@ -653,7 +653,7 @@ var body: some View {
                     foodEntries[index].isLoading = false
                 }
 
-                // Update in database
+                // 👉 Update in database
                 _ = try await FoodEntryService.updateFoodEntry(
                     accessToken: accessToken,
                     id: dbId,
@@ -692,7 +692,7 @@ var body: some View {
                         accessToken: accessToken,
                         id: dbId
                     )
-                    // Reload entries to refresh view state
+                    // 👉 Reload entries to refresh view state
                     loadFoodEntries()
                 } catch APIError.sessionExpired {
                     await MainActor.run {
@@ -705,7 +705,7 @@ var body: some View {
         }
     }
 
-    // MARK: - Profile Management
+    // MARK: - ❇️ Profile Management
 
     private func loadUserProfile() {
         guard let accessToken = authManager.getAccessToken() else { return }
@@ -733,7 +733,7 @@ var body: some View {
         }
     }
 
-    // MARK: - Food Entry Management
+    // MARK: - ❇️ Food Entry Management
 
     private func loadFoodEntries() {
         guard let accessToken = authManager.getAccessToken() else { return }
@@ -774,121 +774,22 @@ var body: some View {
         }
     }
 
-    // MARK: - Date Selection Helpers
+    // MARK: - ❇️ Date Selection Helpers
 
     private func datesInCurrentMonth() -> [Date] {
         let calendar = Calendar.current
         let now = Date()
 
-        // Get the start and end of the current month
+        // 👉 Get the start and end of the current month
         guard let monthInterval = calendar.dateInterval(of: .month, for: now),
               let monthRange = calendar.range(of: .day, in: .month, for: now) else {
             return []
         }
 
-        // Generate all dates in the month
+        // 👉 Generate all dates in the month
         return monthRange.compactMap { day -> Date? in
             calendar.date(byAdding: .day, value: day - 1, to: monthInterval.start)
         }
-    }
-}
-
-// Tab Button Component
-struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let isDark: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Text(title)
-                    .font(isSelected ? .system(size: 16) : .system(size: 14))
-                    .fontWeight(isSelected ? .semibold : .medium)
-                    .foregroundColor(isSelected ? Color.primaryText(isDark) : Color.secondaryText(isDark))
-                    .offset(y: isSelected ? -6 : 0)
-
-                // Small dot beneath selected tab
-                Circle()
-                    .fill(isSelected ? Color.primaryText(isDark) : Color.clear)
-                    .frame(width: 4, height: 4)
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
-
-// Date Button Component (matches TabButton UI pattern)
-struct DateButton: View {
-    let date: Date
-    let isSelected: Bool
-    let isDark: Bool
-    let action: () -> Void
-
-    init(date: Date, isSelected: Bool, isDark: Bool = false, action: @escaping () -> Void) {
-        self.date = date
-        self.isSelected = isSelected
-        self.isDark = isDark
-        self.action = action
-    }
-
-    private var dayNumber: Int {
-        Calendar.current.component(.day, from: date)
-    }
-
-    private var daySuffix: String {
-        switch dayNumber {
-        case 1, 21, 31: return "st"
-        case 2, 22: return "nd"
-        case 3, 23: return "rd"
-        default: return "th"
-        }
-    }
-
-    private var monthAbbrev: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        return formatter.string(from: date)
-    }
-
-    private var dayAbbrev: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-        return formatter.string(from: date)
-    }
-
-    private var fullDayName: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
-    }
-
-    private var displayText: String {
-        if isSelected {
-            return "\(fullDayName) \(monthAbbrev) \(dayNumber)"
-        } else {
-            return "\(dayNumber)\(daySuffix)"
-        }
-    }
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Text(displayText)
-                    .font(isSelected ? .system(size: 16) : .system(size: 14))
-                    .fontWeight(isSelected ? .semibold : .medium)
-                    .foregroundColor(isSelected ? (isDark ? .white : .black) : Color.tertiaryText(isDark))
-                    .offset(y: isSelected ? -6 : 0)
-
-                // Small dot beneath selected date
-                Circle()
-                    .fill(isSelected ? (isDark ? Color.white : Color.black) : Color.clear)
-                    .frame(width: 4, height: 4)
-            }
-            .padding(.top, 8)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 

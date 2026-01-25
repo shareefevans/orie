@@ -16,8 +16,6 @@ struct MainView: View {
     @EnvironmentObject var notificationManager: NotificationManager
     @Environment(\.scenePhase) private var scenePhase
 
-    private var isDark: Bool { themeManager.isDarkMode }
-
     // MARK: - ❇️ UI State
 
     @State private var foodEntries: [FoodEntry] = []
@@ -42,57 +40,51 @@ struct MainView: View {
 
     // MARK: - ❇️ Computed Properties
 
+    private var isDark: Bool { themeManager.isDarkMode }
+
     private var filteredEntries: [FoodEntry] {
         foodEntries.filter { entry in
             Calendar.current.isDate(entry.entryDate, inSameDayAs: selectedDate)
         }
     }
 
-    // 👉 Computed property to calculate total calories from filtered entries
     private var consumedCalories: Int {
         filteredEntries.reduce(0) { total, entry in
             total + (entry.calories ?? 0)
         }
     }
 
-    // 👉 Remaining calories
     private var remainingCalories: Int {
         dailyCalorieGoal - consumedCalories
     }
 
-    // 👉 Progress percentage (capped at 1.0)
     private var calorieProgress: Double {
         guard dailyCalorieGoal > 0 else { return 0 }
         return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
     }
 
-    // 👉 Consumed protein
     private var consumedProtein: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.protein ?? 0)
         })
     }
 
-    // 👉 Consumed carbs
     private var consumedCarbs: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.carbs ?? 0)
         })
     }
 
-    // 👉 Consumed fats
     private var consumedFats: Int {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.fats ?? 0)
         })
     }
 
-    // 👉 Consumed sugar (placeholder - FoodEntry doesn't track sugar yet)
     private var consumedSugar: Int {
         0
     }
 
-    // 👉 Convert food entries to meal bubbles for the progress bar
     private var mealBubbles: [MealBubble] {
         filteredEntries
             .filter { !$0.isLoading }
@@ -106,9 +98,274 @@ struct MainView: View {
             }
     }
 
-    // 👉 Check if selected date is today
     private var isToday: Bool {
         Calendar.current.isDateInToday(selectedDate)
+    }
+
+    // MARK: - ❇️ Functions
+    // MARK: 👉 Add Food Entry
+    private func addFoodEntry(foodName: String) {
+        guard let accessToken = authManager.getAccessToken() else { return }
+        guard !foodName.isEmpty else { return }
+
+        let newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
+        foodEntries.append(newEntry)
+
+        Task {
+            do {
+                let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
+
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].calories = nutrition.calories
+                        foodEntries[index].protein = nutrition.protein
+                        foodEntries[index].carbs = nutrition.carbs
+                        foodEntries[index].fats = nutrition.fats
+                        foodEntries[index].servingSize = nutrition.servingSize
+                        foodEntries[index].imageUrl = nutrition.imageUrl
+                        foodEntries[index].sources = nutrition.sources
+                        foodEntries[index].isLoading = false
+                    }
+
+                    let dbEntry = try await FoodEntryService.createFoodEntry(
+                        accessToken: accessToken,
+                        entry: foodEntries[index]
+                    )
+
+                    await MainActor.run {
+                        foodEntries[index].dbId = dbEntry.id
+                    }
+                }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Error: \(error)")
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].isLoading = false
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: 👉 addFoodEntryFromImage
+    private func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse) {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        var newEntry = FoodEntry(foodName: result.description, entryDate: selectedDate)
+        newEntry.calories = result.nutrition.calories
+        newEntry.protein = result.nutrition.protein
+        newEntry.carbs = result.nutrition.carbs
+        newEntry.fats = result.nutrition.fats
+        newEntry.servingSize = result.nutrition.servingSize
+        newEntry.imageUrl = result.nutrition.imageUrl
+        newEntry.sources = result.nutrition.sources
+        newEntry.isLoading = false
+
+        foodEntries.append(newEntry)
+
+        Task {
+            do {
+                let dbEntry = try await FoodEntryService.createFoodEntry(
+                    accessToken: accessToken,
+                    entry: newEntry
+                )
+
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    await MainActor.run {
+                        foodEntries[index].dbId = dbEntry.id
+                    }
+                }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Error saving image-analyzed entry: \(error)")
+            }
+        }
+    }
+    
+    // MARK: 👉 UpdateEntryTime
+    private func updateEntryTime(_ entryId: UUID, newTime: Date) {
+        guard let accessToken = authManager.getAccessToken(),
+              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+              let dbId = foodEntries[index].dbId else { return }
+
+        withAnimation {
+            foodEntries[index].timestamp = newTime
+        }
+
+        Task {
+            do {
+                _ = try await FoodEntryService.updateFoodEntry(
+                    accessToken: accessToken,
+                    id: dbId,
+                    timestamp: newTime
+                )
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Failed to update entry time: \(error)")
+            }
+        }
+    }
+
+    // MARK: 👉 UpdateFoodEntry
+    private func updateFoodEntry(_ entryId: UUID, newFoodName: String) {
+        guard let accessToken = authManager.getAccessToken(),
+              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+              let dbId = foodEntries[index].dbId else { return }
+
+        withAnimation {
+            foodEntries[index].foodName = newFoodName
+            foodEntries[index].isLoading = true
+        }
+
+        Task {
+            do {
+                let nutrition = try await APIService.getNutrition(for: newFoodName)
+
+                await MainActor.run {
+                    foodEntries[index].calories = nutrition.calories
+                    foodEntries[index].protein = nutrition.protein
+                    foodEntries[index].carbs = nutrition.carbs
+                    foodEntries[index].fats = nutrition.fats
+                    foodEntries[index].servingSize = nutrition.servingSize
+                    foodEntries[index].imageUrl = nutrition.imageUrl
+                    foodEntries[index].sources = nutrition.sources
+                    foodEntries[index].isLoading = false
+                }
+
+                _ = try await FoodEntryService.updateFoodEntry(
+                    accessToken: accessToken,
+                    id: dbId,
+                    entry: foodEntries[index]
+                )
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Failed to update food entry: \(error)")
+                await MainActor.run {
+                    foodEntries[index].isLoading = false
+                }
+            }
+        }
+    }
+
+    // MARK: 👉 DeleteFoodEntry
+    private func deleteFoodEntry(_ entry: FoodEntry) {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        withAnimation {
+            foodEntries.removeAll { $0.id == entry.id }
+        }
+
+        if let dbId = entry.dbId {
+            Task {
+                do {
+                    try await FoodEntryService.deleteFoodEntry(
+                        accessToken: accessToken,
+                        id: dbId
+                    )
+                    loadFoodEntries()
+                } catch APIError.sessionExpired {
+                    await MainActor.run {
+                        authManager.handleSessionExpired()
+                    }
+                } catch {
+                    print("Failed to delete entry: \(error)")
+                }
+            }
+        }
+    }
+
+    // MARK: 👉 loadUserProfile
+    private func loadUserProfile() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            do {
+                let profile = try await AuthService.getProfile(accessToken: accessToken)
+                await MainActor.run {
+                    if let calories = profile.dailyCalories, calories > 0 {
+                        dailyCalorieGoal = calories
+                    }
+                    if let protein = profile.dailyProtein, protein > 0 {
+                        dailyProteinGoal = protein
+                    }
+                    if let carbs = profile.dailyCarbs, carbs > 0 {
+                        dailyCarbsGoal = carbs
+                    }
+                    if let fats = profile.dailyFats, fats > 0 {
+                        dailyFatsGoal = fats
+                    }
+                }
+            } catch {
+                print("Failed to load user profile: \(error)")
+            }
+        }
+    }
+
+    // MARK: 👉 loadFoodEntries
+    private func loadFoodEntries() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            do {
+                let entries = try await FoodEntryService.getFoodEntries(
+                    accessToken: accessToken,
+                    date: selectedDate
+                )
+
+                await MainActor.run {
+                    foodEntries = entries.map { dbEntry in
+                        var entry = FoodEntry(foodName: dbEntry.foodName, entryDate: selectedDate)
+                        entry.dbId = dbEntry.id
+                        entry.calories = dbEntry.calories
+                        entry.protein = dbEntry.protein
+                        entry.carbs = dbEntry.carbs
+                        entry.fats = dbEntry.fats
+                        entry.servingSize = dbEntry.servingSize
+                        entry.isLoading = false
+
+                        if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
+                            entry.timestamp = timestamp
+                        }
+
+                        return entry
+                    }
+                }
+            } catch APIError.sessionExpired {
+                await MainActor.run {
+                    authManager.handleSessionExpired()
+                }
+            } catch {
+                print("Failed to load food entries: \(error)")
+            }
+        }
+    }
+
+    // MARK: 👉 datesInCurrentMonth
+    private func datesInCurrentMonth() -> [Date] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard let monthInterval = calendar.dateInterval(of: .month, for: now),
+              let monthRange = calendar.range(of: .day, in: .month, for: now) else {
+            return []
+        }
+
+        return monthRange.compactMap { day -> Date? in
+            calendar.date(byAdding: .day, value: day - 1, to: monthInterval.start)
+        }
     }
 
     // MARK: - ❇️ Body
@@ -123,7 +380,6 @@ struct MainView: View {
             // MARK: ❇️ Main Scrollable Content
             ScrollViewReader { proxy in
                 List {
-                    // 👉 Top padding spacer
                     Color.clear
                         .frame(height: 68)
                         .listRowInsets(EdgeInsets())
@@ -185,7 +441,6 @@ struct MainView: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     } else {
-                        // 👉 Regular tab buttons
                         HStack(spacing: 32) {
                             TabButton(
                                 title: "Health",
@@ -242,7 +497,6 @@ struct MainView: View {
                     if selectedTab == "consumed" {
                         VStack(spacing: 8) {
 
-                            // 👉 Calorie Tracking Card
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Daily intake")
                                     .font(.system(size: 14))
@@ -267,7 +521,6 @@ struct MainView: View {
                                     .foregroundColor(remainingCalories > 0 ? .yellow : .red)
                                     .padding(.top, 4)
 
-                                // 👉 Progress bar with meal bubbles
                                 VStack(spacing: 8) {
                                     HStack {
                                         Text("0")
@@ -302,10 +555,8 @@ struct MainView: View {
                             .background(Color.cardBackground(isDark))
                             .cornerRadius(32)
 
-                            // 👉 Food Entries Card
                             VStack(spacing: 0) {
 
-                                // 👉 Food entries list
                             ForEach(filteredEntries.sorted()) { entry in
                                 FoodEntryRow(
                                     entry: entry,
@@ -332,7 +583,6 @@ struct MainView: View {
                                 )
                             }
 
-                            // 👉 Input field
                             FoodInputField(
                                 text: $currentInput,
                                 isDark: isDark,
@@ -381,7 +631,6 @@ struct MainView: View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // 👉 Bottom padding
                     Color.clear
                         .frame(height: 120)
                         .listRowInsets(EdgeInsets())
@@ -412,7 +661,6 @@ struct MainView: View {
                     get: { isInputFocused || editingEntryId != nil },
                     set: { newValue in
                         if !newValue {
-                            // Checkmark tapped - dismiss editing or input
                             if editingEntryId != nil {
                                 editingEntryId = nil
                             }
@@ -462,7 +710,7 @@ struct MainView: View {
                 .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showProfile, onDismiss: {
-            loadUserProfile()  // Reload in case user updated their calorie goal
+            loadUserProfile()
         }) {
             ProfileSheet()
                 .environmentObject(authManager)
@@ -489,306 +737,18 @@ struct MainView: View {
                 loadFoodEntries()
                 loadUserProfile()
             } else {
-                // 👉 Clear entries when user logs out
                 foodEntries = []
-                dailyCalorieGoal = 2300  // Reset to default
-                dailyProteinGoal = 150   // Reset to default
-                dailyCarbsGoal = 250     // Reset to default
-                dailyFatsGoal = 65       // Reset to default
-                dailySugarGoal = 50      // Reset to default
+                dailyCalorieGoal = 2300
+                dailyProteinGoal = 150
+                dailyCarbsGoal = 250
+                dailyFatsGoal = 65
+                dailySugarGoal = 50
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                // Reload entries when app becomes active to refresh view state
                 loadFoodEntries()
             }
-        }
-    }
-
-    // MARK: - ❇️ Food Entry Operations
-
-    private func addFoodEntry(foodName: String) {
-        guard let accessToken = authManager.getAccessToken() else { return }
-        guard !foodName.isEmpty else { return }
-
-        let newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
-        foodEntries.append(newEntry)
-
-        Task {
-            do {
-                // 👉 Get nutrition data
-                let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
-
-                // 👉 Update local entry
-                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
-                    await MainActor.run {
-                        foodEntries[index].calories = nutrition.calories
-                        foodEntries[index].protein = nutrition.protein
-                        foodEntries[index].carbs = nutrition.carbs
-                        foodEntries[index].fats = nutrition.fats
-                        foodEntries[index].servingSize = nutrition.servingSize
-                        foodEntries[index].imageUrl = nutrition.imageUrl
-                        foodEntries[index].sources = nutrition.sources
-                        foodEntries[index].isLoading = false
-                    }
-
-                    // 👉 Save to database
-                    let dbEntry = try await FoodEntryService.createFoodEntry(
-                        accessToken: accessToken,
-                        entry: foodEntries[index]
-                    )
-
-                    // 👉 Update with database ID
-                    await MainActor.run {
-                        foodEntries[index].dbId = dbEntry.id
-                    }
-                }
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
-            } catch {
-                print("Error: \(error)")
-                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
-                    await MainActor.run {
-                        foodEntries[index].isLoading = false
-                    }
-                }
-            }
-        }
-    }
-
-    private func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse) {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
-        // 👉 Create entry with data already populated from image analysis
-        var newEntry = FoodEntry(foodName: result.description, entryDate: selectedDate)
-        newEntry.calories = result.nutrition.calories
-        newEntry.protein = result.nutrition.protein
-        newEntry.carbs = result.nutrition.carbs
-        newEntry.fats = result.nutrition.fats
-        newEntry.servingSize = result.nutrition.servingSize
-        newEntry.imageUrl = result.nutrition.imageUrl
-        newEntry.sources = result.nutrition.sources
-        newEntry.isLoading = false
-
-        foodEntries.append(newEntry)
-
-        // 👉 Save to database
-        Task {
-            do {
-                let dbEntry = try await FoodEntryService.createFoodEntry(
-                    accessToken: accessToken,
-                    entry: newEntry
-                )
-
-                // 👉 Update with database ID
-                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
-                    await MainActor.run {
-                        foodEntries[index].dbId = dbEntry.id
-                    }
-                }
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
-            } catch {
-                print("Error saving image-analyzed entry: \(error)")
-            }
-        }
-    }
-
-    private func updateEntryTime(_ entryId: UUID, newTime: Date) {
-        guard let accessToken = authManager.getAccessToken(),
-              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
-              let dbId = foodEntries[index].dbId else { return }
-
-        withAnimation {
-            foodEntries[index].timestamp = newTime
-        }
-
-        Task {
-            do {
-                _ = try await FoodEntryService.updateFoodEntry(
-                    accessToken: accessToken,
-                    id: dbId,
-                    timestamp: newTime
-                )
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
-            } catch {
-                print("Failed to update entry time: \(error)")
-            }
-        }
-    }
-
-    private func updateFoodEntry(_ entryId: UUID, newFoodName: String) {
-        guard let accessToken = authManager.getAccessToken(),
-              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
-              let dbId = foodEntries[index].dbId else { return }
-
-        // 👉 Set loading state and update food name
-        withAnimation {
-            foodEntries[index].foodName = newFoodName
-            foodEntries[index].isLoading = true
-        }
-
-        Task {
-            do {
-                // 👉 Fetch new nutrition data
-                let nutrition = try await APIService.getNutrition(for: newFoodName)
-
-                // 👉 Update local entry with new nutrition
-                await MainActor.run {
-                    foodEntries[index].calories = nutrition.calories
-                    foodEntries[index].protein = nutrition.protein
-                    foodEntries[index].carbs = nutrition.carbs
-                    foodEntries[index].fats = nutrition.fats
-                    foodEntries[index].servingSize = nutrition.servingSize
-                    foodEntries[index].imageUrl = nutrition.imageUrl
-                    foodEntries[index].sources = nutrition.sources
-                    foodEntries[index].isLoading = false
-                }
-
-                // 👉 Update in database
-                _ = try await FoodEntryService.updateFoodEntry(
-                    accessToken: accessToken,
-                    id: dbId,
-                    entry: foodEntries[index]
-                )
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
-            } catch {
-                print("Failed to update food entry: \(error)")
-                await MainActor.run {
-                    foodEntries[index].isLoading = false
-                }
-            }
-        }
-    }
-
-    private func formattedDate() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMMM yyyy, HH.mm"
-        return formatter.string(from: Date())
-    }
-    
-    private func deleteFoodEntry(_ entry: FoodEntry) {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
-        withAnimation {
-            foodEntries.removeAll { $0.id == entry.id }
-        }
-
-        if let dbId = entry.dbId {
-            Task {
-                do {
-                    try await FoodEntryService.deleteFoodEntry(
-                        accessToken: accessToken,
-                        id: dbId
-                    )
-                    // 👉 Reload entries to refresh view state
-                    loadFoodEntries()
-                } catch APIError.sessionExpired {
-                    await MainActor.run {
-                        authManager.handleSessionExpired()
-                    }
-                } catch {
-                    print("Failed to delete entry: \(error)")
-                }
-            }
-        }
-    }
-
-    // MARK: - ❇️ Profile Management
-
-    private func loadUserProfile() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
-        Task {
-            do {
-                let profile = try await AuthService.getProfile(accessToken: accessToken)
-                await MainActor.run {
-                    if let calories = profile.dailyCalories, calories > 0 {
-                        dailyCalorieGoal = calories
-                    }
-                    if let protein = profile.dailyProtein, protein > 0 {
-                        dailyProteinGoal = protein
-                    }
-                    if let carbs = profile.dailyCarbs, carbs > 0 {
-                        dailyCarbsGoal = carbs
-                    }
-                    if let fats = profile.dailyFats, fats > 0 {
-                        dailyFatsGoal = fats
-                    }
-                }
-            } catch {
-                print("Failed to load user profile: \(error)")
-            }
-        }
-    }
-
-    // MARK: - ❇️ Food Entry Management
-
-    private func loadFoodEntries() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
-        Task {
-            do {
-                let entries = try await FoodEntryService.getFoodEntries(
-                    accessToken: accessToken,
-                    date: selectedDate
-                )
-
-                await MainActor.run {
-                    foodEntries = entries.map { dbEntry in
-                        var entry = FoodEntry(foodName: dbEntry.foodName, entryDate: selectedDate)
-                        entry.dbId = dbEntry.id
-                        entry.calories = dbEntry.calories
-                        entry.protein = dbEntry.protein
-                        entry.carbs = dbEntry.carbs
-                        entry.fats = dbEntry.fats
-                        entry.servingSize = dbEntry.servingSize
-                        entry.isLoading = false
-
-                        // Parse timestamp
-                        if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
-                            entry.timestamp = timestamp
-                        }
-
-                        return entry
-                    }
-                }
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
-            } catch {
-                print("Failed to load food entries: \(error)")
-            }
-        }
-    }
-
-    // MARK: - ❇️ Date Selection Helpers
-
-    private func datesInCurrentMonth() -> [Date] {
-        let calendar = Calendar.current
-        let now = Date()
-
-        // 👉 Get the start and end of the current month
-        guard let monthInterval = calendar.dateInterval(of: .month, for: now),
-              let monthRange = calendar.range(of: .day, in: .month, for: now) else {
-            return []
-        }
-
-        // 👉 Generate all dates in the month
-        return monthRange.compactMap { day -> Date? in
-            calendar.date(byAdding: .day, value: day - 1, to: monthInterval.start)
         }
     }
 }

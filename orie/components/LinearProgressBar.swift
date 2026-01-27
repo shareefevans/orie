@@ -39,7 +39,7 @@ struct LinearProgressBar: View {
 
             GeometryReader { geometry in
                 HStack(spacing: 0) {
-                    // Colored progress bar (expanding)
+                    // MARK: 👉 Colored progress bar (expanding)
                     if animatedProgress > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(
@@ -52,7 +52,7 @@ struct LinearProgressBar: View {
                             .frame(width: geometry.size.width * min(animatedProgress, 1.0), height: height)
                     }
 
-                    // Grey bar (contracting)
+                    // MARK: 👉 Grey bar (contracting)
                     if animatedProgress < 1.0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.chartBackground(isDark))

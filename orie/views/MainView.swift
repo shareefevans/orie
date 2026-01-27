@@ -471,7 +471,7 @@ struct MainView: View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // MARK: ❇️ Health Tab
+                    // MARK: 👉 Health Tab
                     if selectedTab == "health" {
                         HealthTabView(
                             consumedCalories: consumedCalories,
@@ -493,7 +493,7 @@ struct MainView: View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // MARK: ❇️ Consumed Tab
+                    // MARK: 👉 Consumed Tab
                     if selectedTab == "consumed" {
                         VStack(spacing: 8) {
 
@@ -557,6 +557,7 @@ struct MainView: View {
 
                             VStack(spacing: 0) {
 
+                            // MARK: 👉 Food Entry Row
                             ForEach(filteredEntries.sorted()) { entry in
                                 FoodEntryRow(
                                     entry: entry,
@@ -582,7 +583,8 @@ struct MainView: View {
                                     )
                                 )
                             }
-
+                                
+                            // MARK: 👉 Food Input Field
                             FoodInputField(
                                 text: $currentInput,
                                 isDark: isDark,
@@ -619,7 +621,7 @@ struct MainView: View {
                         .listRowBackground(Color.clear)
                     }
 
-                    // MARK: ❇️ Activity Tab
+                    // MARK: 👉 Activity Tab
                     if selectedTab == "activity" {
                         ActivityTabView(
                             burnedCalories: 0,
@@ -648,7 +650,7 @@ struct MainView: View {
                 }
             }
 
-            // MARK: ❇️ Floating Navigation Bar
+            // MARK: - ❇️ Floating Navigation Bar
             TopNavigationBar(
                 showAwards: $showAwards,
                 showProfile: $showProfile,
@@ -687,7 +689,7 @@ struct MainView: View {
                 .ignoresSafeArea(edges: .top)
             )
 
-            // MARK: ❇️ Bottom Fade Overlay
+            // MARK: - ❇️ Bottom Fade Overlay
             VStack {
                 Spacer()
                 LinearGradient(
@@ -704,7 +706,7 @@ struct MainView: View {
             .ignoresSafeArea(edges: .bottom)
         }
 
-        // MARK: ❇️ Sheet Modifiers
+        // MARK: - ❇️ Sheet Modifiers
         .sheet(isPresented: $showAwards) {
             AwardSheet()
                 .presentationBackground(Color.appBackground(isDark))
@@ -724,7 +726,7 @@ struct MainView: View {
                 .presentationBackground(Color.appBackground(isDark))
         }
 
-        // MARK: ❇️ Lifecycle Handlers
+        // MARK: - ❇️ Lifecycle Handlers
         .onAppear {
             loadFoodEntries()
             loadUserProfile()

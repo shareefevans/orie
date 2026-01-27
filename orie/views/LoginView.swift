@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
@@ -24,7 +23,7 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            // Background
+            // MARK: - ❇️ Background
             Color.appBackground(isDark)
                 .ignoresSafeArea()
 
@@ -33,7 +32,7 @@ struct LoginView: View {
                     Spacer()
                         .frame(height: 60)
 
-                    // Logo/Title
+                    // MARK: - ❇️ Logo/Title
                     VStack(spacing: 8) {
                         Text("orie")
                             .font(.system(size: 48, weight: .bold))
@@ -45,9 +44,9 @@ struct LoginView: View {
                     }
                     .padding(.bottom, 32)
 
-                    // Form Card
+                    // MARK: - ❇️ Form Card
                     VStack(spacing: 16) {
-                        // Full Name (Sign Up only)
+                        // MARK: 👉 Full Name (Sign Up only)
                         if isSignUp {
                             AuthTextField(
                                 placeholder: "Full Name",
@@ -57,7 +56,7 @@ struct LoginView: View {
                             )
                         }
 
-                        // Email
+                        // MARK: 👉 Email
                         AuthTextField(
                             placeholder: "Email",
                             text: $email,
@@ -67,7 +66,7 @@ struct LoginView: View {
                             autocapitalization: .never
                         )
 
-                        // Password
+                        // MARK: 👉 Password
                         AuthTextField(
                             placeholder: "Password",
                             text: $password,
@@ -75,7 +74,7 @@ struct LoginView: View {
                             isSecure: true
                         )
 
-                        // Error Message
+                        // MARK: 🚨 Error Message
                         if let error = authManager.errorMessage {
                             Text(error)
                                 .font(.system(size: 14))
@@ -84,7 +83,7 @@ struct LoginView: View {
                                 .padding(.horizontal)
                         }
 
-                        // Primary Button
+                        // MARK: 👉 Primary Button
                         Button(action: {
                             Task {
                                 await handleAuth()
@@ -114,7 +113,7 @@ struct LoginView: View {
                     .cornerRadius(32)
                     .padding(.horizontal, 16)
 
-                    // Divider
+                    // MARK: 👉 Divider
                     HStack {
                         Rectangle()
                             .fill(Color.secondaryText(isDark).opacity(0.3))
@@ -131,7 +130,7 @@ struct LoginView: View {
                     }
                     .padding(.horizontal, 32)
 
-                    // Social Login Buttons
+                    // MARK: - ❇️ Social Login Buttons
                     VStack(spacing: 12) {
                         // Google Sign In
                         SocialLoginButton(
@@ -159,7 +158,7 @@ struct LoginView: View {
                     }
                     .padding(.horizontal, 16)
 
-                    // Toggle Sign Up / Log In
+                    // MARK: - ❇️ Toggle Sign Up / Log In
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isSignUp.toggle()
@@ -195,7 +194,7 @@ struct LoginView: View {
         }
     }
 
-    // MARK: - Computed Properties
+    // MARK: - ❇️ Computed Properties
 
     private var isFormValid: Bool {
         let emailValid = !email.isEmpty && email.contains("@")
@@ -207,7 +206,7 @@ struct LoginView: View {
         return emailValid && passwordValid
     }
 
-    // MARK: - Actions
+    // MARK: - ❇️ Actions
 
     private func handleAuth() async {
         isLoading = true
@@ -233,118 +232,6 @@ struct LoginView: View {
            let url = URL(string: urlString) {
             oauthURL = url
             showOAuthSheet = true
-        }
-    }
-}
-
-// MARK: - Auth Text Field
-
-struct AuthTextField: View {
-    let placeholder: String
-    @Binding var text: String
-    var isDark: Bool = false
-    var isSecure: Bool = false
-    var keyboardType: UIKeyboardType = .default
-    var autocapitalization: TextInputAutocapitalization = .sentences
-
-    @State private var isPasswordVisible = false
-
-    var body: some View {
-        HStack {
-            if isSecure && !isPasswordVisible {
-                SecureField(placeholder, text: $text)
-                    .font(.system(size: 16))
-                    .foregroundColor(Color.primaryText(isDark))
-            } else {
-                TextField(placeholder, text: $text)
-                    .font(.system(size: 16))
-                    .foregroundColor(Color.primaryText(isDark))
-                    .keyboardType(keyboardType)
-                    .textInputAutocapitalization(autocapitalization)
-            }
-
-            if isSecure {
-                Button(action: { isPasswordVisible.toggle() }) {
-                    Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
-                        .foregroundColor(Color.secondaryText(isDark))
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(Color.appBackground(isDark))
-        .cornerRadius(16)
-    }
-}
-
-// MARK: - Social Login Button
-
-struct SocialLoginButton: View {
-    let title: String
-    let icon: String
-    let backgroundColor: Color
-    let textColor: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-
-                Text(title)
-                    .font(.system(size: 16, weight: .medium))
-            }
-            .foregroundColor(textColor)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(backgroundColor)
-            .cornerRadius(100)
-            .overlay(
-                RoundedRectangle(cornerRadius: 100)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: backgroundColor == .white ? 1 : 0)
-            )
-        }
-    }
-}
-
-// MARK: - OAuth WebView
-
-import WebKit
-
-struct OAuthWebView: UIViewRepresentable {
-    let url: URL
-    let onCodeReceived: (String) -> Void
-
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        webView.navigationDelegate = context.coordinator
-        webView.load(URLRequest(url: url))
-        return webView
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onCodeReceived: onCodeReceived)
-    }
-
-    class Coordinator: NSObject, WKNavigationDelegate {
-        let onCodeReceived: (String) -> Void
-
-        init(onCodeReceived: @escaping (String) -> Void) {
-            self.onCodeReceived = onCodeReceived
-        }
-
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            if let url = navigationAction.request.url,
-               let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
-               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
-                onCodeReceived(code)
-                decisionHandler(.cancel)
-                return
-            }
-            decisionHandler(.allow)
         }
     }
 }

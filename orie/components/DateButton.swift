@@ -68,7 +68,7 @@ struct DateButton: View {
                     .foregroundColor(isSelected ? (isDark ? .white : .black) : Color.tertiaryText(isDark))
                     .offset(y: isSelected ? -6 : 0)
 
-                // Small dot beneath selected date
+                // MARK: 👉 Small dot beneath selected date
                 Circle()
                     .fill(isSelected ? (isDark ? Color.white : Color.black) : Color.clear)
                     .frame(width: 4, height: 4)

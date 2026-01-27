@@ -37,7 +37,7 @@ struct FoodEntryRow: View {
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            // Delete button background
+            // MARK: 👉 Delete button background
             if showDeleteButton {
                 Button(action: {
                     withAnimation {
@@ -55,9 +55,9 @@ struct FoodEntryRow: View {
                 .transition(.opacity)
             }
 
-            // Main content
+            // MARK: - ❇️ Main content
             HStack(alignment: .top, spacing: 0) {
-                // Timestamp (left) - Now clickable
+                // MARK: 👉 Timestamp (left) - Now clickable
                 Button(action: {
                     showTimePicker = true
                 }) {
@@ -68,7 +68,7 @@ struct FoodEntryRow: View {
                 }
                 .buttonStyle(.plain)
 
-                // Food name - Tap to edit, long press for nutrition detail
+                // MARK: 👉 Food name - Tap to edit, long press for nutrition detail
                 if isEditing {
                     TextField("", text: $editedFoodName, axis: .vertical)
                         .font(.subheadline)
@@ -110,7 +110,7 @@ struct FoodEntryRow: View {
                         }
                 }
 
-                // Calories (right)
+                // MARK: 👉 Calories (right)
                 if entry.isLoading {
                     Image(systemName: "sparkle")
                         .font(.system(size: 14))
@@ -189,7 +189,8 @@ struct FoodEntryRow: View {
             }
         }
     }
-
+    
+    // MARK: - ❇️ Functions
     private func submitEdit() {
         let trimmedName = editedFoodName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedName.isEmpty && trimmedName != entry.foodName {
@@ -212,7 +213,7 @@ struct FoodEntryRow: View {
     }
 }
 
-// Time Picker Sheet
+// MARK: 👉 Time Picker Sheet
 struct TimePickerSheet: View {
     @Binding var selectedTime: Date
     var isDark: Bool = false
@@ -246,7 +247,7 @@ struct TimePickerSheet: View {
 
             Divider()
 
-            // Time Picker
+            // MARK: 👉 Time Picker
             DatePicker(
                 "",
                 selection: $selectedTime,

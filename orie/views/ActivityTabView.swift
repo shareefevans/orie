@@ -29,18 +29,18 @@ struct ActivityTabView: View {
     @State private var selectedActivities: Set<UUID> = []
 
     private let exercises: [ExerciseActivity] = [
-        // Cardio
+        // MARK: - ❇️ Cardio
         ExerciseActivity(name: "Running", iconName: "figure.run", category: .cardio),
         ExerciseActivity(name: "Walking", iconName: "figure.walk", category: .cardio),
         ExerciseActivity(name: "Cycling", iconName: "figure.outdoor.cycle", category: .cardio),
         ExerciseActivity(name: "Swimming", iconName: "figure.pool.swim", category: .cardio),
         ExerciseActivity(name: "Jump Rope", iconName: "figure.jumprope", category: .cardio),
 
-        // Weights
+        // MARK: - ❇️ Weights
         ExerciseActivity(name: "Weight Training", iconName: "figure.strengthtraining.traditional", category: .weights),
         ExerciseActivity(name: "Pilates", iconName: "figure.pilates", category: .sports),
 
-        // Sports
+        // MARK: - ❇️ Sports
         ExerciseActivity(name: "Basketball", iconName: "figure.basketball", category: .sports),
         ExerciseActivity(name: "Football", iconName: "figure.australian.football", category: .sports),
         ExerciseActivity(name: "Tennis", iconName: "figure.tennis", category: .sports),
@@ -58,7 +58,7 @@ struct ActivityTabView: View {
         ExerciseActivity(name: "Track", iconName: "figure.track.and.field", category: .sports),
         ExerciseActivity(name: "Wrestling", iconName: "figure.wrestling", category: .sports),
 
-        // Misc
+        // MARK: - ❇️ Misc
         ExerciseActivity(name: "Climbing", iconName: "figure.climbing", category: .misc),
         ExerciseActivity(name: "Yoga", iconName: "figure.yoga", category: .misc),
         ExerciseActivity(name: "Stretching", iconName: "figure.flexibility", category: .misc),
@@ -69,6 +69,7 @@ struct ActivityTabView: View {
         
     ]
 
+    // MARK: - ❇️ Functions
     private func exercises(for category: ExerciseCategory) -> [ExerciseActivity] {
         exercises.filter { $0.category == category }
     }
@@ -84,7 +85,7 @@ struct ActivityTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Burned Calories Card (large, like Daily Intake)
+            // MARK: - ❇️ Burned Calories Card (large, like Daily Intake)
             VStack(alignment: .leading, spacing: 0) {
                 Text("Burned calories")
                     .font(.system(size: 14))
@@ -106,7 +107,7 @@ struct ActivityTabView: View {
 
                 Spacer()
 
-                // Progress bar
+                // MARK: - ❇️ Progress bar
                 LinearProgressBar(
                     progress: progress,
                     minLabel: "0",
@@ -127,10 +128,10 @@ struct ActivityTabView: View {
             .cornerRadius(32)
             .padding(.horizontal, 16)
 
-            // Exercise Categories
+            // MARK: - ❇️ Exercise Categories
             ForEach(ExerciseCategory.allCases, id: \.self) { category in
                 VStack(alignment: .leading, spacing: 12) {
-                    // Category heading
+                    // MARK: 👉 Category heading
                     Text(category.rawValue)
                         .font(.system(size: 14))
                         .foregroundColor(Color.secondaryText(isDark))
@@ -138,7 +139,7 @@ struct ActivityTabView: View {
                         .padding(.leading, 8)
                         .padding(.top, 24)
 
-                    // Activity buttons
+                    // MARK: 👉 Activity buttons
                     VStack(spacing: 8) {
                         ForEach(exercises(for: category)) { exercise in
                             ExerciseActivityButton(
@@ -164,6 +165,7 @@ struct ActivityTabView: View {
     }
 }
 
+// MARK: - ❇️ Activity Button
 struct ExerciseActivityButton: View {
     let exercise: ExerciseActivity
     let isSelected: Bool
@@ -173,13 +175,13 @@ struct ExerciseActivityButton: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
-                // Icon
+                // MARK: 👉 Icon
                 Image(systemName: exercise.iconName)
                     .font(.system(size: 18))
                     .foregroundColor(Color.iconColor(isDark))
                     .frame(width: 24)
 
-                // Activity name
+                // MARK: 👉 Activity name
                 Text(exercise.name)
                     .font(.system(size: 16))
                     .fontWeight(.semibold)
@@ -187,7 +189,7 @@ struct ExerciseActivityButton: View {
 
                 Spacer()
 
-                // Selection circle
+                // MARK: 👉 Selection circle
                 ZStack {
                     Circle()
                         .fill(isSelected ? Color.yellow : Color.chartBackground(isDark))

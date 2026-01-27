@@ -29,7 +29,7 @@ struct HealthTabView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            // Row 1: Daily Intake (full width)
+            // MARK: - ❇️ Row 1 Daily Intake (full width)
             DailyIntakeCard(
                 consumed: consumedCalories,
                 goal: dailyCalorieGoal,
@@ -37,7 +37,7 @@ struct HealthTabView: View {
                 isDark: isDark
             )
 
-            // Row 2: Protein (left) | Carbs (right)
+            // MARK: - ❇️ Row 2 Protein (left) | Carbs (right)
             HStack(spacing: 8) {
                 MacroDotCard(
                     title: "Protein",
@@ -56,7 +56,7 @@ struct HealthTabView: View {
                 )
             }
 
-            // Row 3: Fats (left) | Burned + Sugar stacked (right)
+            // MARK: - ❇️ Row 3: Fats (left) | Burned + Sugar stacked (right)
             HStack(spacing: 8) {
                 MacroDotCard(
                     title: "Fats",
@@ -66,7 +66,7 @@ struct HealthTabView: View {
                     isDark: isDark
                 )
 
-                // Burned and Sugar stacked vertically
+                // MARK: - ❇️ Burned and Sugar stacked vertically
                 VStack(spacing: 8) {
                     BurnedMiniCard(burned: burnedCalories, isDark: isDark)
                     SugarMiniCard(consumed: consumedSugar, isDark: isDark)

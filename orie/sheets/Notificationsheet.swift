@@ -19,7 +19,7 @@ struct NotificationSheet: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header - Notifications and unread count (centered)
+                // MARK: - ❇️ Header - Notifications and unread count (centered)
                 VStack(spacing: 4) {
                     Text("Notifications")
                         .font(.title)
@@ -39,7 +39,7 @@ struct NotificationSheet: View {
                         .progressViewStyle(CircularProgressViewStyle())
                     Spacer()
                 } else if !notificationManager.notifications.isEmpty {
-                    // Notifications List inside a card
+                    // MARK: 👉 Notifications List inside a card
                     ScrollView {
                         VStack(spacing: 0) {
                             LazyVStack(spacing: 0) {
@@ -78,7 +78,7 @@ struct NotificationSheet: View {
     }
 }
 
-// MARK: - Notification Row
+// MARK: - ❇️ Notification Row
 
 struct NotificationRow: View {
     let notification: AppNotification
@@ -123,7 +123,7 @@ struct NotificationRow: View {
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            // Delete button background
+            // MARK: 👉 Delete button background
             if showDeleteButton {
                 Button(action: {
                     withAnimation {
@@ -141,9 +141,8 @@ struct NotificationRow: View {
                 .transition(.opacity)
             }
 
-            // Main content
+            // MARK: 👉 Main content
             HStack(alignment: .top, spacing: 12) {
-                // Icon
                 ZStack {
                     Circle()
                         .fill(.yellow.opacity(0.15))
@@ -154,7 +153,7 @@ struct NotificationRow: View {
                         .foregroundColor(.yellow)
                 }
 
-                // Content
+                // MARK: 👉 Content
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(notification.title)
@@ -172,7 +171,7 @@ struct NotificationRow: View {
                         .lineLimit(2)
                 }
 
-                // Unread indicator
+                // MARK: 👉 Unread indicator
                 if !notification.isRead {
                     Circle()
                         .fill(Color.blue)

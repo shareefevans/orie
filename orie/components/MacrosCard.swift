@@ -19,7 +19,7 @@ struct MacrosCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            // First row: Protein & Fats
+            // MARK: 👉 First row: Protein & Fats
             HStack(spacing: 8) {
                 SingleMacroCard(
                     title: "Protein",
@@ -46,7 +46,7 @@ struct MacrosCard: View {
                 )
             }
 
-            // Second row: Carbs & Sugar
+            // MARK: 👉 Second row: Carbs & Sugar
             HStack(spacing: 8) {
                 SingleMacroCard(
                     title: "Carbs",
@@ -66,6 +66,7 @@ struct MacrosCard: View {
     }
 }
 
+// MARK: - ❇️ Macro Dot Card
 struct SingleMacroCard: View {
     let title: String
     let consumed: Int
@@ -111,7 +112,7 @@ struct SingleMacroCard: View {
 
             Spacer()
 
-            // Pie chart with icon and goal
+            // MARK: 👉 Pie chart with icon and goal
             HStack(alignment: .bottom) {
                 ZStack {
                     CircularProgressChart(
@@ -121,7 +122,7 @@ struct SingleMacroCard: View {
                         gradientColors: gradientColors
                     )
 
-                    // Centered icon with light background circle
+                    // MARK: 👉 Centered icon with light background circle
                     Circle()
                         .fill(iconColor.opacity(0.15))
                         .frame(width: 22, height: 22)
@@ -146,6 +147,7 @@ struct SingleMacroCard: View {
     }
 }
 
+// MARK: - ❇️ Macro Dot Card
 struct MacroDotCard: View {
     let title: String
     let consumed: Int
@@ -153,7 +155,7 @@ struct MacroDotCard: View {
     let dotColor: Color
     var isDark: Bool = false
 
-    // Original gradient blue colors
+    // MARK: 👉 Original gradient blue colors
     private let gradientColors = [
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
@@ -170,7 +172,7 @@ struct MacroDotCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Title with colored dot
+            // MARK: 👉 Title with colored dot
             HStack(spacing: 8) {
                 Circle()
                     .fill(dotColor)
@@ -225,6 +227,7 @@ struct MacroDotCard: View {
     }
 }
 
+// MARK: - ❇️ Macro Dot Card
 struct SugarCard: View {
     let consumed: Int
 
@@ -250,7 +253,7 @@ struct SugarCard: View {
 
             Spacer()
 
-            // Heart icon in bottom left (like BurnedCard)
+            // MARK: 👉Heart icon in bottom left (like BurnedCard)
             HStack {
                 ZStack {
                     Circle()
@@ -272,13 +275,14 @@ struct SugarCard: View {
     }
 }
 
+// MARK: - ❇️ Macro Dot Card
 struct BurnedMiniCard: View {
     let burned: Int
     var isDark: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
-            // Flame icon
+            // MARK: 👉Flame icon
             ZStack {
                 Circle()
                     .fill(Color.orange.opacity(0.15))
@@ -289,7 +293,7 @@ struct BurnedMiniCard: View {
                     .foregroundColor(.orange)
             }
 
-            // Value and label
+            // MARK: 👉Value and label
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(burned.formatted())
                     .font(.system(size: 20))
@@ -311,13 +315,14 @@ struct BurnedMiniCard: View {
     }
 }
 
+// MARK: - ❇️ Macro Dot Card
 struct SugarMiniCard: View {
     let consumed: Int
     var isDark: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
-            // Heart icon
+            // MARK: 👉Heart icon
             ZStack {
                 Circle()
                     .fill(Color.red.opacity(0.15))
@@ -328,7 +333,7 @@ struct SugarMiniCard: View {
                     .foregroundColor(.red)
             }
 
-            // Value and label
+            // MARK: 👉Value and label
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(consumed.formatted())
                     .font(.system(size: 20))

@@ -17,7 +17,7 @@ struct orieApp: App {
         WindowGroup {
             Group {
                 if authManager.isLoading {
-                    // Splash/Loading screen
+                    // MARK: 👉 Splash/Loading screen
                     ZStack {
                         Color.appBackground(themeManager.isDarkMode)
                             .ignoresSafeArea()
@@ -37,7 +37,7 @@ struct orieApp: App {
                         .environmentObject(themeManager)
                         .environmentObject(notificationManager)
                         .onAppear {
-                            // Sync notifications when app opens
+                            // MARK: 👉 Sync notifications when app opens
                             Task {
                                 await notificationManager.syncSystemNotifications()
                             }

@@ -22,7 +22,7 @@ struct TabButton: View {
                     .foregroundColor(isSelected ? Color.primaryText(isDark) : Color.secondaryText(isDark))
                     .offset(y: isSelected ? -6 : 0)
 
-                // Small dot beneath selected tab
+                // MARK: 👉 Small dot beneath selected tab
                 Circle()
                     .fill(isSelected ? Color.primaryText(isDark) : Color.clear)
                     .frame(width: 4, height: 4)

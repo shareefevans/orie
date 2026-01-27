@@ -22,7 +22,7 @@ struct TopNavigationBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // Left side - Date selector and close button
+            // MARK: - ❇️ Left side - Date selector and close button
             HStack(spacing: 8) {
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -45,7 +45,7 @@ struct TopNavigationBar: View {
                     .glassEffect(.regular.interactive())
                 }
 
-                // X button when in date selection mode (matches keyboard dismiss button)
+                // MARK: 👉 X button when in date selection mode (matches keyboard dismiss button)
                 if isDateSelectionMode {
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -66,7 +66,7 @@ struct TopNavigationBar: View {
 
             Spacer()
 
-            // Right side - Grouped buttons (bell, settings, trophy)
+            // MARK: - ❇️ Right side - Grouped buttons (bell, settings, trophy)
             HStack(spacing: 0) {
 
                 Button(action: {
@@ -108,7 +108,7 @@ struct TopNavigationBar: View {
             }
             .glassEffect(.regular.interactive())
 
-            // Keyboard dismiss button (only shows when keyboard is open)
+            // MARK: 👉 Keyboard dismiss button (only shows when keyboard is open)
             if isInputFocused {
                 Button(action: {
                     isInputFocused = false

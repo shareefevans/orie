@@ -68,7 +68,7 @@ struct FoodInputField: View {
 
             #if os(iOS)
             HStack(spacing: 8) {
-                // Camera button
+                // MARK: 👉 Camera button
                 Button(action: {
                     showCameraPicker = true
                 }) {
@@ -91,7 +91,7 @@ struct FoodInputField: View {
                 .contentShape(Circle())
                 .disabled(isAnalyzingImage)
 
-                // Voice-to-text button
+                // MARK: 👉 Voice-to-text button
                 Button(action: {
                     if isRecording {
                         stopRecording()
@@ -127,6 +127,7 @@ struct FoodInputField: View {
         #endif
     }
 
+    // MARK: - ❇️ Functions
     #if os(iOS)
     private func handleCapturedImage(_ image: UIImage) {
         isAnalyzingImage = true
@@ -165,7 +166,7 @@ struct FoodInputField: View {
 
     #if os(iOS)
     private func startRecording() {
-        // Request authorization
+        // MARK: 👉 Request authorization
         SFSpeechRecognizer.requestAuthorization { authStatus in
             DispatchQueue.main.async {
                 switch authStatus {
@@ -179,11 +180,11 @@ struct FoodInputField: View {
     }
 
     private func beginRecordingSession() {
-        // Cancel any ongoing task
+        // MARK: 👉 Cancel any ongoing task
         recognitionTask?.cancel()
         recognitionTask = nil
 
-        // Configure audio session
+        // MARK: 👉 Configure audio session
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -238,11 +239,11 @@ struct FoodInputField: View {
     }
 
     private func stopRecording() {
-        // Stop the audio engine first
+        // MARK: 👉 Stop the audio engine first
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
 
-        // Cancel the recognition task to prevent further text updates
+        // MARK: 👉 Cancel the recognition task to prevent further text updates
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest?.endAudio()

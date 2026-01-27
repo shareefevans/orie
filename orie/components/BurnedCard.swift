@@ -32,7 +32,7 @@ struct BurnedCard: View {
 
             Spacer()
 
-            // Fire icon in bottom left
+            // MARK: 👉 Fire icon in bottom left
             HStack {
                 ZStack {
                     Circle()

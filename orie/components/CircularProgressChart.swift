@@ -23,12 +23,12 @@ struct CircularProgressChart: View {
 
     var body: some View {
         ZStack {
-            // Background circle
+            // MARK: 👉 Background circle
             Circle()
                 .stroke(Color.chartBackground(isDark), lineWidth: lineWidth)
                 .frame(width: size, height: size)
 
-            // Progress circle
+            // MARK: 👉 Progress circle
             Circle()
                 .trim(from: 0, to: animatedProgress)
                 .stroke(

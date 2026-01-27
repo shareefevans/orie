@@ -47,7 +47,7 @@ struct DailyIntakeCard: View {
                 .foregroundColor(remaining > 0 ? .yellow : .red)
                 .padding(.top, 4)
 
-            // Meal Progress bar with labels above
+            // MARK: 👉 Meal Progress bar with labels above
             VStack(spacing: 8) {
                 HStack {
                     Text("0")

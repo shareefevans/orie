@@ -12,7 +12,7 @@ struct ProfileSheet: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
 
-    // User data
+    // MARK: - ❇️ User data
     @State private var userName = ""
     @State private var dailyCalories = 0
     @State private var dailyProtein = 0
@@ -20,7 +20,7 @@ struct ProfileSheet: View {
     @State private var dailyFats = 0
     @State private var isLoading = true
 
-    // Personal data
+    // MARK: - ❇️ Personal data
     @State private var age = 0
     @State private var weight = 0
     @State private var height = 0
@@ -28,7 +28,7 @@ struct ProfileSheet: View {
     @State private var gender = ""
 
 
-    // Settings
+    // MARK: - ❇️ Settings
     @State private var locationEnabled = true
     @State private var notificationsEnabled = true
 
@@ -39,7 +39,8 @@ struct ProfileSheet: View {
             ScrollView {
                 VStack(spacing: 8) {
                     
-                    // Header - Settings and Name centered
+                    // MARK: - ❇️ Header
+                    // MARK: 👉 Header - Settings and Name centered
                     VStack(alignment: .center, spacing: 2) {
                         Text("Settings")
                             .font(.title)
@@ -55,10 +56,10 @@ struct ProfileSheet: View {
                     .padding(.top, 8)
                     .padding(.bottom, 8)
 
-                    // Feedback and Share buttons
+                    // MARK: 👉 Feedback and Share buttons
                     HStack(spacing: 8) {
                         Button(action: {
-                            // Feedback action
+                            // MARK: 👉 Feedback action
                         }) {
                             Text("Feedback")
                                 .font(.footnote)
@@ -70,7 +71,7 @@ struct ProfileSheet: View {
                         .glassEffect(.regular.interactive())
 
                         Button(action: {
-                            // Share action
+                            // MARK: 👉 Share action
                         }) {
                             Text("Share")
                                 .font(.footnote)
@@ -84,7 +85,7 @@ struct ProfileSheet: View {
                         .glassEffect(.regular.interactive())
                     }
 
-                    // Body Section
+                    // MARK: - ❇️ Body Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
 
@@ -103,7 +104,7 @@ struct ProfileSheet: View {
 
                         Divider()
 
-                        // Macro rows
+                        // MARK: 👉 Macro rows
                         MacroRow(label: "Age", value: $age, unit : "yrs", isDark: isDark, onSave: saveProfile)
                         Divider()
                         MacroRow(label: "Weight", value: $weight, unit: "kg", isDark: isDark, onSave: saveProfile)
@@ -116,7 +117,7 @@ struct ProfileSheet: View {
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(24)
                     
-                    // Macronutrients Section
+                    // MARK: - ❇️ Macronutrients Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
 
@@ -135,7 +136,7 @@ struct ProfileSheet: View {
 
                         Divider()
 
-                        // Macro rows
+                        // MARK: 👉 Macro rows
                         MacroRow(label: "Calories", value: $dailyCalories, unit: "c", isDark: isDark, onSave: saveProfile)
                         Divider()
                         MacroRow(label: "Protein", value: $dailyProtein, unit: "g", isDark: isDark, onSave: saveProfile)
@@ -148,7 +149,7 @@ struct ProfileSheet: View {
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(24)
 
-                    // App Section
+                    // MARK: - ❇️ App Section
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 16) {
 
@@ -168,7 +169,7 @@ struct ProfileSheet: View {
 
                         Divider()
 
-                        // Settings toggles
+                        // MARK: 👉 Settings toggles
                         HStack {
                             Text("Location")
                                 .font(.footnote)
@@ -205,7 +206,7 @@ struct ProfileSheet: View {
 
                         Divider()
 
-                        // Log Out
+                        // MARK: 👉 Log Out
                         Button(action: {
                             Task {
                                 await authManager.logout()
@@ -225,9 +226,8 @@ struct ProfileSheet: View {
 
                         Divider()
 
-                        // Delete Account
+                        // MARK: 👉 Delete Account
                         Button(action: {
-                            // Delete account action
                         }) {
                             HStack {
                                 Text("Delete Account")
@@ -257,6 +257,9 @@ struct ProfileSheet: View {
         }
     }
 
+    
+    // MARK: - ❇️ Functions
+    // MARK: 👉 Load Profiles
     private func loadProfile() {
         guard let accessToken = authManager.getAccessToken() else {
             isLoading = false
@@ -284,6 +287,7 @@ struct ProfileSheet: View {
         }
     }
 
+    // MARK: 👉 Save Profile
     private func saveProfile() {
         guard let accessToken = authManager.getAccessToken() else { return }
 
@@ -306,7 +310,7 @@ struct ProfileSheet: View {
     }
 }
 
-// Macro Row Component
+// MARK: - ❇️ Macro Row Component
 struct MacroRow: View {
     let label: String
     @Binding var value: Int
@@ -377,7 +381,7 @@ struct MacroRow: View {
     }
 }
 
-// Macro Picker Sheet
+// MARK: - ❇️ Macro Picker Sheet
 struct MacroPickerSheet: View {
     let label: String
     @Binding var value: Int
@@ -390,7 +394,7 @@ struct MacroPickerSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // MARK: 👉 Header
             HStack {
                 Button("Cancel") {
                     onDone()
@@ -424,7 +428,7 @@ struct MacroPickerSheet: View {
 
             Divider()
 
-            // Text Field Input
+            // MARK: 👉 Text Field Input
             VStack(spacing: 16) {
                 TextField("Enter value", text: $textValue)
                     .keyboardType(.numberPad)

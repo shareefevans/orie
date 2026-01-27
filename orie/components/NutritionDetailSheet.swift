@@ -14,7 +14,7 @@ struct NutritionDetailSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header with nutritional information and done button
+            // MARK: - ❇️ Header with nutritional information and done button
             HStack {
                 Text("nutritional information")
                     .font(.caption)
@@ -36,7 +36,7 @@ struct NutritionDetailSheet: View {
             .padding(.bottom, 24)
 
             VStack(spacing: 24) {
-                // Food name
+                // MARK: 👉Food name
                 Text(entry.foodName)
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -47,7 +47,7 @@ struct NutritionDetailSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
 
-                // Sources row (buttons)
+                // MARK: 👉Sources row (buttons)
                 if let sources = entry.sources, !sources.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -86,7 +86,7 @@ struct NutritionDetailSheet: View {
                     .scrollClipDisabled(true)
                 }
 
-                // Two-column layout: Breakdown and Totals
+                // MARK: 👉Two-column layout: Breakdown and Totals
                 VStack(spacing: 12) {
                     // Header row
                     HStack(spacing: 0) {
@@ -103,7 +103,7 @@ struct NutritionDetailSheet: View {
 
                     Divider()
 
-                    // Calories row
+                    // MARK: - ❇️ Calories row
                     HStack(spacing: 0) {
                         Text("Calories")
                             .font(.subheadline)
@@ -116,7 +116,7 @@ struct NutritionDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
-                    // Protein row
+                    // MARK: - ❇️ Protein row
                     HStack(spacing: 0) {
                         Text("Protein")
                             .font(.subheadline)
@@ -129,7 +129,7 @@ struct NutritionDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
-                    // Carbs row
+                    // MARK: - ❇️ Carbs row
                     HStack(spacing: 0) {
                         Text("Carbs")
                             .font(.subheadline)
@@ -142,7 +142,7 @@ struct NutritionDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
 
-                    // Fat row
+                    // MARK: ❇️ - Fat row
                     HStack(spacing: 0) {
                         Text("Fat")
                             .font(.subheadline)

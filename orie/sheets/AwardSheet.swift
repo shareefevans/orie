@@ -13,7 +13,7 @@ struct AwardSheet: View {
 
     private var isDark: Bool { themeManager.isDarkMode }
 
-    // Mock data
+    // MARK: 👉 Mock data
     @State private var currentStreak = 0
     @State private var totalBadges = 24
 
@@ -21,7 +21,7 @@ struct AwardSheet: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Header - Streak and Badges
+                    // MARK: 👉 Header - Streak and Badges
                     VStack(spacing: 4) {
                         Text("\(currentStreak) Days")
                             .font(.title)
@@ -37,7 +37,7 @@ struct AwardSheet: View {
                     .padding(.top, 32)
                     .padding(.bottom, 8)
                     
-                    // Badges List
+                    // MARK: 👉 Badges List
                     VStack(spacing: 16) {
                         AwardRow(
                             imageName: "AwardPurpleOne",
@@ -137,7 +137,7 @@ struct AwardSheet: View {
     }
 }
 
-// Award Row Component
+// MARK: - ❇️ Award Row Component
 struct AwardRow: View {
     let imageName: String
     let title: String
@@ -147,14 +147,14 @@ struct AwardRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Badge Image
+            // MARK: 👉 Badge Image
             Image(imageName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 48, height: 48)
                 .opacity(isUnlocked ? 1.0 : 0.25)
 
-            // Title and Subtitle
+            // MARK: 👉 Title and Subtitle
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.footnote)
@@ -168,7 +168,7 @@ struct AwardRow: View {
 
             Spacer()
 
-            // Status Indicator
+            // MARK: 👉 Status Indicator
             if isUnlocked {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title3)

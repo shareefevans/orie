@@ -27,33 +27,34 @@ struct MealProgressBar: View {
     var animationDuration: Double = 0.8
     var animationDelay: Double = 0
 
-    // Macro colors
+    // MARK: 👉Macro colors
     private let proteinColor = Color(red: 55/255, green: 48/255, blue: 163/255)    // Dark blue
     private let carbsColor = Color(red: 135/255, green: 206/255, blue: 250/255)    // Light blue
     private let fatsColor = Color(red: 255/255, green: 180/255, blue: 50/255)      // Orange/Yellow
 
-    // Time between meals color (purple-blue)
+    // MARK: 👉Time between meals color (purple-blue)
     private let timeColor = Color(red: 106/255, green: 118/255, blue: 255/255)
 
-    // Unfilled color
+    // MARK: 👉Unfilled color
     private var unfilledColor: Color {
         Color.chartBackground(isDark)
     }
 
     @State private var animatedProgress: Double = 0
 
+    // MARK: - ❇️ Body
     var body: some View {
         GeometryReader { geometry in
             let barWidth = geometry.size.width
             let sortedMeals = meals.sorted { $0.timestamp < $1.timestamp }
             let pills = buildPills(sortedMeals: sortedMeals)
 
-            // Calculate where the filled portion ends
+            // MARK: 👉Calculate where the filled portion ends
             let filledWidth = barWidth * CGFloat(animatedProgress)
             let unfilledWidth = barWidth - filledWidth
 
             ZStack(alignment: .leading) {
-                // Colored pills (filled portion)
+                // MARK: 👉Colored pills (filled portion)
                 HStack(spacing: 0) {
                     ForEach(Array(pills.enumerated()), id: \.offset) { index, pill in
                         let pillWidth = barWidth * pill.widthFraction
@@ -73,7 +74,7 @@ struct MealProgressBar: View {
                     }
                 }
 
-                // Grey unfilled portion (starts where progress ends)
+                // MARK: 👉Grey unfilled portion (starts where progress ends)
                 if unfilledWidth > 0 && animatedProgress < 1.0 {
                     Capsule()
                         .fill(unfilledColor)
@@ -96,29 +97,30 @@ struct MealProgressBar: View {
         }
     }
 
+    // MARK: - ❇️ Functions
     private func buildPills(sortedMeals: [MealBubble]) -> [PillData] {
         var pills: [PillData] = []
 
         if sortedMeals.isEmpty {
-            // No meals - single time pill
+            // MARK: 👉No meals - single time pill
             pills.append(PillData(type: .time, widthFraction: 1.0))
             return pills
         }
 
-        // Calculate total macros for proportional meal sizing
+        // MARK: 👉Calculate total macros for proportional meal sizing
         let totalAllMacros = sortedMeals.reduce(0.0) { $0 + $1.totalMacros }
         let mealCount = sortedMeals.count
 
-        // Calculate time gaps between meals
+        // MARK: 👉Calculate time gaps between meals
         var timeGaps: [TimeInterval] = []
         let calendar = Calendar.current
 
-        // First gap: from start of day (6am) to first meal
+        // MARK: 👉First gap: from start of day (6am) to first meal
         let startOfDay = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: sortedMeals[0].timestamp) ?? sortedMeals[0].timestamp
         let firstGap = max(0, sortedMeals[0].timestamp.timeIntervalSince(startOfDay))
         timeGaps.append(firstGap)
 
-        // Gaps between consecutive meals
+        // MARK: 👉Gaps between consecutive meals
         for i in 1..<sortedMeals.count {
             let gap = sortedMeals[i].timestamp.timeIntervalSince(sortedMeals[i-1].timestamp)
             timeGaps.append(max(0, gap))
@@ -126,24 +128,24 @@ struct MealProgressBar: View {
 
         let totalTimeGap = timeGaps.reduce(0, +)
 
-        // Distribution: 40% for time segments, 60% for meals
+        // MARK: 👉Distribution: 40% for time segments, 60% for meals
         let timeTotalFraction: CGFloat = 0.4
         let mealsTotalFraction: CGFloat = 0.6
 
         for (index, meal) in sortedMeals.enumerated() {
-            // Time pill before each meal - width proportional to time gap
+            // MARK: 👉Time pill before each meal - width proportional to time gap
             let timeGap = timeGaps[index]
             let timeFraction = totalTimeGap > 0
                 ? timeTotalFraction * CGFloat(timeGap / totalTimeGap)
                 : timeTotalFraction / CGFloat(mealCount)
             pills.append(PillData(type: .time, widthFraction: timeFraction))
 
-            // Meal's share of total meal space
+            // MARK: 👉Meal's share of total meal space
             let mealFraction = totalAllMacros > 0
                 ? mealsTotalFraction * (meal.totalMacros / totalAllMacros)
                 : mealsTotalFraction / CGFloat(mealCount)
 
-            // Add macro pills in order: fats, protein, carbs
+            // MARK: 👉Add macro pills in order: fats, protein, carbs
             if meal.fats > 0 {
                 let fatFraction = mealFraction * (meal.fats / meal.totalMacros)
                 pills.append(PillData(type: .fats, widthFraction: fatFraction))
@@ -215,7 +217,7 @@ struct ColoredPillView: View {
         }
     }
 
-    // Calculate how much of this pill should be filled (0 to 1)
+    // MARK: 👉 Calculate how much of this pill should be filled (0 to 1)
     private var fillFraction: CGFloat {
         if overallProgress >= pillEndProgress {
             return 1.0
@@ -229,7 +231,7 @@ struct ColoredPillView: View {
     }
 
     var body: some View {
-        // Only show the colored pill if there's any fill
+        // MARK: 👉Only show the colored pill if there's any fill
         if fillFraction > 0 {
             Capsule()
                 .fill(fillColor)

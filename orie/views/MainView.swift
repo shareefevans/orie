@@ -14,6 +14,7 @@ struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var notificationManager: NotificationManager
+    @EnvironmentObject var localNotificationManager: LocalNotificationManager
     @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - ❇️ UI State
@@ -134,6 +135,8 @@ struct MainView: View {
 
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
+                        // Schedule meal reminder notification
+                        localNotificationManager.scheduleMealNotification(for: foodEntries[index])
                     }
                 }
             } catch APIError.sessionExpired {
@@ -177,6 +180,8 @@ struct MainView: View {
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
+                        // Schedule meal reminder notification
+                        localNotificationManager.scheduleMealNotification(for: foodEntries[index])
                     }
                 }
             } catch APIError.sessionExpired {
@@ -198,6 +203,9 @@ struct MainView: View {
         withAnimation {
             foodEntries[index].timestamp = newTime
         }
+
+        // Update the meal reminder notification with new time
+        localNotificationManager.updateMealNotification(for: foodEntries[index])
 
         Task {
             do {
@@ -263,6 +271,9 @@ struct MainView: View {
     // MARK: 👉 DeleteFoodEntry
     private func deleteFoodEntry(_ entry: FoodEntry) {
         guard let accessToken = authManager.getAccessToken() else { return }
+
+        // Cancel the meal reminder notification
+        localNotificationManager.cancelMealNotification(for: entry.id)
 
         withAnimation {
             foodEntries.removeAll { $0.id == entry.id }
@@ -717,6 +728,7 @@ struct MainView: View {
             ProfileSheet()
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
+                .environmentObject(localNotificationManager)
                 .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showNotifications) {
@@ -760,4 +772,5 @@ struct MainView: View {
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
         .environmentObject(NotificationManager())
+        .environmentObject(LocalNotificationManager.shared)
 }

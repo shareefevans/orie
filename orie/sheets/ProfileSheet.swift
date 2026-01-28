@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ProfileSheet: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var localNotificationManager: LocalNotificationManager
 
     // MARK: - ❇️ User data
     @State private var userName = ""
@@ -27,10 +29,9 @@ struct ProfileSheet: View {
     @State private var bodyFat = 0
     @State private var gender = ""
 
-
     // MARK: - ❇️ Settings
     @State private var locationEnabled = true
-    @State private var notificationsEnabled = true
+    @State private var showNotificationDeniedAlert = false
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -183,13 +184,34 @@ struct ProfileSheet: View {
                         Divider()
 
                         HStack {
-                            Text("Notifications")
-                                .font(.footnote)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.primaryText(isDark))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Meal Reminders")
+                                    .font(.footnote)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(Color.primaryText(isDark))
+                                Text("Get notified at scheduled meal times")
+                                    .font(.caption2)
+                                    .foregroundColor(Color.secondaryText(isDark))
+                            }
                             Spacer()
-                            Toggle("", isOn: $notificationsEnabled)
-                                .labelsHidden()
+                            Toggle("", isOn: Binding(
+                                get: { localNotificationManager.notificationsEnabled },
+                                set: { newValue in
+                                    if newValue {
+                                        Task {
+                                            let granted = await localNotificationManager.requestAuthorization()
+                                            if granted {
+                                                localNotificationManager.notificationsEnabled = true
+                                            } else {
+                                                showNotificationDeniedAlert = true
+                                            }
+                                        }
+                                    } else {
+                                        localNotificationManager.notificationsEnabled = false
+                                    }
+                                }
+                            ))
+                            .labelsHidden()
                         }
 
                         Divider()
@@ -254,6 +276,16 @@ struct ProfileSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear {
             loadProfile()
+        }
+        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+            Button("Open Settings") {
+                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsUrl)
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("To receive meal reminders, please enable notifications in Settings.")
         }
     }
 
@@ -454,4 +486,5 @@ struct MacroPickerSheet: View {
     ProfileSheet()
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
+        .environmentObject(LocalNotificationManager.shared)
 }

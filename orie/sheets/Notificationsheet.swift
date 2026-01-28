@@ -174,7 +174,7 @@ struct NotificationRow: View {
                 // MARK: 👉 Unread indicator
                 if !notification.isRead {
                     Circle()
-                        .fill(Color.blue)
+                        .fill(Color.red)
                         .frame(width: 8, height: 8)
                 }
             }

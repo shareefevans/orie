@@ -106,7 +106,7 @@ struct SingleMacroCard: View {
 
             Text("\(remaining)g left")
                 .font(.system(size: 12))
-                .foregroundColor(remaining > 0 ? .yellow : .red)
+                .foregroundColor(remaining < -25 ? .red : .yellow)
                 .padding(.top, 4)
                 .padding(.bottom, 24)
 
@@ -199,7 +199,7 @@ struct MacroDotCard: View {
 
             Text("\(remaining)g left")
                 .font(.system(size: 12))
-                .foregroundColor(remaining > 0 ? .yellow : .red)
+                .foregroundColor(remaining < -25 ? .red : .yellow)
                 .padding(.top, 4)
 
             Spacer()

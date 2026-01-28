@@ -44,7 +44,7 @@ struct DailyIntakeCard: View {
 
             Text("\(remaining) remaining")
                 .font(.system(size: 14))
-                .foregroundColor(remaining > 0 ? .yellow : .red)
+                .foregroundColor(remaining < -100 ? .red : .yellow)
                 .padding(.top, 4)
 
             // MARK: 👉 Meal Progress bar with labels above

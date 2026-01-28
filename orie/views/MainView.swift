@@ -518,7 +518,7 @@ struct MainView: View {
 
                                 Text("\(remainingCalories) remaining")
                                     .font(.system(size: 14))
-                                    .foregroundColor(remainingCalories > 0 ? .yellow : .red)
+                                    .foregroundColor(remainingCalories < -100 ? .red : .yellow)
                                     .padding(.top, 4)
 
                                 VStack(spacing: 8) {

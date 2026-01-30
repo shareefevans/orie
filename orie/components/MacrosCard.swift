@@ -141,7 +141,7 @@ struct SingleMacroCard: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 180)
+        .frame(height: 200)
         .background(Color.white)
         .cornerRadius(32)
     }
@@ -221,7 +221,7 @@ struct MacroDotCard: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 180)
+        .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }
@@ -269,7 +269,7 @@ struct SugarCard: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 180)
+        .frame(height: 200)
         .background(Color.white)
         .cornerRadius(32)
     }

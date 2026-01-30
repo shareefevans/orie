@@ -47,6 +47,8 @@ struct DailyIntakeCard: View {
                 .foregroundColor(remaining < -100 ? .red : Color.accessibleYellow(isDark))
                 .padding(.top, 4)
 
+            Spacer()
+
             // MARK: 👉 Meal Progress bar with labels above
             VStack(spacing: 8) {
                 HStack {
@@ -66,13 +68,10 @@ struct DailyIntakeCard: View {
                     isDark: isDark
                 )
             }
-            .padding(.top, 32)
         }
-        .padding(.top, 32)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 32)
+        .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 180)
+        .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }

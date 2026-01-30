@@ -12,6 +12,12 @@ struct NutritionDetailSheet: View {
     let entry: FoodEntry
     var isDark: Bool = false
 
+    // Dot colors matching HealthTabView
+    private let caloriesDotColor = Color(red: 75/255, green: 78/255, blue: 255/255)
+    private let proteinDotColor = Color(red: 55/255, green: 48/255, blue: 163/255)
+    private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)
+    private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)
+
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - ❇️ Header with nutritional information and done button
@@ -105,10 +111,15 @@ struct NutritionDetailSheet: View {
 
                     // MARK: - ❇️ Calories row
                     HStack(spacing: 0) {
-                        Text("Calories")
-                            .font(.subheadline)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(caloriesDotColor)
+                                .frame(width: 8, height: 8)
+                            Text("Calories")
+                                .font(.subheadline)
+                                .foregroundColor(Color.primaryText(isDark))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text("\(entry.calories ?? 0)")
                             .font(.subheadline)
@@ -118,10 +129,15 @@ struct NutritionDetailSheet: View {
 
                     // MARK: - ❇️ Protein row
                     HStack(spacing: 0) {
-                        Text("Protein")
-                            .font(.subheadline)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(proteinDotColor)
+                                .frame(width: 8, height: 8)
+                            Text("Protein")
+                                .font(.subheadline)
+                                .foregroundColor(Color.primaryText(isDark))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.protein ?? 0))
                             .font(.subheadline)
@@ -131,10 +147,15 @@ struct NutritionDetailSheet: View {
 
                     // MARK: - ❇️ Carbs row
                     HStack(spacing: 0) {
-                        Text("Carbs")
-                            .font(.subheadline)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(carbsDotColor)
+                                .frame(width: 8, height: 8)
+                            Text("Carbs")
+                                .font(.subheadline)
+                                .foregroundColor(Color.primaryText(isDark))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.carbs ?? 0))
                             .font(.subheadline)
@@ -144,10 +165,15 @@ struct NutritionDetailSheet: View {
 
                     // MARK: ❇️ - Fat row
                     HStack(spacing: 0) {
-                        Text("Fat")
-                            .font(.subheadline)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(fatsDotColor)
+                                .frame(width: 8, height: 8)
+                            Text("Fat")
+                                .font(.subheadline)
+                                .foregroundColor(Color.primaryText(isDark))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(String(format: "%.1fg", entry.fats ?? 0))
                             .font(.subheadline)

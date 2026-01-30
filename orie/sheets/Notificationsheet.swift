@@ -145,12 +145,12 @@ struct NotificationRow: View {
             HStack(alignment: .top, spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(.yellow.opacity(0.15))
+                        .fill(Color.accessibleYellow(isDark).opacity(0.15))
                         .frame(width: 40, height: 40)
 
                     Image(systemName: iconName)
                         .font(.system(size: 12))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Color.accessibleYellow(isDark))
                 }
 
                 // MARK: 👉 Content

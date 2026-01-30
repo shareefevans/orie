@@ -33,7 +33,7 @@ struct FoodInputField: View {
         HStack(alignment: .center, spacing: 8) {
             Text("\(currentTime())")
                 .font(.system(size: 14))
-                .foregroundColor(.yellow)
+                .foregroundColor(Color.accessibleYellow(isDark))
                 .frame(width: 90, alignment: .leading)
 
             ZStack(alignment: .leading) {

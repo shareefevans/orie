@@ -25,7 +25,7 @@ struct DailyIntakeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Daily intake")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundColor(Color.secondaryText(isDark))
                 .fontWeight(.medium)
 
@@ -43,8 +43,8 @@ struct DailyIntakeCard: View {
             .padding(.top, 4)
 
             Text("\(remaining) remaining")
-                .font(.system(size: 14))
-                .foregroundColor(remaining < -100 ? .red : .yellow)
+                .font(.system(size: 12))
+                .foregroundColor(remaining < -100 ? .red : Color.accessibleYellow(isDark))
                 .padding(.top, 4)
 
             // MARK: 👉 Meal Progress bar with labels above
@@ -72,6 +72,7 @@ struct DailyIntakeCard: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 32)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 180)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }

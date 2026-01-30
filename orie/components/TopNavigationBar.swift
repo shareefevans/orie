@@ -30,7 +30,7 @@ struct TopNavigationBar: View {
                     }
                 }) {
                     HStack(spacing: 8) {
-                        Image(systemName: "figure.run")
+                        Image(systemName: "circle.hexagonpath.fill")
                             .font(.system(size: 20))
                             .foregroundColor(Color.iconColor(isDark))
                             .frame(width: 24)

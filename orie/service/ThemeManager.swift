@@ -15,8 +15,12 @@ class ThemeManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // Load saved preference
-        isDarkMode = UserDefaults.standard.bool(forKey: themeKey)
+        // Load saved preference, default to dark mode if not set
+        if UserDefaults.standard.object(forKey: themeKey) == nil {
+            isDarkMode = true // Default to dark mode for new users
+        } else {
+            isDarkMode = UserDefaults.standard.bool(forKey: themeKey)
+        }
 
         // Save whenever isDarkMode changes
         $isDarkMode
@@ -76,5 +80,10 @@ extension Color {
     // Accent blue for Done buttons (consistent across light/dark mode)
     static var accentBlue: Color {
         Color(red: 0/255, green: 122/255, blue: 255/255)
+    }
+
+    // Accessible yellow (golden in light mode for readability)
+    static func accessibleYellow(_ isDark: Bool) -> Color {
+        isDark ? Color.yellow : Color(red: 253/255, green: 181/255, blue: 0/255)
     }
 }

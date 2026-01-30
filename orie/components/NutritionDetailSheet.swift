@@ -14,7 +14,7 @@ struct NutritionDetailSheet: View {
 
     // Dot colors matching HealthTabView
     private let caloriesDotColor = Color(red: 75/255, green: 78/255, blue: 255/255)
-    private let proteinDotColor = Color(red: 55/255, green: 48/255, blue: 163/255)
+    private let proteinDotColor = Color(red: 49/255, green: 209/255, blue: 149/255)
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)
     private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)
 

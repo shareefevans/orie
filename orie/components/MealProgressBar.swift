@@ -28,7 +28,7 @@ struct MealProgressBar: View {
     var animationDelay: Double = 0
 
     // MARK: 👉Macro colors
-    private let proteinColor = Color(red: 55/255, green: 48/255, blue: 163/255)    // Dark blue
+    private let proteinColor = Color(red: 49/255, green: 209/255, blue: 149/255)    // Teal
     private let carbsColor = Color(red: 135/255, green: 206/255, blue: 250/255)    // Light blue
     private let fatsColor = Color(red: 255/255, green: 180/255, blue: 50/255)      // Orange/Yellow
 

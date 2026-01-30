@@ -30,6 +30,7 @@ struct MainView: View {
     @FocusState private var isInputFocused: Bool
     @State private var editingEntryId: UUID? = nil
     @State private var consumedTabId: UUID = UUID()
+    @State private var isIntakeCardExpanded: Bool = false
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -103,6 +104,48 @@ struct MainView: View {
         Calendar.current.isDateInToday(selectedDate)
     }
 
+    // MARK: - ❇️ Weekly Data for Overview Card
+    private var currentWeekDates: [Date] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 2 // Monday is first day of week
+        let today = calendar.startOfDay(for: Date())
+
+        // Find the Monday of this week
+        let weekday = calendar.component(.weekday, from: today)
+        // weekday: 1 = Sunday, 2 = Monday, ..., 7 = Saturday
+        // Days to subtract to get to Monday
+        let daysFromMonday = (weekday + 5) % 7 // Converts so Monday = 0, Tuesday = 1, etc.
+        guard let monday = calendar.date(byAdding: .day, value: -daysFromMonday, to: today) else { return [] }
+
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: monday) }
+    }
+
+    private var weeklyMacroData: [DailyMacroData] {
+        let calendar = Calendar.current
+        return currentWeekDates.map { date in
+            let dayEntries = weeklyFoodEntries.filter { entry in
+                calendar.isDate(entry.entryDate, inSameDayAs: date)
+            }
+            let calories = dayEntries.reduce(0) { $0 + ($1.calories ?? 0) }
+            let protein = Int(dayEntries.reduce(0.0) { $0 + ($1.protein ?? 0) })
+            let carbs = Int(dayEntries.reduce(0.0) { $0 + ($1.carbs ?? 0) })
+            let fats = Int(dayEntries.reduce(0.0) { $0 + ($1.fats ?? 0) })
+            let sugars = 0 // TODO: Add sugar tracking
+
+            return DailyMacroData(
+                date: date,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fats: fats,
+                sugars: sugars
+            )
+        }
+    }
+
+    @State private var weeklyNote: String = "Tap to see your weekly overview and daily averages."
+    @State private var weeklyFoodEntries: [FoodEntry] = []
+
     // MARK: - ❇️ Functions
     // MARK: 👉 Add Food Entry
     private func addFoodEntry(foodName: String) {
@@ -137,6 +180,8 @@ struct MainView: View {
                         foodEntries[index].dbId = dbEntry.id
                         // Schedule meal reminder notification
                         localNotificationManager.scheduleMealNotification(for: foodEntries[index])
+                        // Refresh weekly data
+                        loadWeeklyFoodEntries()
                     }
                 }
             } catch APIError.sessionExpired {
@@ -182,6 +227,8 @@ struct MainView: View {
                         foodEntries[index].dbId = dbEntry.id
                         // Schedule meal reminder notification
                         localNotificationManager.scheduleMealNotification(for: foodEntries[index])
+                        // Refresh weekly data
+                        loadWeeklyFoodEntries()
                     }
                 }
             } catch APIError.sessionExpired {
@@ -193,7 +240,7 @@ struct MainView: View {
             }
         }
     }
-    
+
     // MARK: 👉 UpdateEntryTime
     private func updateEntryTime(_ entryId: UUID, newTime: Date) {
         guard let accessToken = authManager.getAccessToken(),
@@ -287,6 +334,7 @@ struct MainView: View {
                         id: dbId
                     )
                     loadFoodEntries()
+                    loadWeeklyFoodEntries()
                 } catch APIError.sessionExpired {
                     await MainActor.run {
                         authManager.handleSessionExpired()
@@ -360,6 +408,54 @@ struct MainView: View {
                 }
             } catch {
                 print("Failed to load food entries: \(error)")
+            }
+        }
+    }
+
+    // MARK: 👉 loadWeeklyFoodEntries
+    private func loadWeeklyFoodEntries() {
+        guard let accessToken = authManager.getAccessToken() else { return }
+
+        Task {
+            var allEntries: [FoodEntry] = []
+
+            for date in currentWeekDates {
+                do {
+                    let entries = try await FoodEntryService.getFoodEntries(
+                        accessToken: accessToken,
+                        date: date
+                    )
+
+                    let mappedEntries = entries.map { dbEntry -> FoodEntry in
+                        var entry = FoodEntry(foodName: dbEntry.foodName, entryDate: date)
+                        entry.dbId = dbEntry.id
+                        entry.calories = dbEntry.calories
+                        entry.protein = dbEntry.protein
+                        entry.carbs = dbEntry.carbs
+                        entry.fats = dbEntry.fats
+                        entry.servingSize = dbEntry.servingSize
+                        entry.isLoading = false
+
+                        if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
+                            entry.timestamp = timestamp
+                        }
+
+                        return entry
+                    }
+
+                    allEntries.append(contentsOf: mappedEntries)
+                } catch APIError.sessionExpired {
+                    await MainActor.run {
+                        authManager.handleSessionExpired()
+                    }
+                    return
+                } catch {
+                    print("Failed to load food entries for \(date): \(error)")
+                }
+            }
+
+            await MainActor.run {
+                weeklyFoodEntries = allEntries
             }
         }
     }
@@ -466,13 +562,6 @@ struct MainView: View {
                                 isDark: isDark,
                                 action: { selectedTab = "consumed" }
                             )
-
-                            TabButton(
-                                title: "Activity",
-                                isSelected: selectedTab == "activity",
-                                isDark: isDark,
-                                action: { selectedTab = "activity" }
-                            )
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 40)
@@ -497,6 +586,8 @@ struct MainView: View {
                             consumedSugar: consumedSugar,
                             dailySugarGoal: dailySugarGoal,
                             meals: mealBubbles,
+                            weeklyData: weeklyMacroData,
+                            weeklyNote: weeklyNote,
                             isDark: isDark
                         )
                         .listRowInsets(EdgeInsets())
@@ -510,7 +601,7 @@ struct MainView: View {
 
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Daily intake")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 12))
                                     .foregroundColor(Color.secondaryText(isDark))
                                     .fontWeight(.medium)
 
@@ -529,7 +620,7 @@ struct MainView: View {
 
                                 Text("\(remainingCalories) remaining")
                                     .font(.system(size: 14))
-                                    .foregroundColor(remainingCalories < -100 ? .red : .yellow)
+                                    .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
                                     .padding(.top, 4)
 
                                 VStack(spacing: 8) {
@@ -558,6 +649,82 @@ struct MainView: View {
                                     }
                                 }
                                 .padding(.top, 32)
+
+                                // Expandable macros section
+                                if isIntakeCardExpanded {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text("Today's Macros")
+                                            .font(.system(size: 16))
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(Color.primaryText(isDark))
+                                            .padding(.bottom, 8)
+                                            .padding(.top, 40)
+
+                                        // Protein row
+                                        HStack {
+                                            Circle()
+                                                .fill(Color(red: 49/255, green: 209/255, blue: 149/255))
+                                                .frame(width: 8, height: 8)
+                                            Text("Protein")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color.primaryText(isDark))
+                                            Spacer()
+                                            Text("\(consumedProtein)g")
+                                                .font(.system(size: 12))
+                                                .fontWeight(.regular)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                                .italic()
+                                        }
+
+                                        // Carbs row
+                                        HStack {
+                                            Circle()
+                                                .fill(Color(red: 135/255, green: 206/255, blue: 250/255))
+                                                .frame(width: 8, height: 8)
+                                            Text("Carbs")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color.primaryText(isDark))
+                                            Spacer()
+                                            Text("\(consumedCarbs)g")
+                                                .font(.system(size: 12))
+                                                .fontWeight(.regular)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                                .italic()
+                                        }
+
+                                        // Fats row
+                                        HStack {
+                                            Circle()
+                                                .fill(Color(red: 255/255, green: 180/255, blue: 50/255))
+                                                .frame(width: 8, height: 8)
+                                            Text("Fats")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color.primaryText(isDark))
+                                            Spacer()
+                                            Text("\(consumedFats)g")
+                                                .font(.system(size: 12))
+                                                .fontWeight(.regular)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                                .italic()
+                                        }
+
+                                        // Sugars row
+                                        HStack {
+                                            Circle()
+                                                .fill(Color.red)
+                                                .frame(width: 8, height: 8)
+                                            Text("Sugars")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color.primaryText(isDark))
+                                            Spacer()
+                                            Text("\(consumedSugar)g")
+                                                .font(.system(size: 12))
+                                                .fontWeight(.regular)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                                .italic()
+                                        }
+                                    }
+                                }
                             }
                             .padding(.top, 32)
                             .padding(.horizontal, 24)
@@ -565,6 +732,10 @@ struct MainView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.cardBackground(isDark))
                             .cornerRadius(32)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isIntakeCardExpanded.toggle()
+                            }
 
                             VStack(spacing: 0) {
 
@@ -627,18 +798,6 @@ struct MainView: View {
                             .cornerRadius(32)
                         }
                         .padding(.horizontal, 16)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-
-                    // MARK: 👉 Activity Tab
-                    if selectedTab == "activity" {
-                        ActivityTabView(
-                            burnedCalories: 0,
-                            dailyBurnGoal: 500,
-                            isDark: isDark
-                        )
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -741,6 +900,7 @@ struct MainView: View {
         // MARK: - ❇️ Lifecycle Handlers
         .onAppear {
             loadFoodEntries()
+            loadWeeklyFoodEntries()
             loadUserProfile()
         }
         .onChange(of: selectedDate) { _, _ in
@@ -749,9 +909,11 @@ struct MainView: View {
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 loadFoodEntries()
+                loadWeeklyFoodEntries()
                 loadUserProfile()
             } else {
                 foodEntries = []
+                weeklyFoodEntries = []
                 dailyCalorieGoal = 2300
                 dailyProteinGoal = 150
                 dailyCarbsGoal = 250
@@ -762,6 +924,7 @@ struct MainView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 loadFoodEntries()
+                loadWeeklyFoodEntries()
             }
         }
     }

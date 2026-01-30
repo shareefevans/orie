@@ -20,25 +20,38 @@ struct HealthTabView: View {
     let consumedSugar: Int
     let dailySugarGoal: Int
     let meals: [MealBubble]
+    let weeklyData: [DailyMacroData]
+    let weeklyNote: String
     var isDark: Bool = false
 
     // Dot colors for macros
-    private let proteinDotColor = Color(red: 55/255, green: 48/255, blue: 163/255)    // Dark blue
+    private let proteinDotColor = Color(red: 49/255, green: 209/255, blue: 149/255)    // Teal green
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)    // Light blue
     private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)      // Yellow
 
     var body: some View {
         VStack(spacing: 8) {
-            // MARK: - ❇️ Row 1 Daily Intake (full width)
-            DailyIntakeCard(
-                consumed: consumedCalories,
-                goal: dailyCalorieGoal,
-                meals: meals,
+            // MARK: - ❇️ Weekly Overview Card
+            WeeklyOverviewCard(
+                weekData: weeklyData,
+                note: weeklyNote,
+                dailyCalorieGoal: dailyCalorieGoal,
+                dailyProteinGoal: dailyProteinGoal,
+                dailyCarbsGoal: dailyCarbsGoal,
+                dailyFatsGoal: dailyFatsGoal,
+                dailySugarGoal: dailySugarGoal,
                 isDark: isDark
             )
 
-            // MARK: - ❇️ Row 2 Protein (left) | Carbs (right)
+            // MARK: - ❇️ Row 1: Daily Intake (left) | Protein (right)
             HStack(spacing: 8) {
+                DailyIntakeCard(
+                    consumed: consumedCalories,
+                    goal: dailyCalorieGoal,
+                    meals: meals,
+                    isDark: isDark
+                )
+
                 MacroDotCard(
                     title: "Protein",
                     consumed: consumedProtein,
@@ -46,7 +59,10 @@ struct HealthTabView: View {
                     dotColor: proteinDotColor,
                     isDark: isDark
                 )
+            }
 
+            // MARK: - ❇️ Row 2: Carbs (left) | Fats (right)
+            HStack(spacing: 8) {
                 MacroDotCard(
                     title: "Carbs",
                     consumed: consumedCarbs,
@@ -54,10 +70,7 @@ struct HealthTabView: View {
                     dotColor: carbsDotColor,
                     isDark: isDark
                 )
-            }
 
-            // MARK: - ❇️ Row 3: Fats (left) | Burned + Sugar stacked (right)
-            HStack(spacing: 8) {
                 MacroDotCard(
                     title: "Fats",
                     consumed: consumedFats,
@@ -65,14 +78,6 @@ struct HealthTabView: View {
                     dotColor: fatsDotColor,
                     isDark: isDark
                 )
-
-                // MARK: - ❇️ Burned and Sugar stacked vertically
-                VStack(spacing: 8) {
-                    BurnedMiniCard(burned: burnedCalories, isDark: isDark)
-                    SugarMiniCard(consumed: consumedSugar, isDark: isDark)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 180)
             }
         }
         .padding(.horizontal, 16)
@@ -80,7 +85,13 @@ struct HealthTabView: View {
 }
 
 #Preview {
-    HealthTabView(
+    let calendar = Calendar.current
+    let today = Date()
+    var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+    components.weekday = 2
+    let monday = calendar.date(from: components)!
+
+    return HealthTabView(
         consumedCalories: 1500,
         dailyCalorieGoal: 2300,
         burnedCalories: 0,
@@ -105,7 +116,13 @@ struct HealthTabView: View {
                 carbs: 25,
                 fats: 18
             )
-        ]
+        ],
+        weeklyData: [
+            DailyMacroData(date: monday, calories: 2200, protein: 150, carbs: 200, fats: 70, sugars: 25),
+            DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2400, protein: 180, carbs: 220, fats: 65, sugars: 30),
+            DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2100, protein: 140, carbs: 190, fats: 60, sugars: 20)
+        ],
+        weeklyNote: "Weeks looking good so far, but watch your fat levels. You've been over a few times..."
     )
     .background(Color.gray.opacity(0.1))
 }

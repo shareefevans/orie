@@ -63,7 +63,7 @@ struct FoodEntryRow: View {
                 }) {
                     Text(formatTime(entry.timestamp))
                         .font(.system(size: 14))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(Color.accessibleYellow(isDark))
                         .frame(width: 90, alignment: .leading)
                 }
                 .buttonStyle(.plain)

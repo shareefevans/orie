@@ -30,19 +30,14 @@ struct LoginView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     Spacer()
-                        .frame(height: 60)
+                        .frame(height: 20)
 
                     // MARK: - ❇️ Logo/Title
-                    VStack(spacing: 8) {
-                        Text("orie")
-                            .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(Color.primaryText(isDark))
-
-                        Text(isSignUp ? "Create your account" : "Welcome back")
-                            .font(.system(size: 16))
-                            .foregroundColor(Color.secondaryText(isDark))
-                    }
-                    .padding(.bottom, 32)
+                    Image("AppLogoText")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 150)
+                        .padding(.bottom, -36)
 
                     // MARK: - ❇️ Form Card
                     VStack(spacing: 16) {
@@ -52,8 +47,14 @@ struct LoginView: View {
                                 placeholder: "Full Name",
                                 text: $fullName,
                                 isDark: isDark,
-                                isSecure: false
+                                isSecure: false,
+                                icon: "person.circle"
                             )
+
+                            // Divider
+                            Rectangle()
+                                .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                                .frame(height: 1)
                         }
 
                         // MARK: 👉 Email
@@ -62,9 +63,15 @@ struct LoginView: View {
                             text: $email,
                             isDark: isDark,
                             isSecure: false,
+                            icon: "person.circle",
                             keyboardType: .emailAddress,
                             autocapitalization: .never
                         )
+
+                        // Divider
+                        Rectangle()
+                            .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                            .frame(height: 1)
 
                         // MARK: 👉 Password
                         AuthTextField(

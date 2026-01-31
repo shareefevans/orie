@@ -30,6 +30,7 @@ struct MainView: View {
     @FocusState private var isInputFocused: Bool
     @State private var editingEntryId: UUID? = nil
     @State private var consumedTabId: UUID = UUID()
+    @State private var healthTabId: UUID = UUID()
     @State private var isIntakeCardExpanded: Bool = false
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
@@ -144,12 +145,12 @@ struct MainView: View {
     }
 
     @State private var weeklyNote: String = "Tap to see your weekly overview and daily averages."
+    @State private var weeklyTip: String? = nil
     @State private var weeklyFoodEntries: [FoodEntry] = []
 
     // MARK: - ❇️ Functions
     // MARK: 👉 Add Food Entry
     private func addFoodEntry(foodName: String) {
-        guard let accessToken = authManager.getAccessToken() else { return }
         guard !foodName.isEmpty else { return }
 
         let newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
@@ -171,10 +172,12 @@ struct MainView: View {
                         foodEntries[index].isLoading = false
                     }
 
-                    let dbEntry = try await FoodEntryService.createFoodEntry(
-                        accessToken: accessToken,
-                        entry: foodEntries[index]
-                    )
+                    let dbEntry = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.createFoodEntry(
+                            accessToken: accessToken,
+                            entry: foodEntries[index]
+                        )
+                    }
 
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
@@ -185,9 +188,7 @@ struct MainView: View {
                     }
                 }
             } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
@@ -201,8 +202,6 @@ struct MainView: View {
 
     // MARK: 👉 addFoodEntryFromImage
     private func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse) {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         var newEntry = FoodEntry(foodName: result.description, entryDate: selectedDate)
         newEntry.calories = result.nutrition.calories
         newEntry.protein = result.nutrition.protein
@@ -217,10 +216,12 @@ struct MainView: View {
 
         Task {
             do {
-                let dbEntry = try await FoodEntryService.createFoodEntry(
-                    accessToken: accessToken,
-                    entry: newEntry
-                )
+                let dbEntry = try await authManager.withAuthRetry { accessToken in
+                    try await FoodEntryService.createFoodEntry(
+                        accessToken: accessToken,
+                        entry: newEntry
+                    )
+                }
 
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
@@ -232,9 +233,7 @@ struct MainView: View {
                     }
                 }
             } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Error saving image-analyzed entry: \(error)")
             }
@@ -243,8 +242,7 @@ struct MainView: View {
 
     // MARK: 👉 UpdateEntryTime
     private func updateEntryTime(_ entryId: UUID, newTime: Date) {
-        guard let accessToken = authManager.getAccessToken(),
-              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+        guard let index = foodEntries.firstIndex(where: { $0.id == entryId }),
               let dbId = foodEntries[index].dbId else { return }
 
         withAnimation {
@@ -256,15 +254,15 @@ struct MainView: View {
 
         Task {
             do {
-                _ = try await FoodEntryService.updateFoodEntry(
-                    accessToken: accessToken,
-                    id: dbId,
-                    timestamp: newTime
-                )
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
+                try await authManager.withAuthRetry { accessToken in
+                    _ = try await FoodEntryService.updateFoodEntry(
+                        accessToken: accessToken,
+                        id: dbId,
+                        timestamp: newTime
+                    )
                 }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to update entry time: \(error)")
             }
@@ -273,8 +271,7 @@ struct MainView: View {
 
     // MARK: 👉 UpdateFoodEntry
     private func updateFoodEntry(_ entryId: UUID, newFoodName: String) {
-        guard let accessToken = authManager.getAccessToken(),
-              let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+        guard let index = foodEntries.firstIndex(where: { $0.id == entryId }),
               let dbId = foodEntries[index].dbId else { return }
 
         withAnimation {
@@ -297,15 +294,15 @@ struct MainView: View {
                     foodEntries[index].isLoading = false
                 }
 
-                _ = try await FoodEntryService.updateFoodEntry(
-                    accessToken: accessToken,
-                    id: dbId,
-                    entry: foodEntries[index]
-                )
-            } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
+                try await authManager.withAuthRetry { accessToken in
+                    _ = try await FoodEntryService.updateFoodEntry(
+                        accessToken: accessToken,
+                        id: dbId,
+                        entry: foodEntries[index]
+                    )
                 }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to update food entry: \(error)")
                 await MainActor.run {
@@ -317,8 +314,6 @@ struct MainView: View {
 
     // MARK: 👉 DeleteFoodEntry
     private func deleteFoodEntry(_ entry: FoodEntry) {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         // Cancel the meal reminder notification
         localNotificationManager.cancelMealNotification(for: entry.id)
 
@@ -329,16 +324,16 @@ struct MainView: View {
         if let dbId = entry.dbId {
             Task {
                 do {
-                    try await FoodEntryService.deleteFoodEntry(
-                        accessToken: accessToken,
-                        id: dbId
-                    )
+                    try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.deleteFoodEntry(
+                            accessToken: accessToken,
+                            id: dbId
+                        )
+                    }
                     loadFoodEntries()
                     loadWeeklyFoodEntries()
                 } catch APIError.sessionExpired {
-                    await MainActor.run {
-                        authManager.handleSessionExpired()
-                    }
+                    // Already handled by withAuthRetry - user is logged out
                 } catch {
                     print("Failed to delete entry: \(error)")
                 }
@@ -348,11 +343,11 @@ struct MainView: View {
 
     // MARK: 👉 loadUserProfile
     private func loadUserProfile() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         Task {
             do {
-                let profile = try await AuthService.getProfile(accessToken: accessToken)
+                let profile = try await authManager.withAuthRetry { accessToken in
+                    try await AuthService.getProfile(accessToken: accessToken)
+                }
                 await MainActor.run {
                     if let calories = profile.dailyCalories, calories > 0 {
                         dailyCalorieGoal = calories
@@ -367,6 +362,8 @@ struct MainView: View {
                         dailyFatsGoal = fats
                     }
                 }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to load user profile: \(error)")
             }
@@ -375,14 +372,14 @@ struct MainView: View {
 
     // MARK: 👉 loadFoodEntries
     private func loadFoodEntries() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         Task {
             do {
-                let entries = try await FoodEntryService.getFoodEntries(
-                    accessToken: accessToken,
-                    date: selectedDate
-                )
+                let entries = try await authManager.withAuthRetry { accessToken in
+                    try await FoodEntryService.getFoodEntries(
+                        accessToken: accessToken,
+                        date: selectedDate
+                    )
+                }
 
                 await MainActor.run {
                     foodEntries = entries.map { dbEntry in
@@ -403,9 +400,7 @@ struct MainView: View {
                     }
                 }
             } catch APIError.sessionExpired {
-                await MainActor.run {
-                    authManager.handleSessionExpired()
-                }
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to load food entries: \(error)")
             }
@@ -414,17 +409,17 @@ struct MainView: View {
 
     // MARK: 👉 loadWeeklyFoodEntries
     private func loadWeeklyFoodEntries() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         Task {
             var allEntries: [FoodEntry] = []
 
             for date in currentWeekDates {
                 do {
-                    let entries = try await FoodEntryService.getFoodEntries(
-                        accessToken: accessToken,
-                        date: date
-                    )
+                    let entries = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.getFoodEntries(
+                            accessToken: accessToken,
+                            date: date
+                        )
+                    }
 
                     let mappedEntries = entries.map { dbEntry -> FoodEntry in
                         var entry = FoodEntry(foodName: dbEntry.foodName, entryDate: date)
@@ -445,9 +440,7 @@ struct MainView: View {
 
                     allEntries.append(contentsOf: mappedEntries)
                 } catch APIError.sessionExpired {
-                    await MainActor.run {
-                        authManager.handleSessionExpired()
-                    }
+                    // Already handled by withAuthRetry - user is logged out
                     return
                 } catch {
                     print("Failed to load food entries for \(date): \(error)")
@@ -456,6 +449,28 @@ struct MainView: View {
 
             await MainActor.run {
                 weeklyFoodEntries = allEntries
+            }
+        }
+    }
+
+    // MARK: 👉 loadWeeklyProgress
+    private func loadWeeklyProgress(forceRefresh: Bool = false) {
+        Task {
+            do {
+                let progress = try await authManager.withAuthRetry { accessToken in
+                    try await FoodEntryService.getWeeklyProgress(
+                        accessToken: accessToken,
+                        forceRefresh: forceRefresh
+                    )
+                }
+                await MainActor.run {
+                    weeklyNote = progress.statement
+                    weeklyTip = progress.tip
+                }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
+            } catch {
+                print("Failed to load weekly progress: \(error)")
             }
         }
     }
@@ -590,6 +605,7 @@ struct MainView: View {
                             weeklyNote: weeklyNote,
                             isDark: isDark
                         )
+                        .id(healthTabId)
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -642,11 +658,6 @@ struct MainView: View {
                                         isDark: isDark
                                     )
                                     .id(consumedTabId)
-                                    .onChange(of: selectedTab) { _, newTab in
-                                        if newTab == "consumed" {
-                                            consumedTabId = UUID()
-                                        }
-                                    }
                                 }
                                 .padding(.top, 32)
 
@@ -811,6 +822,7 @@ struct MainView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
+                .scrollIndicators(.hidden)
                 .onChange(of: foodEntries.count) { oldValue, newValue in
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation {
@@ -902,15 +914,24 @@ struct MainView: View {
             loadFoodEntries()
             loadWeeklyFoodEntries()
             loadUserProfile()
+            loadWeeklyProgress()
         }
         .onChange(of: selectedDate) { _, _ in
             loadFoodEntries()
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == "consumed" {
+                consumedTabId = UUID()
+            } else if newTab == "health" {
+                healthTabId = UUID()
+            }
         }
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
                 loadFoodEntries()
                 loadWeeklyFoodEntries()
                 loadUserProfile()
+                loadWeeklyProgress()
             } else {
                 foodEntries = []
                 weeklyFoodEntries = []
@@ -919,12 +940,15 @@ struct MainView: View {
                 dailyCarbsGoal = 250
                 dailyFatsGoal = 65
                 dailySugarGoal = 50
+                weeklyNote = "Tap to see your weekly overview and daily averages."
+                weeklyTip = nil
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 loadFoodEntries()
                 loadWeeklyFoodEntries()
+                loadWeeklyProgress()
             }
         }
     }

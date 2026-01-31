@@ -13,6 +13,29 @@ enum APIError: Error {
     case badURL
 }
 
+// MARK: - Weekly Progress Models
+
+struct MacroComparison: Codable {
+    let actual: Int
+    let goal: Int
+    let percentage: Int
+    let status: String
+}
+
+struct WeeklyAverages: Codable {
+    let calories: MacroComparison
+    let protein: MacroComparison
+    let carbs: MacroComparison
+    let fats: MacroComparison
+}
+
+struct WeeklyProgressResponse: Codable {
+    let daysTracked: Int
+    let averages: WeeklyAverages
+    let statement: String
+    let tip: String?
+}
+
 class FoodEntryService {
     static let baseURL = APIService.baseURL
     
@@ -237,5 +260,39 @@ class FoodEntryService {
         guard httpResponse.statusCode < 400 else {
             throw APIError.badResponse
         }
+    }
+
+    // MARK: - Weekly Progress
+
+    static func getWeeklyProgress(accessToken: String, forceRefresh: Bool = false) async throws -> WeeklyProgressResponse {
+        var urlString = "\(baseURL)/api/progress/weekly"
+        if forceRefresh {
+            urlString += "?refresh=true"
+        }
+
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.badResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard httpResponse.statusCode < 400 else {
+            throw APIError.badResponse
+        }
+
+        let result = try JSONDecoder().decode(WeeklyProgressResponse.self, from: data)
+        return result
     }
 }

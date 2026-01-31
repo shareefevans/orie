@@ -268,6 +268,10 @@ class AuthService {
             throw URLError(.badServerResponse)
         }
 
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
         if httpResponse.statusCode >= 400 {
             throw AuthError.serverError("Failed to fetch profile")
         }
@@ -319,6 +323,10 @@ class AuthService {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
         }
 
         if httpResponse.statusCode >= 400 {

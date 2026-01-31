@@ -293,14 +293,11 @@ struct ProfileSheet: View {
     // MARK: - ❇️ Functions
     // MARK: 👉 Load Profiles
     private func loadProfile() {
-        guard let accessToken = authManager.getAccessToken() else {
-            isLoading = false
-            return
-        }
-
         Task {
             do {
-                let profile = try await AuthService.getProfile(accessToken: accessToken)
+                let profile = try await authManager.withAuthRetry { accessToken in
+                    try await AuthService.getProfile(accessToken: accessToken)
+                }
                 await MainActor.run {
                     userName = profile.fullName ?? ""
                     age = profile.age ?? 0
@@ -312,6 +309,9 @@ struct ProfileSheet: View {
                     dailyFats = profile.dailyFats ?? 0
                     isLoading = false
                 }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
+                isLoading = false
             } catch {
                 print("Failed to load profile: \(error)")
                 isLoading = false
@@ -321,20 +321,22 @@ struct ProfileSheet: View {
 
     // MARK: 👉 Save Profile
     private func saveProfile() {
-        guard let accessToken = authManager.getAccessToken() else { return }
-
         Task {
             do {
-                _ = try await AuthService.updateProfile(
-                    accessToken: accessToken,
-                    age: age > 0 ? age : nil,
-                    height: height > 0 ? Double(height) : nil,
-                    weight: weight > 0 ? Double(weight) : nil,
-                    dailyCalories: dailyCalories > 0 ? dailyCalories : nil,
-                    dailyProtein: dailyProtein > 0 ? dailyProtein : nil,
-                    dailyCarbs: dailyCarbs > 0 ? dailyCarbs : nil,
-                    dailyFats: dailyFats > 0 ? dailyFats : nil
-                )
+                try await authManager.withAuthRetry { accessToken in
+                    _ = try await AuthService.updateProfile(
+                        accessToken: accessToken,
+                        age: age > 0 ? age : nil,
+                        height: height > 0 ? Double(height) : nil,
+                        weight: weight > 0 ? Double(weight) : nil,
+                        dailyCalories: dailyCalories > 0 ? dailyCalories : nil,
+                        dailyProtein: dailyProtein > 0 ? dailyProtein : nil,
+                        dailyCarbs: dailyCarbs > 0 ? dailyCarbs : nil,
+                        dailyFats: dailyFats > 0 ? dailyFats : nil
+                    )
+                }
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to save profile: \(error)")
             }

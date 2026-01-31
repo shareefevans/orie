@@ -174,9 +174,10 @@ struct WeeklyOverviewCard: View {
 
                 // Chart bars
                 HStack(alignment: .bottom, spacing: 0) {
-                    ForEach(weekDays, id: \.self) { date in
+                    ForEach(Array(weekDays.enumerated()), id: \.element) { dayIndex, date in
                         let data = dataForDate(date)
                         let hasData = data != nil && data!.calories > 0
+                        let baseDelay = Double(dayIndex) * 0.05
 
                         VStack(spacing: 8) {
                             // Bars - always show, height based on data (dots when no data)
@@ -186,25 +187,29 @@ struct WeeklyOverviewCard: View {
                                     goal: dailyCalorieGoal,
                                     color: caloriesColor,
                                     showAsDot: !hasData,
-                                    overThreshold: 150
+                                    overThreshold: 150,
+                                    animationDelay: baseDelay
                                 )
                                 MacroBar(
                                     value: hasData ? (data?.protein ?? 0) : 0,
                                     goal: dailyProteinGoal,
                                     color: proteinColor,
-                                    showAsDot: !hasData
+                                    showAsDot: !hasData,
+                                    animationDelay: baseDelay + 0.02
                                 )
                                 MacroBar(
                                     value: hasData ? (data?.carbs ?? 0) : 0,
                                     goal: dailyCarbsGoal,
                                     color: carbsColor,
-                                    showAsDot: !hasData
+                                    showAsDot: !hasData,
+                                    animationDelay: baseDelay + 0.04
                                 )
                                 MacroBar(
                                     value: hasData ? (data?.fats ?? 0) : 0,
                                     goal: dailyFatsGoal,
                                     color: fatsColor,
-                                    showAsDot: !hasData
+                                    showAsDot: !hasData,
+                                    animationDelay: baseDelay + 0.06
                                 )
                             }
                             .frame(height: 44, alignment: .bottom)
@@ -315,10 +320,14 @@ struct MacroBar: View {
     let color: Color
     var showAsDot: Bool = false
     var overThreshold: Int = 50 // Amount over goal to trigger extra height (150 for calories, 50 for macros)
+    var animationDelay: Double = 0
     let chartHeight: CGFloat = 44
     let maxExtraHeight: CGFloat = 2
 
-    private var height: CGFloat {
+    @State private var animatedHeight: CGFloat = 0
+    @State private var dotScale: CGFloat = 0
+
+    private var targetHeight: CGFloat {
         if showAsDot {
             return 6 // Dot size
         }
@@ -344,10 +353,21 @@ struct MacroBar: View {
             Circle()
                 .fill(color)
                 .frame(width: 6, height: 6)
+                .scaleEffect(dotScale)
+                .onAppear {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(animationDelay)) {
+                        dotScale = 1
+                    }
+                }
         } else {
             RoundedRectangle(cornerRadius: 3)
                 .fill(color)
-                .frame(width: 6, height: height)
+                .frame(width: 6, height: animatedHeight)
+                .onAppear {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(animationDelay)) {
+                        animatedHeight = targetHeight
+                    }
+                }
         }
     }
 }

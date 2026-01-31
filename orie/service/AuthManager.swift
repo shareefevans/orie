@@ -144,6 +144,31 @@ class AuthManager: ObservableObject {
         isAuthenticated = false
     }
 
+    /// Attempts to refresh the token and returns whether it succeeded.
+    /// Use this for 401 retry logic - only logs out if refresh fails.
+    func attemptTokenRefresh() async -> Bool {
+        guard let refreshToken = getRefreshToken() else {
+            handleSessionExpired()
+            return false
+        }
+
+        do {
+            let response = try await AuthService.refreshSession(refreshToken: refreshToken)
+
+            if let session = response.session {
+                saveSession(session)
+                currentUser = response.user
+                return true
+            } else {
+                handleSessionExpired()
+                return false
+            }
+        } catch {
+            handleSessionExpired()
+            return false
+        }
+    }
+
     // MARK: - Session Management
 
     private func saveSession(_ session: AuthService.Session) {
@@ -162,6 +187,35 @@ class AuthManager: ObservableObject {
 
     func getRefreshToken() -> String? {
         return UserDefaults.standard.string(forKey: refreshTokenKey)
+    }
+
+    // MARK: - API Call with Retry
+
+    /// Executes an authenticated API call with automatic 401 retry.
+    /// If the call fails with sessionExpired, attempts to refresh the token and retry once.
+    /// - Parameter operation: A closure that performs the API call using the current access token
+    /// - Returns: The result of the API call
+    /// - Throws: The original error if retry fails, or non-401 errors
+    func withAuthRetry<T>(_ operation: @escaping (String) async throws -> T) async throws -> T {
+        guard let accessToken = getAccessToken() else {
+            handleSessionExpired()
+            throw APIError.sessionExpired
+        }
+
+        do {
+            return try await operation(accessToken)
+        } catch APIError.sessionExpired {
+            // Attempt to refresh the token
+            let refreshed = await attemptTokenRefresh()
+
+            if refreshed, let newAccessToken = getAccessToken() {
+                // Retry with new token
+                return try await operation(newAccessToken)
+            } else {
+                // Refresh failed, user is logged out
+                throw APIError.sessionExpired
+            }
+        }
     }
 
     // MARK: - Refresh Session

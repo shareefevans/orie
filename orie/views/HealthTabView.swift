@@ -24,6 +24,7 @@ struct HealthTabView: View {
     let weeklyNote: String
     var isDark: Bool = false
 
+
     // Dot colors for macros
     private let proteinDotColor = Color(red: 49/255, green: 209/255, blue: 149/255)    // Teal green
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)    // Light blue

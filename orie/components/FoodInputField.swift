@@ -18,6 +18,7 @@ struct FoodInputField: View {
     var onSubmit: (String) -> Void
     var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
     @FocusState.Binding var isFocused: Bool
+    var authManager: AuthManager? = nil
 
     #if os(iOS)
     @State private var isRecording = false
@@ -27,6 +28,10 @@ struct FoodInputField: View {
     @State private var audioEngine = AVAudioEngine()
     @State private var showCameraPicker = false
     @State private var isAnalyzingImage = false
+
+    // Autocomplete state
+    @State private var autocompleteSuggestion: String? = nil
+    @State private var autocompleteTask: Task<Void, Never>? = nil
     #endif
 
     var body: some View {
@@ -49,19 +54,51 @@ struct FoodInputField: View {
                     .lineLimit(1...5)
                     .focused($isFocused)
                     .offset(x: -8)
+                    #if os(iOS)
+                    .autocorrectionDisabled(false)
+                    .textInputAutocapitalization(.never)
+                    #endif
                     .onChange(of: text) { oldValue, newValue in
                         if newValue.contains("\n") {
                             let trimmed = newValue.replacingOccurrences(of: "\n", with: "")
                                 .trimmingCharacters(in: .whitespacesAndNewlines)
                             text = ""
+                            #if os(iOS)
+                            autocompleteSuggestion = nil
+                            #endif
                             if !trimmed.isEmpty {
                                 onSubmit(trimmed)
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                     isFocused = true
                                 }
                             }
+                        } else {
+                            #if os(iOS)
+                            fetchAutocompleteSuggestion(for: newValue)
+                            #endif
                         }
                     }
+                    #if os(iOS)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            if let suggestion = autocompleteSuggestion {
+                                Button {
+                                    selectSuggestion(suggestion)
+                                } label: {
+                                    Text(suggestion)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                        .padding(.horizontal, 16)
+                                }
+                                .buttonStyle(.plain)
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                    #endif
             }
 
             Spacer()
@@ -163,6 +200,58 @@ struct FoodInputField: View {
         formatter.dateFormat = "hh:mma"
         return formatter.string(from: Date()).lowercased()
     }
+
+    #if os(iOS)
+    private func fetchAutocompleteSuggestion(for input: String) {
+        // Cancel any existing task
+        autocompleteTask?.cancel()
+
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Clear suggestion if input is too short or no auth manager
+        guard trimmed.count >= 2, let authManager = authManager else {
+            autocompleteSuggestion = nil
+            return
+        }
+
+        // Debounce: wait 300ms before fetching
+        autocompleteTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+
+            guard !Task.isCancelled else { return }
+
+            do {
+                let suggestions = try await authManager.withAuthRetry { accessToken in
+                    try await FoodHistoryService.getAutocompleteSuggestions(
+                        accessToken: accessToken,
+                        partialName: trimmed,
+                        limit: 1
+                    )
+                }
+
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    autocompleteSuggestion = suggestions.first
+                }
+            } catch {
+                // Silently fail - autocomplete is a nice-to-have
+                await MainActor.run {
+                    autocompleteSuggestion = nil
+                }
+            }
+        }
+    }
+
+    private func selectSuggestion(_ suggestion: String) {
+        text = ""
+        autocompleteSuggestion = nil
+        onSubmit(suggestion)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            isFocused = true
+        }
+    }
+    #endif
 
     #if os(iOS)
     private func startRecording() {

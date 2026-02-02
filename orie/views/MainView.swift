@@ -158,7 +158,34 @@ struct MainView: View {
 
         Task {
             do {
-                let nutrition = try await APIService.getNutrition(for: newEntry.foodName)
+                // First, check if we've logged this food before
+                let previousData = try await authManager.withAuthRetry { accessToken in
+                    try await FoodHistoryService.findPreviousEntry(
+                        accessToken: accessToken,
+                        foodName: foodName
+                    )
+                }
+
+                var nutrition: APIService.NutritionResponse
+
+                if let cached = previousData {
+                    // Use cached nutrition data
+                    print("📦 Using cached nutrition for: \(foodName)")
+                    nutrition = APIService.NutritionResponse(
+                        foodName: foodName,
+                        calories: cached.calories,
+                        protein: cached.protein,
+                        carbs: cached.carbs,
+                        fats: cached.fats,
+                        servingSize: cached.servingSize,
+                        imageUrl: nil,
+                        sources: nil
+                    )
+                } else {
+                    // Fetch fresh nutrition data from API
+                    print("🌐 Fetching fresh nutrition for: \(foodName)")
+                    nutrition = try await APIService.getNutrition(for: foodName)
+                }
 
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
@@ -181,9 +208,7 @@ struct MainView: View {
 
                     await MainActor.run {
                         foodEntries[index].dbId = dbEntry.id
-                        // Schedule meal reminder notification
                         localNotificationManager.scheduleMealNotification(for: foodEntries[index])
-                        // Refresh weekly data
                         loadWeeklyFoodEntries()
                     }
                 }
@@ -797,7 +822,8 @@ struct MainView: View {
                                         }
                                     }
                                 },
-                                isFocused: $isInputFocused
+                                isFocused: $isInputFocused,
+                                authManager: authManager
                             )
                             }
                             .id(filteredEntries.map { $0.id.uuidString }.joined())

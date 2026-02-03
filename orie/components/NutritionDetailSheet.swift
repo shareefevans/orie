@@ -18,6 +18,13 @@ struct NutritionDetailSheet: View {
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)
     private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)
 
+    // Custom divider color #363636
+    private var customDivider: some View {
+        Rectangle()
+            .fill(Color(red: 54/255, green: 54/255, blue: 54/255))
+            .frame(height: 1)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - ❇️ Header with nutritional information and done button
@@ -39,7 +46,7 @@ struct NutritionDetailSheet: View {
             }
             .padding(.horizontal, 8)
             .padding(.top, 16)
-            .padding(.bottom, 24)
+            .padding(.bottom, 16)
 
             VStack(spacing: 24) {
                 // MARK: 👉Food name
@@ -52,62 +59,53 @@ struct NutritionDetailSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
+                    .padding(.bottom, 24)
+            }
 
-                // MARK: 👉Sources row (buttons)
-                if let sources = entry.sources, !sources.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(sources) { source in
-                                Button(action: {
-                                    if let url = URL(string: source.url) {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }) {
-                                    HStack(spacing: 8) {
-                                        AsyncImage(url: URL(string: source.icon)) { image in
-                                            image
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                        } placeholder: {
-                                            Image(systemName: "globe")
-                                                .foregroundColor(Color.secondaryText(isDark))
-                                        }
-                                        .frame(width: 16, height: 16)
-
-                                        Text(source.name)
-                                            .font(.footnote)
-                                            .foregroundColor(Color.primaryText(isDark))
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .frame(height: 50)
-                                    .background(Color.cardBackground(isDark))
-                                    .clipShape(RoundedRectangle(cornerRadius: 100))
-                                    .glassEffect(.regular.interactive())
+            // MARK: 👉Sources row (buttons)
+            if let sources = entry.sources, !sources.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(sources) { source in
+                            Button(action: {
+                                if let url = URL(string: source.url) {
+                                    UIApplication.shared.open(url)
                                 }
-                                .buttonStyle(.plain)
+                            }) {
+                                HStack(spacing: 8) {
+                                    AsyncImage(url: URL(string: source.icon)) { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                    } placeholder: {
+                                        Image(systemName: "globe")
+                                            .foregroundColor(Color.secondaryText(isDark))
+                                    }
+                                    .frame(width: 16, height: 16)
+
+                                    Text(source.name)
+                                        .font(.footnote)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                }
+                                .padding(.horizontal, 16)
+                                .frame(height: 50)
+                                .background(Color.cardBackground(isDark))
+                                .clipShape(RoundedRectangle(cornerRadius: 100))
+                                .glassEffect(.regular.interactive())
                             }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 8)
                     }
-                    .scrollClipDisabled(true)
+                    .padding(.horizontal, 8)
                 }
+                .scrollClipDisabled(true)
+                .padding(.bottom, 24)
+            }
 
-                // MARK: 👉Two-column layout: Breakdown and Totals
-                VStack(spacing: 12) {
-                    // Header row
-                    HStack(spacing: 0) {
-                        Text("Breakdown")
-                            .font(.footnote)
-                            .foregroundColor(Color.secondaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text("Totals")
-                            .font(.footnote)
-                            .foregroundColor(Color.secondaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
-
-                    Divider()
+            // MARK: 👉Macro rows with dividers
+            ScrollView {
+                VStack(spacing: 0) {
+                    customDivider
 
                     // MARK: - ❇️ Calories row
                     HStack(spacing: 0) {
@@ -126,6 +124,9 @@ struct NutritionDetailSheet: View {
                             .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
+                    .padding(.vertical, 24)
+
+                    customDivider
 
                     // MARK: - ❇️ Protein row
                     HStack(spacing: 0) {
@@ -144,6 +145,9 @@ struct NutritionDetailSheet: View {
                             .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
+                    .padding(.vertical, 24)
+
+                    customDivider
 
                     // MARK: - ❇️ Carbs row
                     HStack(spacing: 0) {
@@ -162,6 +166,9 @@ struct NutritionDetailSheet: View {
                             .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
+                    .padding(.vertical, 24)
+
+                    customDivider
 
                     // MARK: ❇️ - Fat row
                     HStack(spacing: 0) {
@@ -180,16 +187,21 @@ struct NutritionDetailSheet: View {
                             .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                }
-                .padding(.top, 8)
-                .padding(.horizontal, 8)
+                    .padding(.vertical, 24)
 
-                Spacer()
+                    // Extra space at bottom
+                    Color.clear
+                        .frame(height: 8)
+                }
             }
+            .padding(.horizontal, 8)
+
+            Spacer(minLength: 8)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 24)
         .padding(.top, 32)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(Color.cardBackground(isDark))
     }
 }
@@ -197,6 +209,6 @@ struct NutritionDetailSheet: View {
 #Preview {
     NutritionDetailSheet(
         entry: FoodEntry(foodName: "KFC Zinger Burger"),
-        isDark: false
+        isDark: true
     )
 }

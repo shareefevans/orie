@@ -186,7 +186,7 @@ struct FoodEntryRow: View {
         }
         .sheet(isPresented: $showNutritionDetail) {
             NutritionDetailSheet(entry: entry, isDark: isDark)
-                .presentationDetents([.height(400)])
+                .presentationDetents([.height(520)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.cardBackground(isDark))
         }

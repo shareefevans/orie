@@ -90,21 +90,23 @@ struct NutritionEditSheet: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.top, 12)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKeyboardOpen)
 
-            // MARK: - Food name (read-only)
-            Text(entry.foodName)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.primaryText(isDark))
-                .lineLimit(nil)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.top, 16)
-                .padding(.bottom, 24)
+            VStack(spacing: 24) {
+                // MARK: - Food name (read-only)
+                Text(entry.foodName)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color.primaryText(isDark))
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 24)
+            }
 
             // MARK: - Editable fields with dividers
             ScrollViewReader { proxy in

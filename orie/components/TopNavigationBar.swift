@@ -41,7 +41,7 @@ struct TopNavigationBar: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .frame(height: 50)
                     .glassEffect(.regular.interactive())
                 }
 
@@ -56,9 +56,12 @@ struct TopNavigationBar: View {
                             .font(.callout)
                             .foregroundColor(isDark ? .black : .white)
                             .frame(width: 50, height: 50)
-                            .background(Color.yellow)
+                            .background {
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(Circle().fill(Color.yellow))
+                            }
                             .clipShape(Circle())
-                            .glassEffect(.regular.interactive())
                     }
                     .transition(.move(edge: .leading).combined(with: .opacity).combined(with: .scale))
                 }
@@ -117,9 +120,12 @@ struct TopNavigationBar: View {
                         .font(.callout)
                         .foregroundColor(isDark ? .black : .white)
                         .frame(width: 50, height: 50)
-                        .background(Color.yellow)
+                        .background {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .overlay(Circle().fill(Color.yellow))
+                        }
                         .clipShape(Circle())
-                        .glassEffect(.regular.interactive())
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
             }

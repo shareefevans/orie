@@ -366,6 +366,38 @@ struct MainView: View {
         }
     }
 
+    // MARK: 👉 UpdateEntryNutrition
+    private func updateEntryNutrition(_ entryId: UUID, calories: Int, protein: Double, carbs: Double, fats: Double) {
+        guard let index = foodEntries.firstIndex(where: { $0.id == entryId }),
+              let dbId = foodEntries[index].dbId else { return }
+
+        // Update local state immediately
+        withAnimation {
+            foodEntries[index].calories = calories
+            foodEntries[index].protein = protein
+            foodEntries[index].carbs = carbs
+            foodEntries[index].fats = fats
+        }
+
+        // Persist to database
+        Task {
+            do {
+                try await authManager.withAuthRetry { accessToken in
+                    _ = try await FoodEntryService.updateFoodEntry(
+                        accessToken: accessToken,
+                        id: dbId,
+                        entry: foodEntries[index]
+                    )
+                }
+                loadWeeklyFoodEntries()
+            } catch APIError.sessionExpired {
+                // Already handled by withAuthRetry - user is logged out
+            } catch {
+                print("Failed to update nutrition: \(error)")
+            }
+        }
+    }
+
     // MARK: 👉 loadUserProfile
     private func loadUserProfile() {
         Task {
@@ -788,6 +820,9 @@ struct MainView: View {
                                     },
                                     onFoodNameChange: { newFoodName in
                                         updateFoodEntry(entry.id, newFoodName: newFoodName)
+                                    },
+                                    onNutritionChange: { calories, protein, carbs, fats in
+                                        updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
                                     },
                                     isEditing: Binding(
                                         get: { editingEntryId == entry.id },

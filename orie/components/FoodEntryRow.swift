@@ -13,10 +13,12 @@ struct FoodEntryRow: View {
     var onTimeChange: (Date) -> Void
     var onDelete: (() -> Void)?
     var onFoodNameChange: ((String) -> Void)?
+    var onNutritionChange: ((Int, Double, Double, Double) -> Void)?
     @Binding var isEditing: Bool
 
     @State private var showTimePicker = false
     @State private var showNutritionDetail = false
+    @State private var showNutritionEdit = false
     @State private var selectedTime: Date
     @State private var sparkleScale: CGFloat = 1.0
     @State private var offset: CGFloat = 0
@@ -24,12 +26,13 @@ struct FoodEntryRow: View {
     @State private var editedFoodName: String
     @FocusState private var isTextFieldFocused: Bool
 
-    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
+    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, onNutritionChange: ((Int, Double, Double, Double) -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
         self.entry = entry
         self.isDark = isDark
         self.onTimeChange = onTimeChange
         self.onDelete = onDelete
         self.onFoodNameChange = onFoodNameChange
+        self.onNutritionChange = onNutritionChange
         self._isEditing = isEditing
         _selectedTime = State(initialValue: entry.timestamp)
         _editedFoodName = State(initialValue: entry.foodName)
@@ -110,7 +113,7 @@ struct FoodEntryRow: View {
                         }
                 }
 
-                // MARK: 👉 Calories (right)
+                // MARK: 👉 Calories (right) - Tap to edit nutrition
                 if entry.isLoading {
                     Image(systemName: "sparkle")
                         .font(.system(size: 14))
@@ -132,10 +135,15 @@ struct FoodEntryRow: View {
                         }
                         .frame(width: 90, alignment: .trailing)
                 } else if let calories = entry.calories {
-                    Text("\(calories) cal")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.secondaryText(isDark))
-                        .frame(width: 90, alignment: .trailing)
+                    Button(action: {
+                        showNutritionEdit = true
+                    }) {
+                        Text("\(calories) cal")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.secondaryText(isDark))
+                            .frame(width: 90, alignment: .trailing)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.vertical, 12)
@@ -181,6 +189,14 @@ struct FoodEntryRow: View {
                 .presentationDetents([.height(400)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.cardBackground(isDark))
+        }
+        .sheet(isPresented: $showNutritionEdit) {
+            NutritionEditSheet(entry: entry, isDark: isDark) { calories, protein, carbs, fats in
+                onNutritionChange?(calories, protein, carbs, fats)
+            }
+            .presentationDetents([.height(520)])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(Color.cardBackground(isDark))
         }
         .onChange(of: isEditing) { oldValue, newValue in
             if oldValue && !newValue && isTextFieldFocused {

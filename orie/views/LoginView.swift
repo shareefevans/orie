@@ -16,8 +16,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var fullName = ""
     @State private var isLoading = false
-    @State private var showOAuthSheet = false
-    @State private var oauthURL: URL?
+    @State private var appleSignInHelper = AppleSignInHelper()
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -158,9 +157,7 @@ struct LoginView: View {
                             backgroundColor: isDark ? Color.white : Color.black,
                             textColor: isDark ? .black : .white
                         ) {
-                            Task {
-                                await handleAppleSignIn()
-                            }
+                            handleAppleSignIn()
                         }
                     }
                     .padding(.horizontal, 16)
@@ -186,16 +183,6 @@ struct LoginView: View {
 
                     Spacer()
                         .frame(height: 40)
-                }
-            }
-        }
-        .sheet(isPresented: $showOAuthSheet) {
-            if let url = oauthURL {
-                OAuthWebView(url: url) { code in
-                    showOAuthSheet = false
-                    Task {
-                        await authManager.handleOAuthCallback(code: code)
-                    }
                 }
             }
         }
@@ -227,18 +214,35 @@ struct LoginView: View {
     }
 
     private func handleGoogleSignIn() async {
-        if let urlString = await authManager.getGoogleOAuthURL(),
-           let url = URL(string: urlString) {
-            oauthURL = url
-            showOAuthSheet = true
+        guard let urlString = await authManager.getGoogleOAuthURL(),
+              let url = URL(string: urlString) else {
+            return
+        }
+
+        OAuthHelper.startOAuth(url: url) { code in
+            Task {
+                await authManager.handleOAuthCallback(code: code)
+            }
+        } onError: { error in
+            if let error = error {
+                print("OAuth error: \(error)")
+            }
         }
     }
 
-    private func handleAppleSignIn() async {
-        if let urlString = await authManager.getAppleOAuthURL(),
-           let url = URL(string: urlString) {
-            oauthURL = url
-            showOAuthSheet = true
+    private func handleAppleSignIn() {
+        appleSignInHelper.startSignIn { identityToken, email, fullName in
+            Task {
+                await authManager.signInWithApple(
+                    identityToken: identityToken,
+                    fullName: fullName,
+                    email: email
+                )
+            }
+        } onError: { error in
+            if let error = error {
+                print("Apple Sign-In error: \(error)")
+            }
         }
     }
 }

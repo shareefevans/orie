@@ -166,19 +166,34 @@ class AuthService {
         return oauthURL
     }
 
-    static func getAppleOAuthURL() async throws -> String {
-        guard let url = URL(string: "\(baseURL)/api/auth/apple") else {
+    static func signInWithApple(identityToken: String, fullName: String?, email: String?) async throws -> AuthResponse {
+        guard let url = URL(string: "\(baseURL)/api/auth/apple/native") else {
             throw URLError(.badURL)
         }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let response = try JSONDecoder().decode(OAuthURLResponse.self, from: data)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        guard let oauthURL = response.url else {
-            throw AuthError.serverError(response.error ?? "Failed to get OAuth URL")
+        var body: [String: Any] = ["identityToken": identityToken]
+        if let fullName = fullName { body["fullName"] = fullName }
+        if let email = email { body["email"] = email }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
         }
 
-        return oauthURL
+        let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+
+        if httpResponse.statusCode >= 400 {
+            throw AuthError.serverError(authResponse.error ?? "Apple sign-in failed")
+        }
+
+        return authResponse
     }
 
     static func exchangeCodeForSession(code: String) async throws -> AuthResponse {

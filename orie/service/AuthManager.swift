@@ -96,12 +96,25 @@ class AuthManager: ObservableObject {
         }
     }
 
-    func getAppleOAuthURL() async -> String? {
+    func signInWithApple(identityToken: String, fullName: String?, email: String?) async {
+        errorMessage = nil
+
         do {
-            return try await AuthService.getAppleOAuthURL()
+            let response = try await AuthService.signInWithApple(
+                identityToken: identityToken,
+                fullName: fullName,
+                email: email
+            )
+
+            if let session = response.session {
+                saveSession(session)
+                currentUser = response.user
+                isAuthenticated = true
+            }
+        } catch let error as AuthError {
+            errorMessage = error.localizedDescription
         } catch {
-            errorMessage = "Failed to initiate Apple sign-in"
-            return nil
+            errorMessage = "Failed to complete Apple sign-in"
         }
     }
 

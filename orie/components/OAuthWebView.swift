@@ -6,41 +6,58 @@
 //
 
 import SwiftUI
-import WebKit
+import UIKit
+import AuthenticationServices
 
-struct OAuthWebView: UIViewRepresentable {
-    let url: URL
-    let onCodeReceived: (String) -> Void
+struct OAuthHelper {
+    static func startOAuth(url: URL, onCodeReceived: @escaping (String) -> Void, onError: @escaping (Error?) -> Void) {
+        let callbackScheme = "orie"
 
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        webView.navigationDelegate = context.coordinator
-        webView.load(URLRequest(url: url))
-        return webView
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onCodeReceived: onCodeReceived)
-    }
-
-    class Coordinator: NSObject, WKNavigationDelegate {
-        let onCodeReceived: (String) -> Void
-
-        init(onCodeReceived: @escaping (String) -> Void) {
-            self.onCodeReceived = onCodeReceived
-        }
-
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            if let url = navigationAction.request.url,
-               let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
-               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
-                onCodeReceived(code)
-                decisionHandler(.cancel)
+        let session = ASWebAuthenticationSession(
+            url: url,
+            callbackURLScheme: callbackScheme
+        ) { callbackURL, error in
+            if let error = error as? ASWebAuthenticationSessionError {
+                if error.code == .canceledLogin {
+                    // User cancelled
+                    onError(nil)
+                    return
+                }
+                onError(error)
                 return
             }
-            decisionHandler(.allow)
+
+            guard let callbackURL = callbackURL,
+                  let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: true),
+                  let code = components.queryItems?.first(where: { $0.name == "code" })?.value else {
+                onError(nil)
+                return
+            }
+
+            onCodeReceived(code)
         }
+
+        session.presentationContextProvider = OAuthPresentationContext.shared
+        session.prefersEphemeralWebBrowserSession = false
+        session.start()
+    }
+}
+
+class OAuthPresentationContext: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = OAuthPresentationContext()
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        let windowScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+
+        let window = windowScene?.windows.first { $0.isKeyWindow }
+            ?? windowScene?.windows.first
+            ?? UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }
+
+        return window!
     }
 }

@@ -861,7 +861,6 @@ struct MainView: View {
                                 authManager: authManager
                             )
                             }
-                            .id(filteredEntries.map { $0.id.uuidString }.joined())
                             .padding(.top, 16)
                             .padding(.horizontal, 24)
                             .padding(.bottom, 16)

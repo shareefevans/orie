@@ -51,6 +51,13 @@ class AuthService {
             case expiresIn = "expires_in"
             case expiresAt = "expires_at"
         }
+
+        init(accessToken: String, refreshToken: String, expiresIn: Int? = nil, expiresAt: Int? = nil) {
+            self.accessToken = accessToken
+            self.refreshToken = refreshToken
+            self.expiresIn = expiresIn
+            self.expiresAt = expiresAt
+        }
     }
 
     struct OAuthURLResponse: Codable {
@@ -264,6 +271,37 @@ class AuthService {
               httpResponse.statusCode < 400 else {
             throw URLError(.badServerResponse)
         }
+    }
+
+    static func getCurrentUser(accessToken: String) async throws -> User {
+        guard let url = URL(string: "\(baseURL)/api/auth/me") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        if httpResponse.statusCode >= 400 {
+            throw AuthError.serverError("Failed to fetch user")
+        }
+
+        struct UserResponse: Codable {
+            let user: User
+        }
+
+        let userResponse = try JSONDecoder().decode(UserResponse.self, from: data)
+        return userResponse.user
     }
 
     // MARK: - Profile Methods

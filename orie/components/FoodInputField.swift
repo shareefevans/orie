@@ -244,9 +244,21 @@ struct FoodInputField: View {
     }
 
     private func selectSuggestion(_ suggestion: String) {
-        text = ""
+        // Cancel any pending autocomplete task first
+        autocompleteTask?.cancel()
+        autocompleteTask = nil
+
+        // Clear state before submitting
         autocompleteSuggestion = nil
-        onSubmit(suggestion)
+        let suggestionToSubmit = suggestion
+
+        // Clear the text field
+        text = ""
+
+        // Submit the suggestion
+        onSubmit(suggestionToSubmit)
+
+        // Refocus for next entry
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             isFocused = true
         }

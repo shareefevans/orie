@@ -219,15 +219,24 @@ struct LoginView: View {
             return
         }
 
-        OAuthHelper.startOAuth(url: url) { code in
-            Task {
-                await authManager.handleOAuthCallback(code: code)
+        OAuthHelper.startOAuth(
+            url: url,
+            onCodeReceived: { code in
+                Task {
+                    await authManager.handleOAuthCallback(code: code)
+                }
+            },
+            onTokensReceived: { accessToken, refreshToken in
+                Task {
+                    await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+                }
+            },
+            onError: { error in
+                if let error = error {
+                    print("OAuth error: \(error)")
+                }
             }
-        } onError: { error in
-            if let error = error {
-                print("OAuth error: \(error)")
-            }
-        }
+        )
     }
 
     private func handleAppleSignIn() {

@@ -46,6 +46,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 @main
 struct orieApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var authManager = AuthManager()
     @StateObject private var themeManager = ThemeManager()
@@ -88,6 +89,36 @@ struct orieApp: App {
                         .environmentObject(authManager)
                         .environmentObject(themeManager)
                 }
+            }
+            .onOpenURL { url in
+                handleIncomingURL(url)
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .active && authManager.isAuthenticated {
+                    // Refresh session when app becomes active to prevent stale tokens
+                    Task {
+                        await authManager.refreshSession()
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        // Handle OAuth callback: orie://callback?access_token=...&refresh_token=...
+        guard url.scheme == "orie",
+              url.host == "callback",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+              let queryItems = components.queryItems else {
+            return
+        }
+
+        let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value
+        let refreshToken = queryItems.first(where: { $0.name == "refresh_token" })?.value
+
+        if let accessToken = accessToken, let refreshToken = refreshToken {
+            Task {
+                await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
             }
         }
     }

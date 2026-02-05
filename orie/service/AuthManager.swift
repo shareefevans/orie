@@ -136,6 +136,25 @@ class AuthManager: ObservableObject {
         }
     }
 
+    /// Handle OAuth callback with tokens directly (from redirect URL)
+    func handleOAuthTokens(accessToken: String, refreshToken: String) async {
+        errorMessage = nil
+
+        // Save the tokens
+        let session = AuthService.Session(accessToken: accessToken, refreshToken: refreshToken)
+        saveSession(session)
+
+        // Fetch current user info
+        do {
+            let user = try await AuthService.getCurrentUser(accessToken: accessToken)
+            currentUser = user
+            isAuthenticated = true
+        } catch {
+            // Tokens are saved, mark as authenticated even if user fetch fails
+            isAuthenticated = true
+        }
+    }
+
     // MARK: - Logout
 
     func logout() async {

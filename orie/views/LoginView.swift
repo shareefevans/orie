@@ -11,12 +11,16 @@ struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
 
+    @Binding var showResetPassword: Bool
+    @Binding var resetPasswordToken: String
+
     @State private var isSignUp = false
     @State private var email = ""
     @State private var password = ""
     @State private var fullName = ""
     @State private var isLoading = false
     @State private var appleSignInHelper = AppleSignInHelper()
+    @State private var showForgotPassword = false
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -119,6 +123,23 @@ struct LoginView: View {
                     .cornerRadius(32)
                     .padding(.horizontal, 16)
 
+                    // MARK: 👉 Forgot Password (Login only)
+                    if !isSignUp {
+                        Button(action: {
+                            showForgotPassword = true
+                        }) {
+                            Text("Forgot Password?")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(Color.primaryText(isDark))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(Color.cardBackground(isDark))
+                                .clipShape(RoundedRectangle(cornerRadius: 100))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, -12)
+                    }
+
                     // MARK: 👉 Divider
                     HStack {
                         Rectangle()
@@ -183,6 +204,26 @@ struct LoginView: View {
 
                     Spacer()
                         .frame(height: 40)
+                }
+            }
+        }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
+                .environmentObject(authManager)
+                .environmentObject(themeManager)
+        }
+        .fullScreenCover(isPresented: $showResetPassword) {
+            ResetPasswordView(showResetPassword: $showResetPassword, accessToken: resetPasswordToken)
+                .environmentObject(authManager)
+                .environmentObject(themeManager)
+        }
+        .onChange(of: showResetPassword) { _, shouldShow in
+            if shouldShow && showForgotPassword {
+                // Dismiss forgot password sheet first, then show reset password after delay
+                showForgotPassword = false
+                showResetPassword = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showResetPassword = true
                 }
             }
         }
@@ -257,7 +298,7 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView()
+    LoginView(showResetPassword: .constant(false), resetPasswordToken: .constant(""))
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
 }

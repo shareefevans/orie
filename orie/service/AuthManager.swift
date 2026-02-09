@@ -155,6 +155,38 @@ class AuthManager: ObservableObject {
         }
     }
 
+    // MARK: - Password Reset
+
+    func forgotPassword(email: String) async -> Bool {
+        errorMessage = nil
+
+        do {
+            _ = try await AuthService.forgotPassword(email: email)
+            return true
+        } catch let error as AuthError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = "Failed to send reset email"
+            return false
+        }
+    }
+
+    func resetPassword(accessToken: String, newPassword: String) async -> Bool {
+        errorMessage = nil
+
+        do {
+            _ = try await AuthService.resetPassword(accessToken: accessToken, newPassword: newPassword)
+            return true
+        } catch let error as AuthError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = "Failed to reset password"
+            return false
+        }
+    }
+
     // MARK: - Logout
 
     func logout() async {

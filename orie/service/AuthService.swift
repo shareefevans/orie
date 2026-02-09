@@ -273,6 +273,70 @@ class AuthService {
         }
     }
 
+    // MARK: - Password Reset
+
+    struct MessageResponse: Codable {
+        let message: String?
+        let error: String?
+    }
+
+    static func forgotPassword(email: String) async throws -> MessageResponse {
+        guard let url = URL(string: "\(baseURL)/api/auth/forgot-password") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = ["email": email]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+
+        if httpResponse.statusCode >= 400 {
+            throw AuthError.serverError(messageResponse.error ?? "Failed to send reset email")
+        }
+
+        return messageResponse
+    }
+
+    static func resetPassword(accessToken: String, newPassword: String) async throws -> MessageResponse {
+        guard let url = URL(string: "\(baseURL)/api/auth/reset-password") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "accessToken": accessToken,
+            "newPassword": newPassword
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+
+        if httpResponse.statusCode >= 400 {
+            throw AuthError.serverError(messageResponse.error ?? "Failed to reset password")
+        }
+
+        return messageResponse
+    }
+
     static func getCurrentUser(accessToken: String) async throws -> User {
         guard let url = URL(string: "\(baseURL)/api/auth/me") else {
             throw URLError(.badURL)

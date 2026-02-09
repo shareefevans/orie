@@ -52,6 +52,9 @@ struct orieApp: App {
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var notificationManager = NotificationManager()
 
+    @State private var showResetPassword = false
+    @State private var resetPasswordToken: String = ""
+
     private var localNotificationManager: LocalNotificationManager { LocalNotificationManager.shared }
 
     var body: some Scene {
@@ -85,9 +88,12 @@ struct orieApp: App {
                             }
                         }
                 } else {
-                    LoginView()
-                        .environmentObject(authManager)
-                        .environmentObject(themeManager)
+                    LoginView(
+                        showResetPassword: $showResetPassword,
+                        resetPasswordToken: $resetPasswordToken
+                    )
+                    .environmentObject(authManager)
+                    .environmentObject(themeManager)
                 }
             }
             .onOpenURL { url in
@@ -105,20 +111,49 @@ struct orieApp: App {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        // Handle OAuth callback: orie://callback?access_token=...&refresh_token=...
         guard url.scheme == "orie",
-              url.host == "callback",
-              let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
-              let queryItems = components.queryItems else {
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
             return
         }
 
-        let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value
-        let refreshToken = queryItems.first(where: { $0.name == "refresh_token" })?.value
+        let queryItems = components.queryItems ?? []
 
-        if let accessToken = accessToken, let refreshToken = refreshToken {
-            Task {
-                await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+        // Handle OAuth callback: orie://callback?access_token=...&refresh_token=...
+        if url.host == "callback" {
+            let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value
+            let refreshToken = queryItems.first(where: { $0.name == "refresh_token" })?.value
+
+            if let accessToken = accessToken, let refreshToken = refreshToken {
+                Task {
+                    await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+                }
+            }
+        }
+
+        // Handle password reset: orie://reset-password#access_token=...&type=recovery
+        // Supabase sends tokens in the URL fragment, not query params
+        if url.host == "reset-password" {
+            // Try query params first
+            if let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value {
+                resetPasswordToken = accessToken
+                showResetPassword = true
+                return
+            }
+
+            // Try fragment (Supabase format)
+            if let fragment = url.fragment {
+                let fragmentItems = fragment.components(separatedBy: "&")
+                    .compactMap { item -> (String, String)? in
+                        let parts = item.components(separatedBy: "=")
+                        guard parts.count == 2 else { return nil }
+                        return (parts[0], parts[1])
+                    }
+                    .reduce(into: [String: String]()) { $0[$1.0] = $1.1 }
+
+                if let accessToken = fragmentItems["access_token"] {
+                    resetPasswordToken = accessToken
+                    showResetPassword = true
+                }
             }
         }
     }

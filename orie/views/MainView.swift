@@ -32,6 +32,7 @@ struct MainView: View {
     @State private var consumedTabId: UUID = UUID()
     @State private var healthTabId: UUID = UUID()
     @State private var isIntakeCardExpanded: Bool = false
+    @State private var isEntriesLoading: Bool = true
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -429,6 +430,7 @@ struct MainView: View {
 
     // MARK: 👉 loadFoodEntries
     private func loadFoodEntries() {
+        isEntriesLoading = true
         Task {
             do {
                 let entries = try await authManager.withAuthRetry { accessToken in
@@ -455,11 +457,14 @@ struct MainView: View {
 
                         return entry
                     }
+                    isEntriesLoading = false
                 }
             } catch APIError.sessionExpired {
                 // Already handled by withAuthRetry - user is logged out
+                await MainActor.run { isEntriesLoading = false }
             } catch {
                 print("Failed to load food entries: \(error)")
+                await MainActor.run { isEntriesLoading = false }
             }
         }
     }
@@ -672,201 +677,204 @@ struct MainView: View {
                     if selectedTab == "consumed" {
                         VStack(spacing: 8) {
 
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Daily intake")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color.secondaryText(isDark))
-                                    .fontWeight(.medium)
+                            if isEntriesLoading {
+                                ConsumedTabSkeleton(isDark: isDark)
+                            } else {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text("Daily intake")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                        .fontWeight(.medium)
 
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text(consumedCalories.formatted())
-                                        .font(.system(size: 24))
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color.primaryText(isDark))
-
-                                    Text("cal")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color.primaryText(isDark))
-                                        .fontWeight(.regular)
-                                }
-                                .padding(.top, 4)
-
-                                Text("\(remainingCalories) remaining")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
-                                    .padding(.top, 4)
-
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Text("0")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color.secondaryText(isDark))
-
-                                        Spacer()
-
-                                        Text(dailyCalorieGoal.formatted())
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color.primaryText(isDark))
-                                    }
-
-                                    MealProgressBar(
-                                        progress: calorieProgress,
-                                        meals: mealBubbles,
-                                        isDark: isDark
-                                    )
-                                    .id(consumedTabId)
-                                }
-                                .padding(.top, 32)
-
-                                // Expandable macros section
-                                if isIntakeCardExpanded {
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        Text("Today's Macros")
-                                            .font(.system(size: 16))
+                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                        Text(consumedCalories.formatted())
+                                            .font(.system(size: 24))
                                             .fontWeight(.semibold)
                                             .foregroundColor(Color.primaryText(isDark))
-                                            .padding(.bottom, 8)
-                                            .padding(.top, 40)
 
-                                        // Protein row
+                                        Text("cal")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Color.primaryText(isDark))
+                                            .fontWeight(.regular)
+                                    }
+                                    .padding(.top, 4)
+
+                                    Text("\(remainingCalories) remaining")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
+                                        .padding(.top, 4)
+
+                                    VStack(spacing: 8) {
                                         HStack {
-                                            Circle()
-                                                .fill(Color(red: 49/255, green: 209/255, blue: 149/255))
-                                                .frame(width: 8, height: 8)
-                                            Text("Protein")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(Color.primaryText(isDark))
-                                            Spacer()
-                                            Text("\(consumedProtein)g")
+                                            Text("0")
                                                 .font(.system(size: 12))
-                                                .fontWeight(.regular)
+                                                .foregroundColor(Color.secondaryText(isDark))
+
+                                            Spacer()
+
+                                            Text(dailyCalorieGoal.formatted())
+                                                .font(.system(size: 12))
                                                 .foregroundColor(Color.primaryText(isDark))
-                                                .italic()
                                         }
 
-                                        // Carbs row
-                                        HStack {
-                                            Circle()
-                                                .fill(Color(red: 135/255, green: 206/255, blue: 250/255))
-                                                .frame(width: 8, height: 8)
-                                            Text("Carbs")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(Color.primaryText(isDark))
-                                            Spacer()
-                                            Text("\(consumedCarbs)g")
-                                                .font(.system(size: 12))
-                                                .fontWeight(.regular)
-                                                .foregroundColor(Color.primaryText(isDark))
-                                                .italic()
-                                        }
+                                        MealProgressBar(
+                                            progress: calorieProgress,
+                                            meals: mealBubbles,
+                                            isDark: isDark
+                                        )
+                                        .id(consumedTabId)
+                                    }
+                                    .padding(.top, 32)
 
-                                        // Fats row
-                                        HStack {
-                                            Circle()
-                                                .fill(Color(red: 255/255, green: 180/255, blue: 50/255))
-                                                .frame(width: 8, height: 8)
-                                            Text("Fats")
-                                                .font(.system(size: 14))
+                                    // Expandable macros section
+                                    if isIntakeCardExpanded {
+                                        VStack(alignment: .leading, spacing: 12) {
+                                            Text("Today's Macros")
+                                                .font(.system(size: 16))
+                                                .fontWeight(.semibold)
                                                 .foregroundColor(Color.primaryText(isDark))
-                                            Spacer()
-                                            Text("\(consumedFats)g")
-                                                .font(.system(size: 12))
-                                                .fontWeight(.regular)
-                                                .foregroundColor(Color.primaryText(isDark))
-                                                .italic()
-                                        }
+                                                .padding(.bottom, 8)
+                                                .padding(.top, 40)
 
-                                        // Sugars row
-                                        HStack {
-                                            Circle()
-                                                .fill(Color.red)
-                                                .frame(width: 8, height: 8)
-                                            Text("Sugars")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(Color.primaryText(isDark))
-                                            Spacer()
-                                            Text("\(consumedSugar)g")
-                                                .font(.system(size: 12))
-                                                .fontWeight(.regular)
-                                                .foregroundColor(Color.primaryText(isDark))
-                                                .italic()
+                                            // Protein row
+                                            HStack {
+                                                Circle()
+                                                    .fill(Color(red: 49/255, green: 209/255, blue: 149/255))
+                                                    .frame(width: 8, height: 8)
+                                                Text("Protein")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                Spacer()
+                                                Text("\(consumedProtein)g")
+                                                    .font(.system(size: 12))
+                                                    .fontWeight(.regular)
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                    .italic()
+                                            }
+
+                                            // Carbs row
+                                            HStack {
+                                                Circle()
+                                                    .fill(Color(red: 135/255, green: 206/255, blue: 250/255))
+                                                    .frame(width: 8, height: 8)
+                                                Text("Carbs")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                Spacer()
+                                                Text("\(consumedCarbs)g")
+                                                    .font(.system(size: 12))
+                                                    .fontWeight(.regular)
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                    .italic()
+                                            }
+
+                                            // Fats row
+                                            HStack {
+                                                Circle()
+                                                    .fill(Color(red: 255/255, green: 180/255, blue: 50/255))
+                                                    .frame(width: 8, height: 8)
+                                                Text("Fats")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                Spacer()
+                                                Text("\(consumedFats)g")
+                                                    .font(.system(size: 12))
+                                                    .fontWeight(.regular)
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                    .italic()
+                                            }
+
+                                            // Sugars row
+                                            HStack {
+                                                Circle()
+                                                    .fill(Color.red)
+                                                    .frame(width: 8, height: 8)
+                                                Text("Sugars")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                Spacer()
+                                                Text("\(consumedSugar)g")
+                                                    .font(.system(size: 12))
+                                                    .fontWeight(.regular)
+                                                    .foregroundColor(Color.primaryText(isDark))
+                                                    .italic()
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            .padding(.top, 32)
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 32)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.cardBackground(isDark))
-                            .cornerRadius(32)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                isIntakeCardExpanded.toggle()
-                            }
+                                .padding(.top, 32)
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 32)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.cardBackground(isDark))
+                                .cornerRadius(32)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    isIntakeCardExpanded.toggle()
+                                }
 
-                            VStack(spacing: 0) {
+                                VStack(spacing: 0) {
+                                    // MARK: 👉 Food Entry Row
+                                    ForEach(filteredEntries.sorted()) { entry in
+                                        FoodEntryRow(
+                                            entry: entry,
+                                            isDark: isDark,
+                                            onTimeChange: { newTime in
+                                                updateEntryTime(entry.id, newTime: newTime)
+                                            },
+                                            onDelete: {
+                                                deleteFoodEntry(entry)
+                                            },
+                                            onFoodNameChange: { newFoodName in
+                                                updateFoodEntry(entry.id, newFoodName: newFoodName)
+                                            },
+                                            onNutritionChange: { calories, protein, carbs, fats in
+                                                updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
+                                            },
+                                            isEditing: Binding(
+                                                get: { editingEntryId == entry.id },
+                                                set: { isEditing in
+                                                    if isEditing {
+                                                        editingEntryId = entry.id
+                                                    } else if editingEntryId == entry.id {
+                                                        editingEntryId = nil
+                                                    }
+                                                }
+                                            )
+                                        )
+                                    }
 
-                            // MARK: 👉 Food Entry Row
-                            ForEach(filteredEntries.sorted()) { entry in
-                                FoodEntryRow(
-                                    entry: entry,
-                                    isDark: isDark,
-                                    onTimeChange: { newTime in
-                                        updateEntryTime(entry.id, newTime: newTime)
-                                    },
-                                    onDelete: {
-                                        deleteFoodEntry(entry)
-                                    },
-                                    onFoodNameChange: { newFoodName in
-                                        updateFoodEntry(entry.id, newFoodName: newFoodName)
-                                    },
-                                    onNutritionChange: { calories, protein, carbs, fats in
-                                        updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
-                                    },
-                                    isEditing: Binding(
-                                        get: { editingEntryId == entry.id },
-                                        set: { isEditing in
-                                            if isEditing {
-                                                editingEntryId = entry.id
-                                            } else if editingEntryId == entry.id {
-                                                editingEntryId = nil
+                                    // MARK: 👉 Food Input Field
+                                    FoodInputField(
+                                        text: $currentInput,
+                                        isDark: isDark,
+                                        onSubmit: { foodName in
+                                            addFoodEntry(foodName: foodName)
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                withAnimation {
+                                                    proxy.scrollTo("inputField", anchor: .top)
+                                                }
                                             }
-                                        }
+                                        },
+                                        onImageAnalyzed: { result in
+                                            addFoodEntryFromImage(result: result)
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                withAnimation {
+                                                    proxy.scrollTo("inputField", anchor: .top)
+                                                }
+                                            }
+                                        },
+                                        isFocused: $isInputFocused,
+                                        authManager: authManager
                                     )
-                                )
+                                }
+                                .padding(.top, 16)
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 16)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.cardBackground(isDark))
+                                .cornerRadius(32)
                             }
-                                
-                            // MARK: 👉 Food Input Field
-                            FoodInputField(
-                                text: $currentInput,
-                                isDark: isDark,
-                                onSubmit: { foodName in
-                                    addFoodEntry(foodName: foodName)
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                        withAnimation {
-                                            proxy.scrollTo("inputField", anchor: .top)
-                                        }
-                                    }
-                                },
-                                onImageAnalyzed: { result in
-                                    addFoodEntryFromImage(result: result)
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                        withAnimation {
-                                            proxy.scrollTo("inputField", anchor: .top)
-                                        }
-                                    }
-                                },
-                                isFocused: $isInputFocused,
-                                authManager: authManager
-                            )
-                            }
-                            .padding(.top, 16)
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 16)
-                            .frame(maxWidth: .infinity)
-                            .background(Color.cardBackground(isDark))
-                            .cornerRadius(32)
                         }
                         .padding(.horizontal, 16)
                         .listRowInsets(EdgeInsets())
@@ -1009,6 +1017,84 @@ struct MainView: View {
                 loadFoodEntries()
                 loadWeeklyFoodEntries()
                 loadWeeklyProgress()
+            }
+        }
+    }
+}
+
+// MARK: - ❇️ Consumed Tab Skeleton
+struct ConsumedTabSkeleton: View {
+    let isDark: Bool
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Daily Intake card skeleton
+            VStack(alignment: .leading, spacing: 0) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 10)
+
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 100, height: 22)
+                    .padding(.top, 8)
+
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 120, height: 12)
+                    .padding(.top, 8)
+
+                VStack(spacing: 8) {
+                    HStack {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 20, height: 10)
+                        Spacer()
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 40, height: 10)
+                    }
+
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 6)
+                }
+                .padding(.top, 32)
+            }
+            .padding(.top, 32)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.cardBackground(isDark))
+            .cornerRadius(32)
+
+            // Entry rows skeleton
+            VStack(spacing: 12) {
+                ForEach(0..<4, id: \.self) { _ in
+                    HStack {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 120, height: 14)
+                        Spacer()
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 50, height: 14)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            .padding(.top, 16)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+            .frame(maxWidth: .infinity)
+            .background(Color.cardBackground(isDark))
+            .cornerRadius(32)
+        }
+        .opacity(isAnimating ? 0.5 : 1.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                isAnimating = true
             }
         }
     }

@@ -368,6 +368,33 @@ class AuthService {
         return userResponse.user
     }
 
+    // MARK: - Delete Account
+
+    static func deleteAccount(accessToken: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/auth/delete-account") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        if httpResponse.statusCode >= 400 {
+            let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+            throw AuthError.serverError(messageResponse.error ?? "Failed to delete account")
+        }
+    }
+
     // MARK: - Profile Methods
 
     static func getProfile(accessToken: String) async throws -> UserProfile {

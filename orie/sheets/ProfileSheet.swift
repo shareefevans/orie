@@ -32,6 +32,7 @@ struct ProfileSheet: View {
     // MARK: - ❇️ Settings
     @State private var locationEnabled = true
     @State private var showNotificationDeniedAlert = false
+    @State private var showDeleteAccountAlert = false
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -86,185 +87,190 @@ struct ProfileSheet: View {
                         .glassEffect(.regular.interactive())
                     }
 
-                    // MARK: - ❇️ Body Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Body")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-
-                                Text("Set up your body composition below.")
-                                    .font(.footnote)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                            }
-                        }
-                        .padding(.bottom, 8)
-
-                        Divider()
-
-                        // MARK: 👉 Macro rows
-                        MacroRow(label: "Age", value: $age, unit : "yrs", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Weight", value: $weight, unit: "kg", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Height", value: $height, unit: "cm", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Body Fat", value: $bodyFat, unit: "%", isDark: isDark, onSave: saveProfile)
-                    }
-                    .padding(24)
-                    .background(Color.cardBackground(isDark))
-                    .cornerRadius(24)
-                    
-                    // MARK: - ❇️ Macronutrients Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Macros")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-
-                                Text("Set your daily calorie and macro goals.")
-                                    .font(.footnote)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                            }
-                        }
-                        .padding(.bottom, 8)
-
-                        Divider()
-
-                        // MARK: 👉 Macro rows
-                        MacroRow(label: "Calories", value: $dailyCalories, unit: "c", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Protein", value: $dailyProtein, unit: "g", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", isDark: isDark, onSave: saveProfile)
-                        Divider()
-                        MacroRow(label: "Fats", value: $dailyFats, unit: "g", isDark: isDark, onSave: saveProfile)
-                    }
-                    .padding(24)
-                    .background(Color.cardBackground(isDark))
-                    .cornerRadius(24)
-
-                    // MARK: - ❇️ App Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    if isLoading {
+                        ProfileSheetSkeleton(isDark: isDark)
+                    } else {
+                        // MARK: - ❇️ Body Section
                         VStack(alignment: .leading, spacing: 16) {
-
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("App")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
 
-                                Text("Manage your app settings.")
-                                    .font(.footnote)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                                    .lineLimit(2)
-                            }
-                        }
-                        .padding(.bottom, 8)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Body")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color.primaryText(isDark))
 
-                        Divider()
-
-                        // MARK: 👉 Settings toggles
-                        HStack {
-                            Text("Location")
-                                .font(.footnote)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.primaryText(isDark))
-                            Spacer()
-                            Toggle("", isOn: $locationEnabled)
-                                .labelsHidden()
-                        }
-
-                        Divider()
-
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Meal Reminders")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color.primaryText(isDark))
-                                Text("Get notified at scheduled meal times")
-                                    .font(.caption2)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                            }
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { localNotificationManager.notificationsEnabled },
-                                set: { newValue in
-                                    if newValue {
-                                        Task {
-                                            let granted = await localNotificationManager.requestAuthorization()
-                                            if granted {
-                                                localNotificationManager.notificationsEnabled = true
-                                            } else {
-                                                showNotificationDeniedAlert = true
-                                            }
-                                        }
-                                    } else {
-                                        localNotificationManager.notificationsEnabled = false
-                                    }
+                                    Text("Set up your body composition below.")
+                                        .font(.footnote)
+                                        .foregroundColor(Color.secondaryText(isDark))
                                 }
-                            ))
-                            .labelsHidden()
-                        }
-
-                        Divider()
-
-                        HStack {
-                            Text("Dark Mode")
-                                .font(.footnote)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.primaryText(isDark))
-                            Spacer()
-                            Toggle("", isOn: $themeManager.isDarkMode)
-                                .labelsHidden()
-                        }
-
-                        Divider()
-
-                        // MARK: 👉 Log Out
-                        Button(action: {
-                            Task {
-                                await authManager.logout()
-                                dismiss()
                             }
-                        }) {
+                            .padding(.bottom, 8)
+
+                            Divider()
+
+                            // MARK: 👉 Macro rows
+                            MacroRow(label: "Age", value: $age, unit : "yrs", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Weight", value: $weight, unit: "kg", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Height", value: $height, unit: "cm", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Body Fat", value: $bodyFat, unit: "%", isDark: isDark, onSave: saveProfile)
+                        }
+                        .padding(24)
+                        .background(Color.cardBackground(isDark))
+                        .cornerRadius(24)
+
+                        // MARK: - ❇️ Macronutrients Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Macros")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color.primaryText(isDark))
+
+                                    Text("Set your daily calorie and macro goals.")
+                                        .font(.footnote)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                }
+                            }
+                            .padding(.bottom, 8)
+
+                            Divider()
+
+                            // MARK: 👉 Macro rows
+                            MacroRow(label: "Calories", value: $dailyCalories, unit: "c", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Protein", value: $dailyProtein, unit: "g", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Fats", value: $dailyFats, unit: "g", isDark: isDark, onSave: saveProfile)
+                        }
+                        .padding(24)
+                        .background(Color.cardBackground(isDark))
+                        .cornerRadius(24)
+
+                        // MARK: - ❇️ App Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 16) {
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("App")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color.primaryText(isDark))
+
+                                    Text("Manage your app settings.")
+                                        .font(.footnote)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                        .lineLimit(2)
+                                }
+                            }
+                            .padding(.bottom, 8)
+
+                            Divider()
+
+                            // MARK: 👉 Settings toggles
                             HStack {
-                                Text("Log Out")
+                                Text("Location")
                                     .font(.footnote)
+                                    .fontWeight(.medium)
                                     .foregroundColor(Color.primaryText(isDark))
-                                    .fontWeight(.medium)
                                 Spacer()
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .foregroundColor(Color.iconColor(isDark))
+                                Toggle("", isOn: $locationEnabled)
+                                    .labelsHidden()
                             }
-                        }
 
-                        Divider()
+                            Divider()
 
-                        // MARK: 👉 Delete Account
-                        Button(action: {
-                        }) {
                             HStack {
-                                Text("Delete Account")
-                                    .font(.footnote)
-                                    .foregroundColor(.red)
-                                    .fontWeight(.medium)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Meal Reminders")
+                                        .font(.footnote)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                    Text("Get notified at scheduled meal times")
+                                        .font(.caption2)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                }
                                 Spacer()
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
+                                Toggle("", isOn: Binding(
+                                    get: { localNotificationManager.notificationsEnabled },
+                                    set: { newValue in
+                                        if newValue {
+                                            Task {
+                                                let granted = await localNotificationManager.requestAuthorization()
+                                                if granted {
+                                                    localNotificationManager.notificationsEnabled = true
+                                                } else {
+                                                    showNotificationDeniedAlert = true
+                                                }
+                                            }
+                                        } else {
+                                            localNotificationManager.notificationsEnabled = false
+                                        }
+                                    }
+                                ))
+                                .labelsHidden()
+                            }
+
+                            Divider()
+
+                            HStack {
+                                Text("Dark Mode")
+                                    .font(.footnote)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(Color.primaryText(isDark))
+                                Spacer()
+                                Toggle("", isOn: $themeManager.isDarkMode)
+                                    .labelsHidden()
+                            }
+
+                            Divider()
+
+                            // MARK: 👉 Log Out
+                            Button(action: {
+                                Task {
+                                    await authManager.logout()
+                                    dismiss()
+                                }
+                            }) {
+                                HStack {
+                                    Text("Log Out")
+                                        .font(.footnote)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                                        .foregroundColor(Color.iconColor(isDark))
+                                }
+                            }
+
+                            Divider()
+
+                            // MARK: 👉 Delete Account
+                            Button(action: {
+                                showDeleteAccountAlert = true
+                            }) {
+                                HStack {
+                                    Text("Delete Account")
+                                        .font(.footnote)
+                                        .foregroundColor(.red)
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
                             }
                         }
+                        .padding(24)
+                        .background(Color.cardBackground(isDark))
+                        .cornerRadius(24)
                     }
-                    .padding(24)
-                    .background(Color.cardBackground(isDark))
-                    .cornerRadius(24)
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)
@@ -273,6 +279,7 @@ struct ProfileSheet: View {
             .background(Color.appBackground(isDark))
             .navigationBarTitleDisplayMode(.inline)
         }
+        .preferredColorScheme(isDark ? .dark : .light)
         .presentationDragIndicator(.visible)
         .onAppear {
             loadProfile()
@@ -286,6 +293,17 @@ struct ProfileSheet: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("To receive meal reminders, please enable notifications in Settings.")
+        }
+        .alert("Are you sure you want to delete your account?", isPresented: $showDeleteAccountAlert) {
+            Button("Yes", role: .destructive) {
+                Task {
+                    let success = await authManager.deleteAccount()
+                    if success {
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
         }
     }
 
@@ -480,6 +498,116 @@ struct MacroPickerSheet: View {
         .onAppear {
             textValue = "\(value)"
             isTextFieldFocused = true
+        }
+    }
+}
+
+// MARK: - ❇️ Profile Sheet Skeleton
+struct ProfileSheetSkeleton: View {
+    let isDark: Bool
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Body card skeleton
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 60, height: 16)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 200, height: 12)
+                }
+                .padding(.bottom, 8)
+
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+            }
+            .padding(24)
+            .background(Color.cardBackground(isDark))
+            .cornerRadius(24)
+
+            // Macros card skeleton
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 80, height: 16)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 220, height: 12)
+                }
+                .padding(.bottom, 8)
+
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+            }
+            .padding(24)
+            .background(Color.cardBackground(isDark))
+            .cornerRadius(24)
+
+            // App card skeleton
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 50, height: 16)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 180, height: 12)
+                }
+                .padding(.bottom, 8)
+
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+            }
+            .padding(24)
+            .background(Color.cardBackground(isDark))
+            .cornerRadius(24)
+        }
+        .opacity(isAnimating ? 0.5 : 1.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
+    }
+}
+
+// MARK: - ❇️ Skeleton Row
+private struct SkeletonRow: View {
+    let isDark: Bool
+
+    var body: some View {
+        HStack {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 80, height: 14)
+            Spacer()
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 40, height: 14)
         }
     }
 }

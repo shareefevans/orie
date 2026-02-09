@@ -34,9 +34,9 @@ struct NotificationSheet: View {
                 .padding(.top, 32)
 
                 if notificationManager.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
+                    NotificationSheetSkeleton(isDark: isDark)
+                        .padding(.horizontal)
+                        .padding(.top, 24)
                     Spacer()
                 } else if !notificationManager.notifications.isEmpty {
                     // MARK: 👉 Notifications List inside a card
@@ -216,6 +216,56 @@ struct NotificationRow: View {
 
         Divider()
             .padding(.leading, 68)
+    }
+}
+
+// MARK: - ❇️ Notification Sheet Skeleton
+struct NotificationSheetSkeleton: View {
+    let isDark: Bool
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<5, id: \.self) { index in
+                HStack(alignment: .top, spacing: 12) {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 40)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 140, height: 14)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 200, height: 12)
+                    }
+
+                    Spacer()
+
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                if index < 4 {
+                    Divider()
+                        .padding(.leading, 68)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(32)
+        .opacity(isAnimating ? 0.5 : 1.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
     }
 }
 

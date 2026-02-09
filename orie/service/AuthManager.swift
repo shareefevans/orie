@@ -187,6 +187,32 @@ class AuthManager: ObservableObject {
         }
     }
 
+    // MARK: - Delete Account
+
+    func deleteAccount() async -> Bool {
+        errorMessage = nil
+
+        do {
+            try await withAuthRetry { accessToken in
+                try await AuthService.deleteAccount(accessToken: accessToken)
+            }
+        } catch APIError.sessionExpired {
+            // Already handled by withAuthRetry
+            return false
+        } catch let error as AuthError {
+            errorMessage = error.localizedDescription
+            return false
+        } catch {
+            errorMessage = "Failed to delete account"
+            return false
+        }
+
+        clearSession()
+        currentUser = nil
+        isAuthenticated = false
+        return true
+    }
+
     // MARK: - Logout
 
     func logout() async {

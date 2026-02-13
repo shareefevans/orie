@@ -194,7 +194,7 @@ struct FoodEntryRow: View {
             NutritionEditSheet(entry: entry, isDark: isDark) { calories, protein, carbs, fats in
                 onNutritionChange?(calories, protein, carbs, fats)
             }
-            .presentationDetents([.height(520)])
+            .presentationDetents([.fraction(0.85)])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color.cardBackground(isDark))
         }

@@ -18,11 +18,16 @@ struct NutritionEditSheet: View {
     @State private var editedCarbs: String
     @State private var editedFats: String
 
+    // Ingredient builder fields (UI only for now)
+    @State private var ingredientFood: String = ""
+    @State private var ingredientQuantity: String = ""
+    @State private var ingredientMetric: String = ""
+
     // Focus states for each field
     @FocusState private var focusedField: Field?
 
     enum Field {
-        case calories, protein, carbs, fats
+        case calories, protein, carbs, fats, ingredientFood, ingredientQuantity
     }
 
     // Dot colors matching HealthTabView
@@ -53,165 +58,242 @@ struct NutritionEditSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // MARK: - Header (pinned at top)
-            HStack {
-                Text("Edit Calories")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.secondaryText(isDark))
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    // MARK: - Header
+                    HStack {
+                        Text("Update Calories")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.secondaryText(isDark))
 
-                Spacer()
+                        Spacer()
 
-                if isKeyboardOpen {
-                    // Checkmark button when keyboard is open (matches TopNavigationBar style)
-                    Button(action: {
-                        focusedField = nil
-                    }) {
-                        Image(systemName: "checkmark")
-                            .font(.callout)
-                            .foregroundColor(isDark ? .black : .white)
-                            .frame(width: 50, height: 50)
-                            .background {
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(Circle().fill(Color.yellow))
+                        if isKeyboardOpen {
+                            Button(action: {
+                                focusedField = nil
+                            }) {
+                                Image(systemName: "checkmark")
+                                    .font(.callout)
+                                    .foregroundColor(isDark ? .black : .white)
+                                    .frame(width: 50, height: 50)
+                                    .background {
+                                        Circle()
+                                            .fill(.ultraThinMaterial)
+                                            .overlay(Circle().fill(Color.yellow))
+                                    }
+                                    .clipShape(Circle())
                             }
-                            .clipShape(Circle())
-                    }
-                    .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
-                } else {
-                    // Done button when keyboard is closed
-                    Button("Done") {
-                        saveChanges()
-                    }
-                    .foregroundColor(Color.accentBlue)
-                    .fontWeight(.semibold)
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 16)
-            .padding(.bottom, 16)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKeyboardOpen)
-
-            VStack(spacing: 24) {
-                // MARK: - Food name (read-only)
-                Text(entry.foodName)
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color.primaryText(isDark))
-                    .lineLimit(nil)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 24)
-            }
-
-            // MARK: - Editable fields with dividers
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: 0) {
-                        customDivider
-
-                        // Calories row
-                        MacroEditRow(
-                            label: "Calories",
-                            value: $editedCalories,
-                            unit: "cal",
-                            color: caloriesDotColor,
-                            isDark: isDark,
-                            focusedField: $focusedField,
-                            field: .calories
-                        )
-                        .padding(.vertical, 24)
-                        .id(Field.calories)
-
-                        customDivider
-
-                        // Protein row
-                        MacroEditRow(
-                            label: "Protein",
-                            value: $editedProtein,
-                            unit: "g",
-                            color: proteinDotColor,
-                            isDark: isDark,
-                            focusedField: $focusedField,
-                            field: .protein
-                        )
-                        .padding(.vertical, 24)
-                        .id(Field.protein)
-
-                        customDivider
-
-                        // Carbs row
-                        MacroEditRow(
-                            label: "Carbs",
-                            value: $editedCarbs,
-                            unit: "g",
-                            color: carbsDotColor,
-                            isDark: isDark,
-                            focusedField: $focusedField,
-                            field: .carbs
-                        )
-                        .padding(.vertical, 24)
-                        .id(Field.carbs)
-
-                        customDivider
-
-                        // Fat row
-                        MacroEditRow(
-                            label: "Fat",
-                            value: $editedFats,
-                            unit: "g",
-                            color: fatsDotColor,
-                            isDark: isDark,
-                            focusedField: $focusedField,
-                            field: .fats
-                        )
-                        .padding(.vertical, 24)
-                        .id(Field.fats)
-
-                        // Extra space for keyboard
-                        Color.clear
-                            .frame(height: 8)
-                    }
-                }
-                .scrollDismissesKeyboard(.never)
-                .onChange(of: focusedField) { _, newField in
-                    if let field = newField {
-                        withAnimation {
-                            proxy.scrollTo(field, anchor: .center)
+                            .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
+                        } else {
+                            Button("Save") {
+                                saveChanges()
+                            }
+                            .foregroundColor(Color.accentBlue)
+                            .fontWeight(.semibold)
+                            .transition(.scale.combined(with: .opacity))
                         }
                     }
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKeyboardOpen)
+
+                    // MARK: - Food name (read-only)
+                    Text(entry.foodName)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // MARK: - Build With Ingredients section
+                    Text("Build With Ingredients")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.yellow)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 24)
+                        .padding(.top, 24)
+
+                    customDivider
+
+                    // Food row
+                    IngredientInputRow(
+                        label: "Food",
+                        placeholder: "Enter Item/Ingredient",
+                        value: $ingredientFood,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .ingredientFood
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.ingredientFood)
+
+                    customDivider
+
+                    // Quantity row
+                    IngredientInputRow(
+                        label: "Quantity",
+                        placeholder: "Amount",
+                        value: $ingredientQuantity,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .ingredientQuantity
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.ingredientQuantity)
+
+                    customDivider
+
+                    // Metric row
+                    HStack(spacing: 0) {
+                        Text("Metric")
+                            .font(.subheadline)
+                            .foregroundColor(Color.primaryText(isDark))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        HStack(spacing: 8) {
+                            Text("Select")
+                                .font(.subheadline)
+                                .foregroundColor(Color.secondaryText(isDark))
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.vertical, 24)
+
+                    // Add button
+                    Button(action: {
+                        // Add ingredient action (placeholder)
+                    }) {
+                        Text("Add")
+                            .font(.callout)
+                            .fontWeight(.medium)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(Color.white)
+                            .clipShape(Capsule())
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 24)
+
+                    // MARK: - Confirm Totals section
+                    Text("Confirm Totals")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.yellow)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 24)
+
+                    customDivider
+
+                    // Calories row
+                    MacroEditRow(
+                        label: "Calories",
+                        value: $editedCalories,
+                        unit: "cal",
+                        color: caloriesDotColor,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .calories
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.calories)
+
+                    customDivider
+
+                    // Protein row
+                    MacroEditRow(
+                        label: "Protein",
+                        value: $editedProtein,
+                        unit: "g",
+                        color: proteinDotColor,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .protein
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.protein)
+
+                    customDivider
+
+                    // Carbs row
+                    MacroEditRow(
+                        label: "Carbs",
+                        value: $editedCarbs,
+                        unit: "g",
+                        color: carbsDotColor,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .carbs
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.carbs)
+
+                    customDivider
+
+                    // Fats row
+                    MacroEditRow(
+                        label: "Fats",
+                        value: $editedFats,
+                        unit: "g",
+                        color: fatsDotColor,
+                        isDark: isDark,
+                        focusedField: $focusedField,
+                        field: .fats
+                    )
+                    .padding(.vertical, 24)
+                    .id(Field.fats)
+
+                    // MARK: - Bottom buttons
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Text("Cancel")
+                                .font(.callout)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(Color.white.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+
+                        Button(action: {
+                            saveChanges()
+                        }) {
+                            Text("Update")
+                                .font(.callout)
+                                .fontWeight(.medium)
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(Color.yellow.opacity(0.8))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
                 }
+                .padding(.horizontal, 32)
+                .padding(.top, 32)
             }
-            .padding(.horizontal, 8)
-
-            Spacer(minLength: 8)
-
-            // MARK: - Cancel button at bottom (hidden when keyboard is open)
-            if !isKeyboardOpen {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Text("Cancel")
-                        .font(.callout)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Capsule())
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.never)
+            .onChange(of: focusedField) { _, newField in
+                if let field = newField {
+                    withAnimation {
+                        proxy.scrollTo(field, anchor: .center)
+                    }
                 }
-                .padding(.horizontal, 8)
-                .transition(.opacity)
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKeyboardOpen)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 24)
-        .padding(.top, 32)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Color.cardBackground(isDark))
     }
@@ -275,8 +357,43 @@ struct MacroEditRow<Field: Hashable>: View {
     }
 }
 
+// MARK: - Ingredient Input Row
+struct IngredientInputRow<Field: Hashable>: View {
+    let label: String
+    let placeholder: String
+    @Binding var value: String
+    let isDark: Bool
+    var focusedField: FocusState<Field?>.Binding
+    let field: Field
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(Color.primaryText(isDark))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 8) {
+                TextField("", text: $value, prompt: Text(placeholder).foregroundColor(Color.placeholderText(isDark)))
+                    .multilineTextAlignment(.trailing)
+                    .font(.subheadline)
+                    .foregroundColor(Color.primaryText(isDark))
+                    .focused(focusedField, equals: field)
+
+                Image(systemName: "pencil")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField.wrappedValue = field
+        }
+    }
+}
+
 #Preview {
-    var entry = FoodEntry(foodName: "KFC Zinger Burger")
+    var entry = FoodEntry(foodName: "3 Eggs, 2 slices of tip top bread, 5 slices of wagyu salami")
     entry.calories = 450
     entry.protein = 25.0
     entry.carbs = 35.0

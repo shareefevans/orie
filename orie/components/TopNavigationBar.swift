@@ -17,6 +17,7 @@ struct TopNavigationBar: View {
     var isDark: Bool = false
     @Binding var isInputFocused: Bool
     var hasUnreadNotifications: Bool = false
+    var streakCount: Int = StreakManager.shared.currentStreak
 
     @Namespace private var animation
 
@@ -71,14 +72,30 @@ struct TopNavigationBar: View {
 
             // MARK: - ❇️ Right side - Grouped buttons (bell, settings, trophy)
             HStack(spacing: 0) {
+                Spacer().frame(width: 4)
 
                 Button(action: {
                     showAwards = true
                 }) {
-                    Image(systemName: "trophy")
-                        .font(.callout)
-                        .foregroundColor(Color.iconColor(isDark))
-                        .frame(width: 50, height: 50)
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.callout)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0xFE/255.0, green: 0x47/255.0, blue: 0x74/255.0),
+                                        Color(red: 0xFF/255.0, green: 0xCA/255.0, blue: 0x00/255.0)
+                                    ],
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                            )
+                        Text(formatCompactNumber(streakCount))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color.primaryText(isDark))
+                    }
+                    .frame(height: 50)
+                    .padding(.horizontal, 8)
                 }
 
                 Button(action: {
@@ -141,6 +158,22 @@ struct TopNavigationBar: View {
         formatter.dateFormat = "MMM dd"
         return formatter.string(from: date)
     }
+
+    private func formatCompactNumber(_ value: Int) -> String {
+        switch value {
+        case 1_000_000_000...:
+            let v = Double(value) / 1_000_000_000
+            return v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))b" : String(format: "%.1fb", v)
+        case 1_000_000...:
+            let v = Double(value) / 1_000_000
+            return v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))m" : String(format: "%.1fm", v)
+        case 1_000...:
+            let v = Double(value) / 1_000
+            return v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))k" : String(format: "%.1fk", v)
+        default:
+            return "\(value)"
+        }
+    }
 }
 
 #Preview {
@@ -153,6 +186,7 @@ struct TopNavigationBar: View {
         isToday: true,
         isDark: false,
         isInputFocused: .constant(false),
-        hasUnreadNotifications: true
+        hasUnreadNotifications: true,
+        streakCount: 100
     )
 }

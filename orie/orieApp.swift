@@ -82,6 +82,8 @@ struct orieApp: App {
                         .environmentObject(notificationManager)
                         .environmentObject(localNotificationManager)
                         .onAppear {
+                            // MARK: 👉 Record streak on app open
+                            StreakManager.shared.recordAppOpen()
                             // MARK: 👉 Sync notifications when app opens
                             Task {
                                 await notificationManager.syncSystemNotifications()

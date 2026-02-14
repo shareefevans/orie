@@ -104,55 +104,60 @@ struct FoodInputField: View {
             Spacer()
 
             #if os(iOS)
-            HStack(spacing: 8) {
-                // MARK: 👉 Camera button
-                Button(action: {
-                    showCameraPicker = true
-                }) {
-                    ZStack {
-                        Image(systemName: "camera.macro")
-                            .font(.system(size: 14))
-                            .foregroundColor(isAnalyzingImage ? .clear : Color.secondaryText(isDark))
-                            .frame(width: 44, height: 44)
-                            .background(isAnalyzingImage ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
-                            .clipShape(Circle())
+            if !isFocused || isRecording || isAnalyzingImage {
+                HStack(spacing: 8) {
+                    // MARK: 👉 Camera button
+                    Button(action: {
+                        showCameraPicker = true
+                    }) {
+                        ZStack {
+                            Image(systemName: "camera.macro")
+                                .font(.system(size: 14))
+                                .foregroundColor(isAnalyzingImage ? .clear : Color.secondaryText(isDark))
+                                .frame(width: 44, height: 44)
+                                .background(isAnalyzingImage ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
+                                .clipShape(Circle())
 
-                        if isAnalyzingImage {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
-                                .scaleEffect(0.8)
+                            if isAnalyzingImage {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
+                                    .scaleEffect(0.8)
+                            }
                         }
                     }
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .contentShape(Circle())
-                .disabled(isAnalyzingImage)
+                    .buttonStyle(BorderlessButtonStyle())
+                    .contentShape(Circle())
+                    .disabled(isAnalyzingImage)
 
-                // MARK: 👉 Voice-to-text button
-                Button(action: {
-                    if isRecording {
-                        stopRecording()
-                    } else {
-                        startRecording()
+                    // MARK: 👉 Voice-to-text button
+                    Button(action: {
+                        if isRecording {
+                            stopRecording()
+                        } else {
+                            startRecording()
+                        }
+                    }) {
+                        Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
+                            .font(.system(size: 14))
+                            .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
+                            .frame(width: 44, height: 44)
+                            .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
+                            .clipShape(Circle())
+                            .scaleEffect(isRecording ? 1.1 : 1.0)
+                            .animation(
+                                isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
+                                value: isRecording
+                            )
                     }
-                }) {
-                    Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
-                        .font(.system(size: 14))
-                        .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
-                        .frame(width: 44, height: 44)
-                        .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
-                        .clipShape(Circle())
-                        .scaleEffect(isRecording ? 1.1 : 1.0)
-                        .animation(
-                            isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
-                            value: isRecording
-                        )
+                    .buttonStyle(BorderlessButtonStyle())
+                    .contentShape(Circle())
                 }
-                .buttonStyle(BorderlessButtonStyle())
-                .contentShape(Circle())
+                .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
             #endif
         }
+        .frame(minHeight: 44)
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
         .padding(.vertical, 12)
         #if os(iOS)
         .sheet(isPresented: $showCameraPicker) {

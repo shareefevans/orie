@@ -17,6 +17,7 @@ struct FoodInputField: View {
     var isDark: Bool = false
     var onSubmit: (String) -> Void
     var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
+    var onError: ((String) -> Void)? = nil
     @FocusState.Binding var isFocused: Bool
     var authManager: AuthManager? = nil
 
@@ -194,6 +195,7 @@ struct FoodInputField: View {
                 print("Error analyzing image: \(error)")
                 await MainActor.run {
                     isAnalyzingImage = false
+                    onError?("Couldn't analyze the image. Please try again.")
                 }
             }
         }

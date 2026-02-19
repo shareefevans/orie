@@ -33,6 +33,8 @@ struct MainView: View {
     @State private var healthTabId: UUID = UUID()
     @AppStorage("isIntakeCardExpanded") private var isIntakeCardExpanded: Bool = false
     @State private var isEntriesLoading: Bool = true
+    @State private var apiErrorMessage: String? = nil
+    @State private var errorBannerTask: Task<Void, Never>? = nil
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -40,7 +42,6 @@ struct MainView: View {
     @State private var dailyProteinGoal: Int = 150
     @State private var dailyCarbsGoal: Int = 250
     @State private var dailyFatsGoal: Int = 65
-    @State private var dailySugarGoal: Int = 50
 
     // MARK: - ❇️ Computed Properties
 
@@ -83,10 +84,6 @@ struct MainView: View {
         Int(filteredEntries.reduce(0.0) { total, entry in
             total + (entry.fats ?? 0)
         })
-    }
-
-    private var consumedSugar: Int {
-        0
     }
 
     private func macroSuggestion(consumed: Int, goal: Int) -> (String, Bool)? {
@@ -143,15 +140,12 @@ struct MainView: View {
             let protein = Int(dayEntries.reduce(0.0) { $0 + ($1.protein ?? 0) })
             let carbs = Int(dayEntries.reduce(0.0) { $0 + ($1.carbs ?? 0) })
             let fats = Int(dayEntries.reduce(0.0) { $0 + ($1.fats ?? 0) })
-            let sugars = 0 // TODO: Add sugar tracking
-
             return DailyMacroData(
                 date: date,
                 calories: calories,
                 protein: protein,
                 carbs: carbs,
-                fats: fats,
-                sugars: sugars
+                fats: fats
             )
         }
     }
@@ -161,6 +155,23 @@ struct MainView: View {
     @State private var weeklyFoodEntries: [FoodEntry] = []
 
     // MARK: - ❇️ Functions
+
+    // MARK: 👉 Show Error Banner
+    private func showError(_ message: String) {
+        errorBannerTask?.cancel()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            apiErrorMessage = message
+        }
+        errorBannerTask = Task {
+            try? await Task.sleep(for: .seconds(5))
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    apiErrorMessage = nil
+                }
+            }
+        }
+    }
+
     // MARK: 👉 Add Food Entry
     private func addFoodEntry(foodName: String) {
         guard !foodName.isEmpty else { return }
@@ -231,6 +242,7 @@ struct MainView: View {
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].isLoading = false
+                        showError("Couldn't calculate calories for \"\(foodName)\". Please try again.")
                     }
                 }
             }
@@ -671,8 +683,6 @@ struct MainView: View {
                             dailyCarbsGoal: dailyCarbsGoal,
                             consumedFats: consumedFats,
                             dailyFatsGoal: dailyFatsGoal,
-                            consumedSugar: consumedSugar,
-                            dailySugarGoal: dailySugarGoal,
                             meals: mealBubbles,
                             weeklyData: weeklyMacroData,
                             weeklyNote: weeklyNote,
@@ -777,15 +787,6 @@ struct MainView: View {
                                                 isDark: isDark
                                             )
 
-                                            MacroAverageRow(
-                                                color: Color.red,
-                                                title: "Sugars",
-                                                value: consumedSugar,
-                                                goal: dailySugarGoal,
-                                                unit: "g",
-                                                suggestion: macroSuggestion(consumed: consumedSugar, goal: dailySugarGoal),
-                                                isDark: isDark
-                                            )
                                         }
                                     }
                                 }
@@ -850,6 +851,9 @@ struct MainView: View {
                                                     proxy.scrollTo("inputField", anchor: .top)
                                                 }
                                             }
+                                        },
+                                        onError: { message in
+                                            showError(message)
                                         },
                                         isFocused: $isInputFocused,
                                         authManager: authManager
@@ -941,6 +945,18 @@ struct MainView: View {
             }
             .allowsHitTesting(false)
             .ignoresSafeArea(edges: .bottom)
+
+            // MARK: - ❇️ Error Banner
+            if let errorMessage = apiErrorMessage {
+                VStack {
+                    Spacer()
+                    ErrorBanner(message: errorMessage)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 48)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(10)
+            }
         }
 
         // MARK: - ❇️ Sheet Modifiers
@@ -994,7 +1010,6 @@ struct MainView: View {
                 dailyProteinGoal = 150
                 dailyCarbsGoal = 250
                 dailyFatsGoal = 65
-                dailySugarGoal = 50
                 weeklyNote = "Tap to see your weekly overview and daily averages."
                 weeklyTip = nil
             }

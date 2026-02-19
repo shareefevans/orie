@@ -17,8 +17,6 @@ struct HealthTabView: View {
     let dailyCarbsGoal: Int
     let consumedFats: Int
     let dailyFatsGoal: Int
-    let consumedSugar: Int
-    let dailySugarGoal: Int
     let meals: [MealBubble]
     let weeklyData: [DailyMacroData]
     let weeklyNote: String
@@ -40,7 +38,6 @@ struct HealthTabView: View {
                 dailyProteinGoal: dailyProteinGoal,
                 dailyCarbsGoal: dailyCarbsGoal,
                 dailyFatsGoal: dailyFatsGoal,
-                dailySugarGoal: dailySugarGoal,
                 isDark: isDark
             )
 
@@ -117,8 +114,6 @@ struct HealthTabView: View {
         dailyCarbsGoal: 250,
         consumedFats: 30,
         dailyFatsGoal: 65,
-        consumedSugar: 0,
-        dailySugarGoal: 50,
         meals: [
             MealBubble(
                 timestamp: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,
@@ -134,9 +129,9 @@ struct HealthTabView: View {
             )
         ],
         weeklyData: [
-            DailyMacroData(date: monday, calories: 2200, protein: 150, carbs: 200, fats: 70, sugars: 25),
-            DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2400, protein: 180, carbs: 220, fats: 65, sugars: 30),
-            DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2100, protein: 140, carbs: 190, fats: 60, sugars: 20)
+            DailyMacroData(date: monday, calories: 2200, protein: 150, carbs: 200, fats: 70),
+            DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2400, protein: 180, carbs: 220, fats: 65),
+            DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2100, protein: 140, carbs: 190, fats: 60)
         ],
         weeklyNote: "Weeks looking good so far, but watch your fat levels. You've been over a few times..."
     )

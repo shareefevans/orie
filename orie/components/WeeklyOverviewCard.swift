@@ -14,7 +14,6 @@ struct DailyMacroData: Identifiable {
     let protein: Int
     let carbs: Int
     let fats: Int
-    let sugars: Int
 }
 
 struct WeeklyOverviewCard: View {
@@ -24,7 +23,6 @@ struct WeeklyOverviewCard: View {
     let dailyProteinGoal: Int
     let dailyCarbsGoal: Int
     let dailyFatsGoal: Int
-    let dailySugarGoal: Int
     var isDark: Bool = false
 
     @AppStorage("isWeeklyOverviewExpanded") private var isExpanded: Bool = false
@@ -33,7 +31,6 @@ struct WeeklyOverviewCard: View {
     private let proteinColor = Color(red: 49/255, green: 209/255, blue: 149/255)
     private let carbsColor = Color(red: 135/255, green: 206/255, blue: 250/255)
     private let fatsColor = Color(red: 255/255, green: 180/255, blue: 50/255)
-    private let sugarsColor = Color.red
     private let caloriesColor = Color(red: 106/255, green: 118/255, blue: 255/255)
 
     private var weekDays: [Date] {
@@ -104,11 +101,6 @@ struct WeeklyOverviewCard: View {
     private var avgFats: Int {
         guard !daysWithData.isEmpty else { return 0 }
         return daysWithData.reduce(0) { $0 + $1.fats } / daysWithData.count
-    }
-
-    private var avgSugars: Int {
-        guard !daysWithData.isEmpty else { return 0 }
-        return daysWithData.reduce(0) { $0 + $1.sugars } / daysWithData.count
     }
 
     // Check if value needs adjustment suggestion (20% threshold)
@@ -284,16 +276,6 @@ struct WeeklyOverviewCard: View {
                         isDark: isDark
                     )
 
-                    // Sugars row
-                    MacroAverageRow(
-                        color: sugarsColor,
-                        title: "Sugars",
-                        value: avgSugars,
-                        goal: dailySugarGoal,
-                        unit: "g",
-                        suggestion: macroSuggestion(avg: avgSugars, goal: dailySugarGoal),
-                        isDark: isDark
-                    )
                 }
             }
         }
@@ -441,9 +423,9 @@ struct MacroAverageRow: View {
     let monday = calendar.date(from: components)!
 
     let sampleData = [
-        DailyMacroData(date: monday, calories: 2700, protein: 150, carbs: 200, fats: 70, sugars: 25),
-        DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2300, protein: 180, carbs: 200, fats: 65, sugars: 30),
-        DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2300, protein: 140, carbs: 200, fats: 60, sugars: 20),
+        DailyMacroData(date: monday, calories: 2700, protein: 150, carbs: 200, fats: 70),
+        DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2300, protein: 180, carbs: 200, fats: 65),
+        DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2300, protein: 140, carbs: 200, fats: 60),
     ]
 
     return WeeklyOverviewCard(
@@ -453,7 +435,6 @@ struct MacroAverageRow: View {
         dailyProteinGoal: 150,
         dailyCarbsGoal: 200,
         dailyFatsGoal: 65,
-        dailySugarGoal: 50,
         isDark: true
     )
     .padding()

@@ -36,10 +36,9 @@ struct NutritionEditSheet: View {
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)
     private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)
 
-    // Custom divider color #363636
     private var customDivider: some View {
         Rectangle()
-            .fill(Color(red: 54/255, green: 54/255, blue: 54/255))
+            .fill(isDark ? Color(red: 54/255, green: 54/255, blue: 54/255) : Color(red: 220/255, green: 220/255, blue: 220/255))
             .frame(height: 1)
     }
 
@@ -160,7 +159,7 @@ struct NutritionEditSheet: View {
                                 .foregroundColor(Color.secondaryText(isDark))
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(.system(size: 14))
-                                .foregroundColor(.white)
+                                .foregroundColor(Color.secondaryText(isDark))
                         }
                     }
                     .padding(.vertical, 24)
@@ -175,7 +174,7 @@ struct NutritionEditSheet: View {
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
-                            .background(Color.white)
+                            .background(isDark ? Color.white : Color(red: 0.933, green: 0.933, blue: 0.933))
                             .clipShape(Capsule())
                     }
                     .padding(.top, 8)
@@ -257,10 +256,10 @@ struct NutritionEditSheet: View {
                             Text("Cancel")
                                 .font(.callout)
                                 .fontWeight(.medium)
-                                .foregroundColor(.white)
+                                .foregroundColor(.black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
-                                .background(Color.white.opacity(0.15))
+                                .background(isDark ? Color.white.opacity(0.15) : Color(red: 0.933, green: 0.933, blue: 0.933))
                                 .clipShape(Capsule())
                         }
 
@@ -347,7 +346,7 @@ struct MacroEditRow<Field: Hashable>: View {
 
                 Image(systemName: "pencil")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.secondaryText(isDark))
             }
         }
         .contentShape(Rectangle())
@@ -382,7 +381,7 @@ struct IngredientInputRow<Field: Hashable>: View {
 
                 Image(systemName: "pencil")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.secondaryText(isDark))
             }
         }
         .contentShape(Rectangle())

@@ -407,7 +407,7 @@ struct MacroAverageRow: View {
                         .foregroundColor(.gray)
                 }
             }
-            .font(.system(size: 12))
+            .font(.system(size: 13))
             .fontWeight(.regular)
             .italic()
         }
@@ -436,7 +436,7 @@ struct MacroAverageRow: View {
         dailyProteinGoal: 150,
         dailyCarbsGoal: 200,
         dailyFatsGoal: 65,
-        isDark: true
+        isDark: false
     )
     .padding()
     .background(Color.black)

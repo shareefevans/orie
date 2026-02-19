@@ -18,10 +18,9 @@ struct NutritionDetailSheet: View {
     private let carbsDotColor = Color(red: 135/255, green: 206/255, blue: 250/255)
     private let fatsDotColor = Color(red: 255/255, green: 180/255, blue: 50/255)
 
-    // Custom divider color #363636
     private var customDivider: some View {
         Rectangle()
-            .fill(Color(red: 54/255, green: 54/255, blue: 54/255))
+            .fill(isDark ? Color(red: 54/255, green: 54/255, blue: 54/255) : Color(red: 220/255, green: 220/255, blue: 220/255))
             .frame(height: 1)
     }
 

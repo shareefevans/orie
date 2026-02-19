@@ -59,7 +59,7 @@ extension Color {
     }
 
     static func secondaryText(_ isDark: Bool) -> Color {
-        isDark ? Color(white: 0.7) : Color.secondary
+        isDark ? Color(white: 0.7) : Color(white: 0.4)
     }
 
     // Tertiary text (lighter grey for non-selected items in dark mode)

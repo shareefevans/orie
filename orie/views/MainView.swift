@@ -32,6 +32,7 @@ struct MainView: View {
     @State private var consumedTabId: UUID = UUID()
     @State private var healthTabId: UUID = UUID()
     @AppStorage("isIntakeCardExpanded") private var isIntakeCardExpanded: Bool = false
+    @AppStorage("lastWeeklyProgressRefreshDate") private var lastWeeklyProgressRefreshDate: String = ""
     @State private var isEntriesLoading: Bool = true
     @State private var apiErrorMessage: String? = nil
     @State private var errorBannerTask: Task<Void, Never>? = nil
@@ -1018,10 +1019,25 @@ struct MainView: View {
             if newPhase == .active {
                 loadFoodEntries()
                 loadWeeklyFoodEntries()
-                loadWeeklyProgress()
+                let today = DateFormatter.yyyyMMdd.string(from: Date())
+                if today != lastWeeklyProgressRefreshDate {
+                    lastWeeklyProgressRefreshDate = today
+                    loadWeeklyProgress(forceRefresh: true)
+                } else {
+                    loadWeeklyProgress()
+                }
             }
         }
     }
+}
+
+// MARK: - ❇️ Date Formatter Helper
+private extension DateFormatter {
+    static let yyyyMMdd: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 }
 
 // MARK: - ❇️ Consumed Tab Skeleton

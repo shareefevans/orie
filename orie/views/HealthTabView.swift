@@ -49,8 +49,8 @@ struct HealthTabView: View {
                     .foregroundColor(isDark ? .white : .black)
 
                 Text(Date(), format: .dateTime.weekday(.wide).day().month(.abbreviated).year())
-                    .font(.footnote)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 12))
+                    .fontWeight(.medium)
                     .foregroundColor(.gray)
             }
             .frame(maxWidth: .infinity)

@@ -138,6 +138,7 @@ struct WeeklyOverviewCard: View {
         return noteLabel + noteText
     }
 
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header

@@ -129,6 +129,7 @@ struct FoodEntryRow: View {
                         )
                         .scaleEffect(sparkleScale)
                         .onAppear {
+                            sparkleScale = 1.0
                             withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
                                 sparkleScale = 1.3
                             }

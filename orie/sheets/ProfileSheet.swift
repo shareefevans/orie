@@ -33,6 +33,10 @@ struct ProfileSheet: View {
     @State private var locationEnabled = true
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountAlert = false
+    @State private var showFeedbackModal = false
+    @State private var feedbackText = ""
+    @State private var isSendingFeedback = false
+    @State private var showFeedbackSentAlert = false
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -58,34 +62,19 @@ struct ProfileSheet: View {
                     .padding(.top, 8)
                     .padding(.bottom, 8)
 
-                    // MARK: 👉 Feedback and Share buttons
-                    HStack(spacing: 8) {
-                        Button(action: {
-                            // MARK: 👉 Feedback action
-                        }) {
-                            Text("Feedback")
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                                .foregroundColor(Color.primaryText(isDark))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                        }
-                        .glassEffect(.regular.interactive())
-
-                        Button(action: {
-                            // MARK: 👉 Share action
-                        }) {
-                            Text("Share")
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                                .foregroundColor(isDark ? .black : .white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color.yellow)
-                                .cornerRadius(100)
-                        }
-                        .glassEffect(.regular.interactive())
+                    // MARK: 👉 Feedback button
+                    Button(action: {
+                        feedbackText = ""
+                        showFeedbackModal = true
+                    }) {
+                        Text("Feedback")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundColor(Color.primaryText(isDark))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
                     }
+                    .glassEffect(.regular.interactive())
 
                     if isLoading {
                         ProfileSheetSkeleton(isDark: isDark)
@@ -305,10 +294,81 @@ struct ProfileSheet: View {
             }
             Button("Cancel", role: .cancel) { }
         }
+        .alert("Feedback Sent", isPresented: $showFeedbackSentAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Thank you for your feedback!")
+        }
+        .sheet(isPresented: $showFeedbackModal) {
+            NavigationView {
+                Form {
+                    Section {
+                        ZStack(alignment: .topLeading) {
+                            if feedbackText.isEmpty {
+                                Text("Your feedback")
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                            }
+                            TextEditor(text: $feedbackText)
+                                .frame(minHeight: 120)
+                        }
+                    }
+                }
+                .navigationTitle("Send Feedback")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showFeedbackModal = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        if isSendingFeedback {
+                            ProgressView()
+                        } else {
+                            Button("Send") {
+                                sendFeedback()
+                            }
+                            .disabled(feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
 
-    
+
     // MARK: - ❇️ Functions
+
+    // MARK: 👉 Send Feedback
+    private func sendFeedback() {
+        guard !feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let name = userName.isEmpty ? "Unknown User" : userName
+        let email = authManager.currentUser?.email ?? "No email"
+        let message = feedbackText
+
+        showFeedbackModal = false
+        showFeedbackSentAlert = true
+
+        Task {
+            do {
+                try await authManager.withAuthRetry { accessToken in
+                    try await APIService.sendFeedback(
+                        accessToken: accessToken,
+                        name: name,
+                        email: email,
+                        message: message
+                    )
+                }
+            } catch {
+                print("Failed to send feedback: \(error)")
+            }
+        }
+    }
     // MARK: 👉 Load Profiles
     private func loadProfile() {
         Task {

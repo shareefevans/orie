@@ -31,7 +31,7 @@ struct MainView: View {
     @State private var editingEntryId: UUID? = nil
     @State private var consumedTabId: UUID = UUID()
     @State private var healthTabId: UUID = UUID()
-    @State private var isIntakeCardExpanded: Bool = false
+    @AppStorage("isIntakeCardExpanded") private var isIntakeCardExpanded: Bool = false
     @State private var isEntriesLoading: Bool = true
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
@@ -87,6 +87,17 @@ struct MainView: View {
 
     private var consumedSugar: Int {
         0
+    }
+
+    private func macroSuggestion(consumed: Int, goal: Int) -> (String, Bool)? {
+        let threshold = Double(goal) * 0.2
+        let diff = Double(consumed - goal)
+        if diff > threshold {
+            return ("Decrease", true)
+        } else if diff < -threshold {
+            return ("Increase", true)
+        }
+        return nil
     }
 
     private var mealBubbles: [MealBubble] {
@@ -728,77 +739,53 @@ struct MainView: View {
 
                                     // Expandable macros section
                                     if isIntakeCardExpanded {
-                                        VStack(alignment: .leading, spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 16) {
                                             Text("Today's Macros")
                                                 .font(.system(size: 16))
                                                 .fontWeight(.semibold)
                                                 .foregroundColor(Color.primaryText(isDark))
-                                                .padding(.bottom, 8)
-                                                .padding(.top, 40)
+                                                .padding(.bottom, 16)
+                                                .padding(.top, 32)
 
-                                            // Protein row
-                                            HStack {
-                                                Circle()
-                                                    .fill(Color(red: 49/255, green: 209/255, blue: 149/255))
-                                                    .frame(width: 8, height: 8)
-                                                Text("Protein")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                Spacer()
-                                                Text("\(consumedProtein)g")
-                                                    .font(.system(size: 12))
-                                                    .fontWeight(.regular)
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                    .italic()
-                                            }
+                                            MacroAverageRow(
+                                                color: Color(red: 49/255, green: 209/255, blue: 149/255),
+                                                title: "Protein",
+                                                value: consumedProtein,
+                                                goal: dailyProteinGoal,
+                                                unit: "g",
+                                                suggestion: macroSuggestion(consumed: consumedProtein, goal: dailyProteinGoal),
+                                                isDark: isDark
+                                            )
 
-                                            // Carbs row
-                                            HStack {
-                                                Circle()
-                                                    .fill(Color(red: 135/255, green: 206/255, blue: 250/255))
-                                                    .frame(width: 8, height: 8)
-                                                Text("Carbs")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                Spacer()
-                                                Text("\(consumedCarbs)g")
-                                                    .font(.system(size: 12))
-                                                    .fontWeight(.regular)
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                    .italic()
-                                            }
+                                            MacroAverageRow(
+                                                color: Color(red: 135/255, green: 206/255, blue: 250/255),
+                                                title: "Carbs",
+                                                value: consumedCarbs,
+                                                goal: dailyCarbsGoal,
+                                                unit: "g",
+                                                suggestion: macroSuggestion(consumed: consumedCarbs, goal: dailyCarbsGoal),
+                                                isDark: isDark
+                                            )
 
-                                            // Fats row
-                                            HStack {
-                                                Circle()
-                                                    .fill(Color(red: 255/255, green: 180/255, blue: 50/255))
-                                                    .frame(width: 8, height: 8)
-                                                Text("Fats")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                Spacer()
-                                                Text("\(consumedFats)g")
-                                                    .font(.system(size: 12))
-                                                    .fontWeight(.regular)
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                    .italic()
-                                            }
+                                            MacroAverageRow(
+                                                color: Color(red: 255/255, green: 180/255, blue: 50/255),
+                                                title: "Fats",
+                                                value: consumedFats,
+                                                goal: dailyFatsGoal,
+                                                unit: "g",
+                                                suggestion: macroSuggestion(consumed: consumedFats, goal: dailyFatsGoal),
+                                                isDark: isDark
+                                            )
 
-                                            // Sugars row
-                                            HStack {
-                                                Circle()
-                                                    .fill(Color.red)
-                                                    .frame(width: 8, height: 8)
-                                                Text("Sugars")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                Spacer()
-                                                Text("\(consumedSugar)g")
-                                                    .font(.system(size: 12))
-                                                    .fontWeight(.regular)
-                                                    .foregroundColor(Color.primaryText(isDark))
-                                                    .italic()
-                                            }
+                                            MacroAverageRow(
+                                                color: Color.red,
+                                                title: "Sugars",
+                                                value: consumedSugar,
+                                                goal: dailySugarGoal,
+                                                unit: "g",
+                                                suggestion: macroSuggestion(consumed: consumedSugar, goal: dailySugarGoal),
+                                                isDark: isDark
+                                            )
                                         }
                                     }
                                 }

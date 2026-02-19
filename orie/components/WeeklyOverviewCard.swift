@@ -27,7 +27,7 @@ struct WeeklyOverviewCard: View {
     let dailySugarGoal: Int
     var isDark: Bool = false
 
-    @State private var isExpanded: Bool = false
+    @AppStorage("isWeeklyOverviewExpanded") private var isExpanded: Bool = false
 
     // Macro colors
     private let proteinColor = Color(red: 49/255, green: 209/255, blue: 149/255)
@@ -111,22 +111,24 @@ struct WeeklyOverviewCard: View {
         return daysWithData.reduce(0) { $0 + $1.sugars } / daysWithData.count
     }
 
-    // Check if value needs adjustment suggestion
+    // Check if value needs adjustment suggestion (20% threshold)
     private func caloriesSuggestion() -> (String, Bool)? {
-        let diff = avgCalories - dailyCalorieGoal
-        if diff > 200 {
+        let threshold = Double(dailyCalorieGoal) * 0.2
+        let diff = Double(avgCalories - dailyCalorieGoal)
+        if diff > threshold {
             return ("Decrease", true)
-        } else if diff < -200 {
+        } else if diff < -threshold {
             return ("Increase", true)
         }
         return nil
     }
 
     private func macroSuggestion(avg: Int, goal: Int) -> (String, Bool)? {
-        let diff = avg - goal
-        if diff > 100 {
+        let threshold = Double(goal) * 0.2
+        let diff = Double(avg - goal)
+        if diff > threshold {
             return ("Decrease", true)
-        } else if diff < -100 {
+        } else if diff < -threshold {
             return ("Increase", true)
         }
         return nil
@@ -147,7 +149,7 @@ struct WeeklyOverviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            Text("Overview")
+            Text("Weekly Overview")
                 .font(.system(size: 12))
                 .foregroundColor(Color.secondaryText(isDark))
                 .fontWeight(.medium)
@@ -230,19 +232,20 @@ struct WeeklyOverviewCard: View {
 
             // Expanded section - Daily averages
             if isExpanded {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Daily Avg.")
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Weekly Macro Avgs.")
                         .font(.system(size: 16))
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
                         .padding(.top, 32)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 16)
 
                     // Calories row
                     MacroAverageRow(
                         color: caloriesColor,
                         title: "Calories",
                         value: avgCalories,
+                        goal: dailyCalorieGoal,
                         unit: "cal",
                         suggestion: caloriesSuggestion(),
                         isDark: isDark
@@ -253,6 +256,7 @@ struct WeeklyOverviewCard: View {
                         color: proteinColor,
                         title: "Protein",
                         value: avgProtein,
+                        goal: dailyProteinGoal,
                         unit: "g",
                         suggestion: macroSuggestion(avg: avgProtein, goal: dailyProteinGoal),
                         isDark: isDark
@@ -263,6 +267,7 @@ struct WeeklyOverviewCard: View {
                         color: carbsColor,
                         title: "Carbs",
                         value: avgCarbs,
+                        goal: dailyCarbsGoal,
                         unit: "g",
                         suggestion: macroSuggestion(avg: avgCarbs, goal: dailyCarbsGoal),
                         isDark: isDark
@@ -273,6 +278,7 @@ struct WeeklyOverviewCard: View {
                         color: fatsColor,
                         title: "Fats",
                         value: avgFats,
+                        goal: dailyFatsGoal,
                         unit: "g",
                         suggestion: macroSuggestion(avg: avgFats, goal: dailyFatsGoal),
                         isDark: isDark
@@ -283,6 +289,7 @@ struct WeeklyOverviewCard: View {
                         color: sugarsColor,
                         title: "Sugars",
                         value: avgSugars,
+                        goal: dailySugarGoal,
                         unit: "g",
                         suggestion: macroSuggestion(avg: avgSugars, goal: dailySugarGoal),
                         isDark: isDark
@@ -377,9 +384,15 @@ struct MacroAverageRow: View {
     let color: Color
     let title: String
     let value: Int
+    let goal: Int
     let unit: String
     let suggestion: (String, Bool)?
     let isDark: Bool
+
+    private var isTooLow: Bool {
+        guard let (suggestionText, show) = suggestion, show else { return false }
+        return suggestionText == "Increase"
+    }
 
     var body: some View {
         HStack {
@@ -393,19 +406,27 @@ struct MacroAverageRow: View {
 
             Spacer()
 
-            if let (suggestionText, showSuggestion) = suggestion, showSuggestion {
-                Text("\(value)\(unit) - \(suggestionText)")
-                    .font(.system(size: 12))
-                    .fontWeight(.regular)
-                    .foregroundColor(Color.accessibleYellow(isDark))
-                    .italic()
-            } else {
-                Text("\(value)\(unit)")
-                    .font(.system(size: 12))
-                    .fontWeight(.regular)
+            HStack(spacing: 0) {
+                if isTooLow {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.accessibleYellow(isDark))
+                        .padding(.trailing, 4)
+                }
+
+                Text(" \(value)\(unit)")
                     .foregroundColor(Color.primaryText(isDark))
-                    .italic()
+                Text(" / \(goal)\(unit)")
+                    .foregroundColor(.gray)
+
+                if let (suggestionText, showSuggestion) = suggestion, showSuggestion {
+                    Text(" - \(suggestionText)")
+                        .foregroundColor(.gray)
+                }
             }
+            .font(.system(size: 12))
+            .fontWeight(.regular)
+            .italic()
         }
     }
 }
@@ -428,7 +449,7 @@ struct MacroAverageRow: View {
     return WeeklyOverviewCard(
         weekData: sampleData,
         note: "Weeks looking good so far, but watch your fat levels. You've been over a few times...",
-        dailyCalorieGoal: 2300,
+        dailyCalorieGoal: 3000,
         dailyProteinGoal: 150,
         dailyCarbsGoal: 200,
         dailyFatsGoal: 65,

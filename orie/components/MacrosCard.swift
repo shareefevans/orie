@@ -171,56 +171,63 @@ struct MacroDotCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // MARK: 👉 Title with colored dot
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: 6, height: 6)
-
-                Text(title)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.secondaryText(isDark))
-                    .fontWeight(.medium)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(consumed.formatted())
-                    .font(.system(size: 24))
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color.primaryText(isDark))
-
-                Text("g")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color.primaryText(isDark))
-                    .fontWeight(.regular)
-            }
-            .padding(.top, 4)
-
-            Text("\(remaining)g left")
-                .font(.system(size: 12))
-                .foregroundColor(remaining < -25 ? .red : Color.accessibleYellow(isDark))
-                .padding(.top, 4)
-
+        VStack {
             Spacer()
 
-            // Pie chart with goal below
-            VStack(alignment: .leading, spacing: 8) {
-                CircularProgressChart(
-                    progress: progress,
-                    size: 28,
-                    lineWidth: 5,
-                    gradientColors: gradientColors,
-                    isDark: isDark
-                )
+            VStack(alignment: .leading, spacing: 0) {
+                // MARK: 👉 Title with colored dot
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: 6, height: 6)
 
-                Text("\(goal)g")
+                    Text(title)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .fontWeight(.medium)
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(consumed.formatted())
+                        .font(.system(size: 24))
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+
+                    Text("grams")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fontWeight(.regular)
+                }
+                .padding(.top, 4)
+
+                Text("\(remaining)g left")
                     .font(.system(size: 12))
-                    .foregroundColor(Color.primaryText(isDark))
+                    .foregroundColor(Color.accessibleYellow(isDark))
+                    .padding(.top, 4)
+
+                // Progress bar
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.chartBackground(isDark))
+                        .frame(width: 87, height: 6)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(
+                            LinearGradient(
+                                colors: gradientColors,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 87 * CGFloat(progress), height: 6)
+                }
+                .padding(.top, 8)
             }
+
+            Spacer()
         }
         .padding(24)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)

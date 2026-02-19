@@ -44,6 +44,21 @@ struct HealthTabView: View {
                 isDark: isDark
             )
 
+            // MARK: - ❇️ Today's Intake Header
+            VStack(spacing: 4) {
+                Text("Today's Intake")
+                    .font(.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(isDark ? .white : .black)
+
+                Text(Date(), format: .dateTime.weekday(.wide).day().month(.abbreviated).year())
+                    .font(.footnote)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+
             // MARK: - ❇️ Row 1: Daily Intake (left) | Protein (right)
             HStack(spacing: 8) {
                 DailyIntakeCard(

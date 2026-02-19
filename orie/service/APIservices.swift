@@ -96,4 +96,39 @@ class APIService {
         let analysisData = try JSONDecoder().decode(ImageAnalysisResponse.self, from: data)
         return analysisData
     }
+
+    // MARK: 👉 Send Feedback
+    struct FeedbackRequest: Codable {
+        let name: String
+        let email: String
+        let message: String
+    }
+
+    static func sendFeedback(accessToken: String, name: String, email: String, message: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/feedback") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let feedbackBody = FeedbackRequest(name: name, email: email, message: message)
+        request.httpBody = try JSONEncoder().encode(feedbackBody)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.sessionExpired
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
 }

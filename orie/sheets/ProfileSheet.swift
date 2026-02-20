@@ -68,8 +68,8 @@ struct ProfileSheet: View {
                         showFeedbackModal = true
                     }) {
                         Text("Feedback")
-                            .font(.footnote)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 12))
+                            .fontWeight(.medium)
                             .foregroundColor(Color.primaryText(isDark))
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)

@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+private struct ContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct NutritionEditSheet: View {
     @Environment(\.dismiss) var dismiss
     let entry: FoodEntry
@@ -18,12 +25,17 @@ struct NutritionEditSheet: View {
     @State private var editedCarbs: String
     @State private var editedFats: String
 
-    // Ingredient builder fields (UI only for now)
+    // Ingredient builder fields
     @State private var ingredientFood: String = ""
     @State private var ingredientQuantity: String = ""
-    @State private var ingredientMetric: String = ""
 
-    // Focus states for each field
+    // Expanded state
+    @State private var showGetSpecific: Bool = false
+
+    // Sheet sizing
+    @State private var sheetHeight: CGFloat = 0
+
+    // Focus states
     @FocusState private var focusedField: Field?
 
     enum Field {
@@ -62,31 +74,27 @@ struct NutritionEditSheet: View {
                 VStack(spacing: 0) {
                     // MARK: - Header
                     HStack {
-                        Text("Update Calories")
+                        Text(showGetSpecific ? "Get Specific" : "Update Calories")
                             .font(.system(size: 12))
                             .foregroundColor(Color.secondaryText(isDark))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showGetSpecific)
 
                         Spacer()
 
                         if isKeyboardOpen {
-                            Button(action: {
-                                focusedField = nil
-                            }) {
+                            Button(action: { focusedField = nil }) {
                                 Image(systemName: "checkmark")
                                     .font(.callout)
-                                    .foregroundColor(isDark ? .black : .white)
+                                    .foregroundColor(.black)
                                     .frame(width: 50, height: 50)
-                                    .background {
-                                        Circle()
-                                            .fill(.ultraThinMaterial)
-                                            .overlay(Circle().fill(Color.yellow))
-                                    }
-                                    .clipShape(Circle())
+                                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: Circle())
+                                    .glassEffect(in: Circle())
                             }
                             .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
                         } else {
                             Button("Save") {
-                                saveChanges()
+                                commitSave()
+                                dismiss()
                             }
                             .foregroundColor(Color.accentBlue)
                             .fontWeight(.semibold)
@@ -106,181 +114,200 @@ struct NutritionEditSheet: View {
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // MARK: - Build With Ingredients section
-                    Text("Build With Ingredients")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.yellow)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.bottom, 24)
-                        .padding(.top, 24)
 
-                    customDivider
+                    // MARK: - Confirm Totals (macro rows, hidden in Get Specific mode)
+                    if !showGetSpecific {
+                        VStack(spacing: 0) {
+                            customDivider
 
-                    // Food row
-                    IngredientInputRow(
-                        label: "Food",
-                        placeholder: "Enter Item/Ingredient",
-                        value: $ingredientFood,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .ingredientFood
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.ingredientFood)
+                            MacroEditRow(
+                                label: "Calories",
+                                value: $editedCalories,
+                                unit: "cal",
+                                color: caloriesDotColor,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .calories
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.calories)
 
-                    customDivider
+                            customDivider
 
-                    // Quantity row
-                    IngredientInputRow(
-                        label: "Quantity",
-                        placeholder: "Amount",
-                        value: $ingredientQuantity,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .ingredientQuantity
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.ingredientQuantity)
+                            MacroEditRow(
+                                label: "Protein",
+                                value: $editedProtein,
+                                unit: "g",
+                                color: proteinDotColor,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .protein
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.protein)
 
-                    customDivider
+                            customDivider
 
-                    // Metric row
-                    HStack(spacing: 0) {
-                        Text("Metric")
-                            .font(.subheadline)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            MacroEditRow(
+                                label: "Carbs",
+                                value: $editedCarbs,
+                                unit: "g",
+                                color: carbsDotColor,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .carbs
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.carbs)
 
-                        HStack(spacing: 8) {
-                            Text("Select")
-                                .font(.subheadline)
-                                .foregroundColor(Color.secondaryText(isDark))
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color.secondaryText(isDark))
+                            customDivider
+
+                            MacroEditRow(
+                                label: "Fats",
+                                value: $editedFats,
+                                unit: "g",
+                                color: fatsDotColor,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .fats
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.fats)
                         }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
-                    .padding(.vertical, 24)
 
-                    // Add button
-                    Button(action: {
-                        // Add ingredient action (placeholder)
-                    }) {
-                        Text("Add")
-                            .font(.callout)
-                            .fontWeight(.medium)
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 44)
-                            .background(isDark ? Color.white : Color(red: 0.933, green: 0.933, blue: 0.933))
-                            .clipShape(Capsule())
+                    // MARK: - Build With Ingredients (revealed on expand)
+                    if showGetSpecific {
+                        VStack(spacing: 0) {
+
+                            customDivider
+
+                            IngredientInputRow(
+                                label: "Food",
+                                placeholder: "Enter Item/Ingredient",
+                                value: $ingredientFood,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .ingredientFood
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.ingredientFood)
+
+                            customDivider
+
+                            IngredientInputRow(
+                                label: "Quantity",
+                                placeholder: "Amount",
+                                value: $ingredientQuantity,
+                                isDark: isDark,
+                                focusedField: $focusedField,
+                                field: .ingredientQuantity
+                            )
+                            .padding(.vertical, 24)
+                            .id(Field.ingredientQuantity)
+
+                            customDivider
+
+                            HStack(spacing: 0) {
+                                Text("Metric")
+                                    .font(.subheadline)
+                                    .foregroundColor(Color.primaryText(isDark))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                HStack(spacing: 8) {
+                                    Text("Select")
+                                        .font(.subheadline)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                }
+                            }
+                            .padding(.vertical, 24)
+
+                            Button(action: {
+                                // TODO: Add ingredient to list
+                            }) {
+                                Text("Add")
+                                    .font(.system(size: 14))
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(isDark ? .white : .black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                            }
+                            .glassEffect(in: .capsule)
+                            .padding(.top, 8)
+                            .padding(.bottom, 8)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
-                    .padding(.top, 8)
-                    .padding(.bottom, 24)
-
-                    // MARK: - Confirm Totals section
-                    Text("Confirm Totals")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.yellow)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 24)
-
-                    customDivider
-
-                    // Calories row
-                    MacroEditRow(
-                        label: "Calories",
-                        value: $editedCalories,
-                        unit: "cal",
-                        color: caloriesDotColor,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .calories
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.calories)
-
-                    customDivider
-
-                    // Protein row
-                    MacroEditRow(
-                        label: "Protein",
-                        value: $editedProtein,
-                        unit: "g",
-                        color: proteinDotColor,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .protein
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.protein)
-
-                    customDivider
-
-                    // Carbs row
-                    MacroEditRow(
-                        label: "Carbs",
-                        value: $editedCarbs,
-                        unit: "g",
-                        color: carbsDotColor,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .carbs
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.carbs)
-
-                    customDivider
-
-                    // Fats row
-                    MacroEditRow(
-                        label: "Fats",
-                        value: $editedFats,
-                        unit: "g",
-                        color: fatsDotColor,
-                        isDark: isDark,
-                        focusedField: $focusedField,
-                        field: .fats
-                    )
-                    .padding(.vertical, 24)
-                    .id(Field.fats)
 
                     // MARK: - Bottom buttons
                     HStack(spacing: 12) {
                         Button(action: {
-                            dismiss()
+                            if showGetSpecific {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                    showGetSpecific = false
+                                }
+                            } else {
+                                dismiss()
+                            }
                         }) {
                             Text("Cancel")
-                                .font(.callout)
+                                .font(.system(size: 14))
                                 .fontWeight(.medium)
-                                .foregroundColor(.black)
+                                .foregroundStyle(isDark ? .white : .black)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
-                                .background(isDark ? Color.white.opacity(0.15) : Color(red: 0.933, green: 0.933, blue: 0.933))
-                                .clipShape(Capsule())
                         }
+                        .glassEffect(in: .capsule)
 
-                        Button(action: {
-                            saveChanges()
-                        }) {
-                            Text("Update")
-                                .font(.callout)
-                                .fontWeight(.medium)
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(Color.yellow.opacity(0.8))
-                                .clipShape(Capsule())
+                        if showGetSpecific {
+                            Button(action: {
+                                commitSave()
+                                dismiss()
+                            }) {
+                                Text("Update")
+                                    .font(.system(size: 14))
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+                            }
+                            .glassEffect(in: .capsule)
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        } else {
+                            Button(action: {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                    showGetSpecific = true
+                                }
+                            }) {
+                                Text("Get Specific")
+                                    .font(.system(size: 14))
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+                            }
+                            .glassEffect(in: .capsule)
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
+                    .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showGetSpecific)
                     .padding(.top, 16)
                     .padding(.bottom, 24)
                 }
                 .padding(.horizontal, 32)
                 .padding(.top, 32)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+                    }
+                )
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.never)
@@ -295,16 +322,20 @@ struct NutritionEditSheet: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKeyboardOpen)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Color.cardBackground(isDark))
+        .onPreferenceChange(ContentHeightKey.self) { height in
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                sheetHeight = height
+            }
+        }
+        .presentationDetents(sheetHeight > 0 ? [.height(sheetHeight)] : [.fraction(0.85)])
     }
 
-    private func saveChanges() {
+    private func commitSave() {
         let calories = Int(editedCalories) ?? entry.calories ?? 0
         let protein = Double(editedProtein) ?? entry.protein ?? 0
         let carbs = Double(editedCarbs) ?? entry.carbs ?? 0
         let fats = Double(editedFats) ?? entry.fats ?? 0
-
         onSave(calories, protein, carbs, fats)
-        dismiss()
     }
 }
 
@@ -401,7 +432,7 @@ struct IngredientInputRow<Field: Hashable>: View {
 
     return NutritionEditSheet(
         entry: entry,
-        isDark: true,
+        isDark: false,
         onSave: { _, _, _, _ in }
     )
 }

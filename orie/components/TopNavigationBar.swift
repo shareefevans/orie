@@ -56,14 +56,10 @@ struct TopNavigationBar: View {
                     }) {
                         Image(systemName: "xmark")
                             .font(.callout)
-                            .foregroundColor(isDark ? .black : .white)
+                            .foregroundColor(.black)
                             .frame(width: 50, height: 50)
-                            .background {
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(Circle().fill(Color.yellow))
-                            }
-                            .clipShape(Circle())
+                            .background(Color.accessibleYellow(isDark).opacity(0.55), in: Circle())
+                            .glassEffect(in: Circle())
                     }
                     .transition(.move(edge: .leading).combined(with: .opacity).combined(with: .scale))
                 }
@@ -136,14 +132,10 @@ struct TopNavigationBar: View {
                 }) {
                     Image(systemName: "checkmark")
                         .font(.callout)
-                        .foregroundColor(isDark ? .black : .white)
+                        .foregroundColor(.black)
                         .frame(width: 50, height: 50)
-                        .background {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay(Circle().fill(Color.yellow))
-                        }
-                        .clipShape(Circle())
+                        .background(Color.accessibleYellow(isDark).opacity(0.55), in: Circle())
+                        .glassEffect(in: Circle())
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .scale))
             }

@@ -28,6 +28,7 @@ struct TopNavigationBar: View {
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         isDateSelectionMode.toggle()
+                        if isDateSelectionMode { isInputFocused = false }
                     }
                 }) {
                     HStack(spacing: 8) {

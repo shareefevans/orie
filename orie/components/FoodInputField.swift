@@ -54,6 +54,7 @@ struct FoodInputField: View {
                     .foregroundColor(Color.primaryText(isDark))
                     .lineLimit(1...5)
                     .focused($isFocused)
+                    .colorScheme(isDark ? .dark : .light)
                     .offset(x: -8)
                     #if os(iOS)
                     .autocorrectionDisabled(false)

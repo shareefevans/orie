@@ -36,7 +36,7 @@ struct ErrorBanner: View {
 
 #Preview("Error Banner") {
     ZStack {
-        Color.black
+        Color.white
             .ignoresSafeArea()
 
         VStack {

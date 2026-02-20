@@ -14,6 +14,7 @@ struct FoodEntryRow: View {
     var onDelete: (() -> Void)?
     var onFoodNameChange: ((String) -> Void)?
     var onNutritionChange: ((Int, Double, Double, Double) -> Void)?
+    var onOpenSheet: (() -> Void)?
     @Binding var isEditing: Bool
 
     @State private var showTimePicker = false
@@ -26,13 +27,14 @@ struct FoodEntryRow: View {
     @State private var editedFoodName: String
     @FocusState private var isTextFieldFocused: Bool
 
-    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, onNutritionChange: ((Int, Double, Double, Double) -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
+    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, onNutritionChange: ((Int, Double, Double, Double) -> Void)? = nil, onOpenSheet: (() -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
         self.entry = entry
         self.isDark = isDark
         self.onTimeChange = onTimeChange
         self.onDelete = onDelete
         self.onFoodNameChange = onFoodNameChange
         self.onNutritionChange = onNutritionChange
+        self.onOpenSheet = onOpenSheet
         self._isEditing = isEditing
         _selectedTime = State(initialValue: entry.timestamp)
         _editedFoodName = State(initialValue: entry.foodName)
@@ -80,6 +82,7 @@ struct FoodEntryRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(nil)
                         .multilineTextAlignment(.leading)
+                        .colorScheme(isDark ? .dark : .light)
                         .focused($isTextFieldFocused)
                         .onChange(of: editedFoodName) { _, newValue in
                             // Detect Enter key press (newline character) and submit
@@ -108,6 +111,7 @@ struct FoodEntryRow: View {
                         }
                         .onLongPressGesture(minimumDuration: 0.5) {
                             if !entry.isLoading {
+                                onOpenSheet?()
                                 showNutritionDetail = true
                             }
                         }
@@ -137,6 +141,7 @@ struct FoodEntryRow: View {
                         .frame(width: 90, alignment: .trailing)
                 } else if let calories = entry.calories {
                     Button(action: {
+                        onOpenSheet?()
                         showNutritionEdit = true
                     }) {
                         Text("\(calories) cal")

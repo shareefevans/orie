@@ -36,6 +36,9 @@ struct MainView: View {
     @State private var isEntriesLoading: Bool = true
     @State private var apiErrorMessage: String? = nil
     @State private var errorBannerTask: Task<Void, Never>? = nil
+    @State private var awardBannerAchievement: Achievement? = nil
+    @State private var awardBannerTask: Task<Void, Never>? = nil
+    @State private var awardBannerQueue: [Achievement] = []
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -173,6 +176,40 @@ struct MainView: View {
         }
     }
 
+    // MARK: 👉 Dismiss All Inputs
+    private func dismissAllInputs() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            isDateSelectionMode = false
+        }
+        editingEntryId = nil
+        isInputFocused = false
+    }
+
+    // MARK: 👉 Show Award Banner
+    private func showAwardBanners(_ achievements: [Achievement]) {
+        awardBannerQueue.append(contentsOf: achievements)
+        guard awardBannerAchievement == nil else { return }
+        showNextAward()
+    }
+
+    private func showNextAward() {
+        guard !awardBannerQueue.isEmpty else { return }
+        let next = awardBannerQueue.removeFirst()
+        awardBannerTask?.cancel()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            awardBannerAchievement = next
+        }
+        awardBannerTask = Task {
+            try? await Task.sleep(for: .seconds(5))
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    awardBannerAchievement = nil
+                }
+                showNextAward()
+            }
+        }
+    }
+
     // MARK: 👉 Add Food Entry
     private func addFoodEntry(foodName: String) {
         guard !foodName.isEmpty else { return }
@@ -234,6 +271,14 @@ struct MainView: View {
                         foodEntries[index].dbId = dbEntry.id
                         localNotificationManager.scheduleMealNotification(for: foodEntries[index])
                         loadWeeklyFoodEntries()
+                    }
+
+                    if let syncResult = try? await authManager.withAuthRetry({ accessToken in
+                        try await AchievementService.syncAchievements(accessToken: accessToken)
+                    }), !syncResult.newlyUnlocked.isEmpty {
+                        await MainActor.run {
+                            showAwardBanners(syncResult.newlyUnlocked)
+                        }
                     }
                 }
             } catch APIError.sessionExpired {
@@ -820,6 +865,7 @@ struct MainView: View {
                                             onNutritionChange: { calories, protein, carbs, fats in
                                                 updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
                                             },
+                                            onOpenSheet: { dismissAllInputs() },
                                             isEditing: Binding(
                                                 get: { editingEntryId == entry.id },
                                                 set: { isEditing in
@@ -958,6 +1004,20 @@ struct MainView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .zIndex(10)
             }
+
+            // MARK: - ❇️ Award Banner
+            if let award = awardBannerAchievement {
+                VStack {
+                    Spacer()
+                    AwardBanner(achievement: award) {
+                        showAwards = true
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, apiErrorMessage != nil ? 120 : 48)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(11)
+            }
         }
 
         // MARK: - ❇️ Sheet Modifiers
@@ -991,12 +1051,35 @@ struct MainView: View {
         .onChange(of: selectedDate) { _, _ in
             loadFoodEntries()
         }
+        .onChange(of: isInputFocused) { _, focused in
+            if focused {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isDateSelectionMode = false
+                }
+            }
+        }
+        .onChange(of: editingEntryId) { _, id in
+            if id != nil {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isDateSelectionMode = false
+                }
+            }
+        }
         .onChange(of: selectedTab) { _, newTab in
             if newTab == "consumed" {
                 consumedTabId = UUID()
             } else if newTab == "health" {
                 healthTabId = UUID()
             }
+        }
+        .onChange(of: showAwards) { _, shown in
+            if shown { dismissAllInputs() }
+        }
+        .onChange(of: showProfile) { _, shown in
+            if shown { dismissAllInputs() }
+        }
+        .onChange(of: showNotifications) { _, shown in
+            if shown { dismissAllInputs() }
         }
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {

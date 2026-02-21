@@ -323,11 +323,21 @@ class AuthManager: ObservableObject {
                 saveSession(session)
                 currentUser = response.user
                 isAuthenticated = true
+            } else {
+                // Server responded but returned no session — refresh token is invalid
+                clearSession()
+                isAuthenticated = false
             }
-        } catch {
-            // Refresh failed, user needs to login again
+        } catch is AuthError {
+            // Server explicitly rejected the refresh token — log out
             clearSession()
             isAuthenticated = false
+        } catch {
+            // Network or other transient error — preserve the existing session.
+            // Don't log out the user just because of connectivity issues.
+            if getAccessToken() != nil {
+                isAuthenticated = true
+            }
         }
     }
 }

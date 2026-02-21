@@ -20,6 +20,7 @@ struct FoodInputField: View {
     var onError: ((String) -> Void)? = nil
     @FocusState.Binding var isFocused: Bool
     var authManager: AuthManager? = nil
+    var onSuggestionChanged: ((String?) -> Void)? = nil
 
     #if os(iOS)
     @State private var isRecording = false
@@ -81,24 +82,8 @@ struct FoodInputField: View {
                         }
                     }
                     #if os(iOS)
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            if let suggestion = autocompleteSuggestion {
-                                Button {
-                                    selectSuggestion(suggestion)
-                                } label: {
-                                    Text(suggestion)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                        .padding(.horizontal, 16)
-                                }
-                                .buttonStyle(.plain)
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
+                    .onChange(of: autocompleteSuggestion) { _, newValue in
+                        onSuggestionChanged?(newValue)
                     }
                     #endif
             }

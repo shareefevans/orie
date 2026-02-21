@@ -39,6 +39,8 @@ struct MainView: View {
     @State private var awardBannerAchievement: Achievement? = nil
     @State private var awardBannerTask: Task<Void, Never>? = nil
     @State private var awardBannerQueue: [Achievement] = []
+    @State private var autocompleteSuggestion: String? = nil
+    @State private var keyboardHeight: CGFloat = 0
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -621,6 +623,320 @@ struct MainView: View {
         }
     }
 
+    // MARK: - ❇️ Autocomplete Pill Overlay
+
+    @ViewBuilder
+    private var autocompletePillOverlay: some View {
+        if let suggestion = autocompleteSuggestion, isInputFocused, keyboardHeight > 0 {
+            VStack {
+                Spacer()
+                HStack {
+                    Button {
+                        let s = suggestion
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            autocompleteSuggestion = nil
+                        }
+                        currentInput = ""
+                        addFoodEntry(foodName: s)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isInputFocused = true
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                            Text(suggestion)
+                                .font(.system(size: 14))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 44)
+                        .glassEffect(in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, keyboardHeight + 8)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
+            .allowsHitTesting(true)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+            .zIndex(12)
+        }
+    }
+
+    // MARK: - ❇️ Tab Selector Content
+
+    @ViewBuilder
+    private var tabSelectorContent: some View {
+        if isDateSelectionMode {
+            ScrollViewReader { dateProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 24) {
+                        ForEach(datesInCurrentMonth(), id: \.self) { date in
+                            DateButton(
+                                date: date,
+                                isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
+                                isDark: isDark,
+                                action: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        selectedDate = date
+                                    }
+                                }
+                            )
+                            .id(date)
+                        }
+                    }
+                    .padding(.horizontal, 32)
+                }
+                .mask(
+                    HStack(spacing: 0) {
+                        LinearGradient(
+                            gradient: Gradient(colors: [.clear, .black]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 32)
+
+                        Color.black
+
+                        LinearGradient(
+                            gradient: Gradient(colors: [.black, .clear]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 32)
+                    }
+                )
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation {
+                            dateProxy.scrollTo(selectedDate, anchor: .center)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 32)
+            .padding(.bottom, 40)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        } else {
+            HStack(spacing: 32) {
+                TabButton(
+                    title: "Health",
+                    isSelected: selectedTab == "health",
+                    isDark: isDark,
+                    action: { selectedTab = "health" }
+                )
+
+                TabButton(
+                    title: "Consumed",
+                    isSelected: selectedTab == "consumed",
+                    isDark: isDark,
+                    action: { selectedTab = "consumed" }
+                )
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 40)
+            .padding(.bottom, 40)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    // MARK: - ❇️ Consumed Tab Content
+
+    @ViewBuilder
+    private func consumedTabContent(proxy: ScrollViewProxy) -> some View {
+        if selectedTab == "consumed" {
+            VStack(spacing: 8) {
+
+                if isEntriesLoading {
+                    ConsumedTabSkeleton(isDark: isDark)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Daily intake")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.secondaryText(isDark))
+                            .fontWeight(.medium)
+
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(consumedCalories.formatted())
+                                .font(.system(size: 24))
+                                .fontWeight(.semibold)
+                                .foregroundColor(Color.primaryText(isDark))
+
+                            Text("cal")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color.primaryText(isDark))
+                                .fontWeight(.regular)
+                        }
+                        .padding(.top, 4)
+
+                        Text("\(remainingCalories) remaining")
+                            .font(.system(size: 14))
+                            .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
+                            .padding(.top, 4)
+
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("0")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color.secondaryText(isDark))
+
+                                Spacer()
+
+                                Text(dailyCalorieGoal.formatted())
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color.primaryText(isDark))
+                            }
+
+                            MealProgressBar(
+                                progress: calorieProgress,
+                                meals: mealBubbles,
+                                isDark: isDark
+                            )
+                            .id(consumedTabId)
+                        }
+                        .padding(.top, 32)
+
+                        if isIntakeCardExpanded {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Today's Macros")
+                                    .font(.system(size: 16))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color.primaryText(isDark))
+                                    .padding(.bottom, 16)
+                                    .padding(.top, 32)
+
+                                MacroAverageRow(
+                                    color: Color(red: 49/255, green: 209/255, blue: 149/255),
+                                    title: "Protein",
+                                    value: consumedProtein,
+                                    goal: dailyProteinGoal,
+                                    unit: "g",
+                                    suggestion: macroSuggestion(consumed: consumedProtein, goal: dailyProteinGoal),
+                                    isDark: isDark
+                                )
+
+                                MacroAverageRow(
+                                    color: Color(red: 135/255, green: 206/255, blue: 250/255),
+                                    title: "Carbs",
+                                    value: consumedCarbs,
+                                    goal: dailyCarbsGoal,
+                                    unit: "g",
+                                    suggestion: macroSuggestion(consumed: consumedCarbs, goal: dailyCarbsGoal),
+                                    isDark: isDark
+                                )
+
+                                MacroAverageRow(
+                                    color: Color(red: 255/255, green: 180/255, blue: 50/255),
+                                    title: "Fats",
+                                    value: consumedFats,
+                                    goal: dailyFatsGoal,
+                                    unit: "g",
+                                    suggestion: macroSuggestion(consumed: consumedFats, goal: dailyFatsGoal),
+                                    isDark: isDark
+                                )
+                            }
+                        }
+                    }
+                    .padding(.top, 32)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.cardBackground(isDark))
+                    .cornerRadius(32)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isIntakeCardExpanded.toggle()
+                    }
+
+                    VStack(spacing: 0) {
+                        ForEach(filteredEntries.sorted()) { entry in
+                            FoodEntryRow(
+                                entry: entry,
+                                isDark: isDark,
+                                onTimeChange: { newTime in
+                                    updateEntryTime(entry.id, newTime: newTime)
+                                },
+                                onDelete: {
+                                    deleteFoodEntry(entry)
+                                },
+                                onFoodNameChange: { newFoodName in
+                                    updateFoodEntry(entry.id, newFoodName: newFoodName)
+                                },
+                                onNutritionChange: { calories, protein, carbs, fats in
+                                    updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
+                                },
+                                onOpenSheet: { dismissAllInputs() },
+                                isEditing: Binding(
+                                    get: { editingEntryId == entry.id },
+                                    set: { isEditing in
+                                        if isEditing {
+                                            editingEntryId = entry.id
+                                        } else if editingEntryId == entry.id {
+                                            editingEntryId = nil
+                                        }
+                                    }
+                                )
+                            )
+                        }
+
+                        FoodInputField(
+                            text: $currentInput,
+                            isDark: isDark,
+                            onSubmit: { foodName in
+                                addFoodEntry(foodName: foodName)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        proxy.scrollTo("inputField", anchor: .top)
+                                    }
+                                }
+                            },
+                            onImageAnalyzed: { result in
+                                addFoodEntryFromImage(result: result)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        proxy.scrollTo("inputField", anchor: .top)
+                                    }
+                                }
+                            },
+                            onError: { message in
+                                showError(message)
+                            },
+                            isFocused: $isInputFocused,
+                            authManager: authManager,
+                            onSuggestionChanged: { suggestion in
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    autocompleteSuggestion = suggestion
+                                }
+                            }
+                        )
+                    }
+                    .padding(.top, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.cardBackground(isDark))
+                    .cornerRadius(32)
+                }
+            }
+            .padding(.horizontal, 16)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        }
+    }
+
     // MARK: - ❇️ Body
 
     var body: some View {
@@ -640,82 +956,7 @@ struct MainView: View {
                         .listRowBackground(Color.clear)
 
                     // MARK: 👉 Tab Buttons / Date Selector
-                    if isDateSelectionMode {
-                        ScrollViewReader { dateProxy in
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 24) {
-                                    ForEach(datesInCurrentMonth(), id: \.self) { date in
-                                        DateButton(
-                                            date: date,
-                                            isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
-                                            isDark: isDark,
-                                            action: {
-                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                                    selectedDate = date
-                                                }
-                                            }
-                                        )
-                                        .id(date)
-                                    }
-                                }
-                                .padding(.horizontal, 32)
-                            }
-                            .mask(
-                                HStack(spacing: 0) {
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [.clear, .black]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                    .frame(width: 32)
-
-                                    Color.black
-
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [.black, .clear]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                    .frame(width: 32)
-                                }
-                            )
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    withAnimation {
-                                        dateProxy.scrollTo(selectedDate, anchor: .center)
-                                    }
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 32)
-                        .padding(.bottom, 40)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    } else {
-                        HStack(spacing: 32) {
-                            TabButton(
-                                title: "Health",
-                                isSelected: selectedTab == "health",
-                                isDark: isDark,
-                                action: { selectedTab = "health" }
-                            )
-
-                            TabButton(
-                                title: "Consumed",
-                                isSelected: selectedTab == "consumed",
-                                isDark: isDark,
-                                action: { selectedTab = "consumed" }
-                            )
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 40)
-                        .padding(.bottom, 40)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
+                    tabSelectorContent
 
                     // MARK: 👉 Health Tab
                     if selectedTab == "health" {
@@ -741,184 +982,7 @@ struct MainView: View {
                     }
 
                     // MARK: 👉 Consumed Tab
-                    if selectedTab == "consumed" {
-                        VStack(spacing: 8) {
-
-                            if isEntriesLoading {
-                                ConsumedTabSkeleton(isDark: isDark)
-                            } else {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text("Daily intake")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                        .fontWeight(.medium)
-
-                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                        Text(consumedCalories.formatted())
-                                            .font(.system(size: 24))
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(Color.primaryText(isDark))
-
-                                        Text("cal")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(Color.primaryText(isDark))
-                                            .fontWeight(.regular)
-                                    }
-                                    .padding(.top, 4)
-
-                                    Text("\(remainingCalories) remaining")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
-                                        .padding(.top, 4)
-
-                                    VStack(spacing: 8) {
-                                        HStack {
-                                            Text("0")
-                                                .font(.system(size: 12))
-                                                .foregroundColor(Color.secondaryText(isDark))
-
-                                            Spacer()
-
-                                            Text(dailyCalorieGoal.formatted())
-                                                .font(.system(size: 12))
-                                                .foregroundColor(Color.primaryText(isDark))
-                                        }
-
-                                        MealProgressBar(
-                                            progress: calorieProgress,
-                                            meals: mealBubbles,
-                                            isDark: isDark
-                                        )
-                                        .id(consumedTabId)
-                                    }
-                                    .padding(.top, 32)
-
-                                    // Expandable macros section
-                                    if isIntakeCardExpanded {
-                                        VStack(alignment: .leading, spacing: 16) {
-                                            Text("Today's Macros")
-                                                .font(.system(size: 16))
-                                                .fontWeight(.semibold)
-                                                .foregroundColor(Color.primaryText(isDark))
-                                                .padding(.bottom, 16)
-                                                .padding(.top, 32)
-
-                                            MacroAverageRow(
-                                                color: Color(red: 49/255, green: 209/255, blue: 149/255),
-                                                title: "Protein",
-                                                value: consumedProtein,
-                                                goal: dailyProteinGoal,
-                                                unit: "g",
-                                                suggestion: macroSuggestion(consumed: consumedProtein, goal: dailyProteinGoal),
-                                                isDark: isDark
-                                            )
-
-                                            MacroAverageRow(
-                                                color: Color(red: 135/255, green: 206/255, blue: 250/255),
-                                                title: "Carbs",
-                                                value: consumedCarbs,
-                                                goal: dailyCarbsGoal,
-                                                unit: "g",
-                                                suggestion: macroSuggestion(consumed: consumedCarbs, goal: dailyCarbsGoal),
-                                                isDark: isDark
-                                            )
-
-                                            MacroAverageRow(
-                                                color: Color(red: 255/255, green: 180/255, blue: 50/255),
-                                                title: "Fats",
-                                                value: consumedFats,
-                                                goal: dailyFatsGoal,
-                                                unit: "g",
-                                                suggestion: macroSuggestion(consumed: consumedFats, goal: dailyFatsGoal),
-                                                isDark: isDark
-                                            )
-
-                                        }
-                                    }
-                                }
-                                .padding(.top, 32)
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 32)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.cardBackground(isDark))
-                                .cornerRadius(32)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    isIntakeCardExpanded.toggle()
-                                }
-
-                                VStack(spacing: 0) {
-                                    // MARK: 👉 Food Entry Row
-                                    ForEach(filteredEntries.sorted()) { entry in
-                                        FoodEntryRow(
-                                            entry: entry,
-                                            isDark: isDark,
-                                            onTimeChange: { newTime in
-                                                updateEntryTime(entry.id, newTime: newTime)
-                                            },
-                                            onDelete: {
-                                                deleteFoodEntry(entry)
-                                            },
-                                            onFoodNameChange: { newFoodName in
-                                                updateFoodEntry(entry.id, newFoodName: newFoodName)
-                                            },
-                                            onNutritionChange: { calories, protein, carbs, fats in
-                                                updateEntryNutrition(entry.id, calories: calories, protein: protein, carbs: carbs, fats: fats)
-                                            },
-                                            onOpenSheet: { dismissAllInputs() },
-                                            isEditing: Binding(
-                                                get: { editingEntryId == entry.id },
-                                                set: { isEditing in
-                                                    if isEditing {
-                                                        editingEntryId = entry.id
-                                                    } else if editingEntryId == entry.id {
-                                                        editingEntryId = nil
-                                                    }
-                                                }
-                                            )
-                                        )
-                                    }
-
-                                    // MARK: 👉 Food Input Field
-                                    FoodInputField(
-                                        text: $currentInput,
-                                        isDark: isDark,
-                                        onSubmit: { foodName in
-                                            addFoodEntry(foodName: foodName)
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                withAnimation {
-                                                    proxy.scrollTo("inputField", anchor: .top)
-                                                }
-                                            }
-                                        },
-                                        onImageAnalyzed: { result in
-                                            addFoodEntryFromImage(result: result)
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                withAnimation {
-                                                    proxy.scrollTo("inputField", anchor: .top)
-                                                }
-                                            }
-                                        },
-                                        onError: { message in
-                                            showError(message)
-                                        },
-                                        isFocused: $isInputFocused,
-                                        authManager: authManager
-                                    )
-                                }
-                                .padding(.top, 16)
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 16)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.cardBackground(isDark))
-                                .cornerRadius(32)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
+                    consumedTabContent(proxy: proxy)
 
                     Color.clear
                         .frame(height: 120)
@@ -1018,6 +1082,9 @@ struct MainView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .zIndex(11)
             }
+
+            // MARK: - ❇️ Autocomplete Pill
+            autocompletePillOverlay
         }
 
         // MARK: - ❇️ Sheet Modifiers
@@ -1096,6 +1163,19 @@ struct MainView: View {
                 dailyFatsGoal = 65
                 weeklyNote = "Tap to see your weekly overview and daily averages."
                 weeklyTip = nil
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    keyboardHeight = frame.cgRectValue.height
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) {
+                keyboardHeight = 0
+                autocompleteSuggestion = nil
             }
         }
         .onChange(of: scenePhase) { _, newPhase in

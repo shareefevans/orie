@@ -630,35 +630,34 @@ struct MainView: View {
         if let suggestion = autocompleteSuggestion, isInputFocused, keyboardHeight > 0 {
             VStack {
                 Spacer()
-                HStack {
-                    Button {
-                        let s = suggestion
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            autocompleteSuggestion = nil
-                        }
-                        currentInput = ""
-                        addFoodEntry(foodName: s)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isInputFocused = true
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                            Text(suggestion)
-                                .font(.system(size: 14))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                        .padding(.horizontal, 16)
-                        .frame(height: 44)
-                        .glassEffect(in: Capsule())
+                Button {
+                    let s = suggestion
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        autocompleteSuggestion = nil
                     }
-                    .buttonStyle(.plain)
-                    Spacer()
+                    currentInput = ""
+                    addFoodEntry(foodName: s)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isInputFocused = true
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Text(suggestion)
+                            .font(.system(size: 14))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: 44)
+                    .glassEffect(in: Capsule())
                 }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
                 .padding(.bottom, keyboardHeight + 8)
             }

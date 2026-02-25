@@ -14,7 +14,7 @@ private struct ContentHeightKey: PreferenceKey {
     }
 }
 
-private struct AddedIngredient: Identifiable {
+struct AddedIngredient: Identifiable {
     let id = UUID()
     let food: String
     let quantity: String
@@ -73,7 +73,13 @@ struct NutritionEditSheet: View {
             .frame(height: 1)
     }
 
-    init(entry: FoodEntry, isDark: Bool = false, onSave: @escaping (Int, Double, Double, Double) -> Void) {
+    init(
+        entry: FoodEntry,
+        isDark: Bool = false,
+        onSave: @escaping (Int, Double, Double, Double) -> Void,
+        initialIngredients: [AddedIngredient] = [],
+        initialShowGetSpecific: Bool = false
+    ) {
         self.entry = entry
         self.isDark = isDark
         self.onSave = onSave
@@ -81,6 +87,8 @@ struct NutritionEditSheet: View {
         _editedProtein = State(initialValue: String(format: "%.1f", entry.protein ?? 0))
         _editedCarbs = State(initialValue: String(format: "%.1f", entry.carbs ?? 0))
         _editedFats = State(initialValue: String(format: "%.1f", entry.fats ?? 0))
+        _addedIngredients = State(initialValue: initialIngredients)
+        _showGetSpecific = State(initialValue: initialShowGetSpecific)
     }
 
     private var isKeyboardOpen: Bool {
@@ -297,52 +305,69 @@ struct NutritionEditSheet: View {
                             .glassEffect(in: .capsule)
                             .disabled(isLoadingIngredient || ingredientFood.isEmpty || ingredientQuantity.isEmpty)
                             .padding(.top, 8)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 16)
 
                             // MARK: Added ingredients list + totals
                             if !addedIngredients.isEmpty {
-                                customDivider
-                                    .padding(.vertical, 8)
-
-                                ForEach(addedIngredients) { ingredient in
-                                    HStack(spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 2) {
+                                ForEach(Array(addedIngredients.enumerated()), id: \.element.id) { index, ingredient in
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        HStack(alignment: .center, spacing: 0) {
                                             Text("\(ingredient.quantity)\(ingredient.metric) \(ingredient.food)")
                                                 .font(.subheadline)
                                                 .foregroundColor(Color.primaryText(isDark))
                                                 .lineLimit(1)
-                                            Text("\(ingredient.calories) cal  ·  \(String(format: "%.0f", ingredient.protein))g P  ·  \(String(format: "%.0f", ingredient.carbs))g C  ·  \(String(format: "%.0f", ingredient.fats))g F")
-                                                .font(.caption)
-                                                .foregroundColor(Color.secondaryText(isDark))
+                                            Spacer()
+                                            Button(action: {
+                                                addedIngredients.removeAll { $0.id == ingredient.id }
+                                            }) {
+                                                Image(systemName: "trash")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.white)
+                                                    .frame(width: 36, height: 36)
+                                                    .background(Color.red)
+                                                    .clipShape(Circle())
+                                            }
                                         }
-                                        Spacer()
-                                        Button(action: {
-                                            addedIngredients.removeAll { $0.id == ingredient.id }
-                                        }) {
-                                            Image(systemName: "xmark")
-                                                .font(.system(size: 12))
-                                                .foregroundColor(Color.secondaryText(isDark))
+
+                                        VStack(spacing: 16) {
+                                            MacroDotPill(dot: caloriesDotColor, label: "Calories", value: "\(ingredient.calories)", unit: "cal", isDark: isDark)
+                                            MacroDotPill(dot: proteinDotColor, label: "Protein", value: String(format: "%.0f", ingredient.protein), unit: "g", isDark: isDark)
+                                            MacroDotPill(dot: carbsDotColor, label: "Carbs", value: String(format: "%.0f", ingredient.carbs), unit: "g", isDark: isDark)
+                                            MacroDotPill(dot: fatsDotColor, label: "Fats", value: String(format: "%.0f", ingredient.fats), unit: "g", isDark: isDark)
                                         }
+                                        .frame(maxWidth: .infinity)
                                     }
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 16)
+
+                                    if index < addedIngredients.count - 1 {
+                                        customDivider
+                                            .padding(.vertical, 8)
+                                    }
                                 }
 
                                 customDivider
-                                    .padding(.top, 4)
+                                    .padding(.vertical, 24)
 
-                                HStack {
-                                    Text("Total")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color.primaryText(isDark))
-                                    Spacer()
-                                    Text("\(totalCalories) cal  ·  \(String(format: "%.1f", totalProtein))g P  ·  \(String(format: "%.1f", totalCarbs))g C  ·  \(String(format: "%.1f", totalFats))g F")
-                                        .font(.caption)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Total Breakdown")
+                                        .font(.system(size: 12))
                                         .fontWeight(.medium)
-                                        .foregroundColor(Color.primaryText(isDark))
+                                        .foregroundColor(Color.accessibleYellow(isDark))
+                                        .padding(.bottom, 16)
+                                        .padding(.top, 16)
+
+                                    VStack(spacing: 16) {
+                                        MacroDotPill(dot: caloriesDotColor, label: "Calories", value: "\(totalCalories)", unit: "cal", isDark: isDark, bold: true)
+                                        MacroDotPill(dot: proteinDotColor, label: "Protein", value: String(format: "%.1f", totalProtein), unit: "g", isDark: isDark, bold: true)
+                                        MacroDotPill(dot: carbsDotColor, label: "Carbs", value: String(format: "%.1f", totalCarbs), unit: "g", isDark: isDark, bold: true)
+                                        MacroDotPill(dot: fatsDotColor, label: "Fats", value: String(format: "%.1f", totalFats), unit: "g", isDark: isDark, bold: true)
+                                    }
                                 }
-                                .padding(.top, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.bottom, 4)
+
+                                customDivider
+                                    .padding(.vertical, 24)
                             }
                         }
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -552,6 +577,39 @@ struct IngredientInputRow<Field: Hashable>: View {
     }
 }
 
+// MARK: - Macro Dot Row
+private struct MacroDotPill: View {
+    let dot: Color
+    let label: String
+    let value: String
+    let unit: String
+    var isDark: Bool = false
+    var bold: Bool = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(dot)
+                    .frame(width: 6, height: 6)
+                Text(label)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.primaryText(isDark))
+            }
+            Spacer()
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 13))
+                    .fontWeight(bold ? .semibold : .regular)
+                    .foregroundColor(Color.primaryText(isDark))
+                Text(unit)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+        }
+    }
+}
+
 #Preview {
     var entry = FoodEntry(foodName: "3 Eggs, 2 slices of tip top bread, 5 slices of wagyu salami")
     entry.calories = 450
@@ -560,9 +618,17 @@ struct IngredientInputRow<Field: Hashable>: View {
     entry.fats = 22.0
     entry.isLoading = false
 
+    let sampleIngredients: [AddedIngredient] = [
+        AddedIngredient(food: "Egg", quantity: "3", metric: "piece", calories: 210, protein: 18.0, carbs: 1.5, fats: 14.0),
+        AddedIngredient(food: "Tip Top Bread", quantity: "2", metric: "piece", calories: 140, protein: 4.0, carbs: 26.0, fats: 2.0),
+        AddedIngredient(food: "Wagyu Salami", quantity: "5", metric: "piece", calories: 120, protein: 6.0, carbs: 0.5, fats: 10.5)
+    ]
+
     return NutritionEditSheet(
         entry: entry,
-        isDark: false,
-        onSave: { _, _, _, _ in }
+        isDark: true,
+        onSave: { _, _, _, _ in },
+        initialIngredients: sampleIngredients,
+        initialShowGetSpecific: true
     )
 }

@@ -14,6 +14,17 @@ private struct ContentHeightKey: PreferenceKey {
     }
 }
 
+private struct AddedIngredient: Identifiable {
+    let id = UUID()
+    let food: String
+    let quantity: String
+    let metric: String
+    let calories: Int
+    let protein: Double
+    let carbs: Double
+    let fats: Double
+}
+
 struct NutritionEditSheet: View {
     @Environment(\.dismiss) var dismiss
     let entry: FoodEntry
@@ -28,6 +39,12 @@ struct NutritionEditSheet: View {
     // Ingredient builder fields
     @State private var ingredientFood: String = ""
     @State private var ingredientQuantity: String = ""
+    @State private var ingredientMetric: String = "g"
+
+    // Ingredient list and fetch state
+    @State private var addedIngredients: [AddedIngredient] = []
+    @State private var isLoadingIngredient: Bool = false
+    @State private var ingredientError: String? = nil
 
     // Expanded state
     @State private var showGetSpecific: Bool = false
@@ -41,6 +58,8 @@ struct NutritionEditSheet: View {
     enum Field {
         case calories, protein, carbs, fats, ingredientFood, ingredientQuantity
     }
+
+    private let metrics = ["g", "oz", "ml", "cup", "tbsp", "tsp", "serving", "piece"]
 
     // Dot colors matching HealthTabView
     private let caloriesDotColor = Color(red: 75/255, green: 78/255, blue: 255/255)
@@ -66,6 +85,19 @@ struct NutritionEditSheet: View {
 
     private var isKeyboardOpen: Bool {
         focusedField != nil
+    }
+
+    private var totalCalories: Int {
+        addedIngredients.reduce(0) { $0 + $1.calories }
+    }
+    private var totalProtein: Double {
+        addedIngredients.reduce(0) { $0 + $1.protein }
+    }
+    private var totalCarbs: Double {
+        addedIngredients.reduce(0) { $0 + $1.carbs }
+    }
+    private var totalFats: Double {
+        addedIngredients.reduce(0) { $0 + $1.fats }
     }
 
     var body: some View {
@@ -178,10 +210,9 @@ struct NutritionEditSheet: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
-                    // MARK: - Build With Ingredients (revealed on expand)
+                    // MARK: - Get Specific (revealed on expand)
                     if showGetSpecific {
                         VStack(spacing: 0) {
-
                             customDivider
 
                             IngredientInputRow(
@@ -210,36 +241,109 @@ struct NutritionEditSheet: View {
 
                             customDivider
 
+                            // MARK: Metric picker
                             HStack(spacing: 0) {
                                 Text("Metric")
                                     .font(.subheadline)
                                     .foregroundColor(Color.primaryText(isDark))
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                                HStack(spacing: 8) {
-                                    Text("Select")
-                                        .font(.subheadline)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color.secondaryText(isDark))
+                                Menu {
+                                    ForEach(metrics, id: \.self) { metric in
+                                        Button(metric) {
+                                            ingredientMetric = metric
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text(ingredientMetric)
+                                            .font(.subheadline)
+                                            .foregroundColor(Color.secondaryText(isDark))
+                                        Image(systemName: "chevron.up.chevron.down")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Color.secondaryText(isDark))
+                                    }
                                 }
                             }
                             .padding(.vertical, 24)
 
+                            // Error message
+                            if let error = ingredientError {
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.bottom, 8)
+                            }
+
+                            // Add button
                             Button(action: {
-                                // TODO: Add ingredient to list
+                                focusedField = nil
+                                Task { await addIngredient() }
                             }) {
-                                Text("Add")
-                                    .font(.system(size: 14))
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(isDark ? .white : .black)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
+                                if isLoadingIngredient {
+                                    ProgressView()
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                } else {
+                                    Text("Add")
+                                        .font(.system(size: 14))
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(isDark ? .white : .black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                }
                             }
                             .glassEffect(in: .capsule)
+                            .disabled(isLoadingIngredient || ingredientFood.isEmpty || ingredientQuantity.isEmpty)
                             .padding(.top, 8)
                             .padding(.bottom, 8)
+
+                            // MARK: Added ingredients list + totals
+                            if !addedIngredients.isEmpty {
+                                customDivider
+                                    .padding(.vertical, 8)
+
+                                ForEach(addedIngredients) { ingredient in
+                                    HStack(spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("\(ingredient.quantity)\(ingredient.metric) \(ingredient.food)")
+                                                .font(.subheadline)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                                .lineLimit(1)
+                                            Text("\(ingredient.calories) cal  ·  \(String(format: "%.0f", ingredient.protein))g P  ·  \(String(format: "%.0f", ingredient.carbs))g C  ·  \(String(format: "%.0f", ingredient.fats))g F")
+                                                .font(.caption)
+                                                .foregroundColor(Color.secondaryText(isDark))
+                                        }
+                                        Spacer()
+                                        Button(action: {
+                                            addedIngredients.removeAll { $0.id == ingredient.id }
+                                        }) {
+                                            Image(systemName: "xmark")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(Color.secondaryText(isDark))
+                                        }
+                                    }
+                                    .padding(.vertical, 8)
+                                }
+
+                                customDivider
+                                    .padding(.top, 4)
+
+                                HStack {
+                                    Text("Total")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                    Spacer()
+                                    Text("\(totalCalories) cal  ·  \(String(format: "%.1f", totalProtein))g P  ·  \(String(format: "%.1f", totalCarbs))g C  ·  \(String(format: "%.1f", totalFats))g F")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                }
+                                .padding(.top, 12)
+                                .padding(.bottom, 4)
+                            }
                         }
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
@@ -266,7 +370,7 @@ struct NutritionEditSheet: View {
 
                         if showGetSpecific {
                             Button(action: {
-                                commitSave()
+                                onSave(totalCalories, totalProtein, totalCarbs, totalFats)
                                 dismiss()
                             }) {
                                 Text("Update")
@@ -278,6 +382,8 @@ struct NutritionEditSheet: View {
                                     .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
                             }
                             .glassEffect(in: .capsule)
+                            .disabled(addedIngredients.isEmpty)
+                            .opacity(addedIngredients.isEmpty ? 0.5 : 1.0)
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         } else {
                             Button(action: {
@@ -328,6 +434,30 @@ struct NutritionEditSheet: View {
             }
         }
         .presentationDetents(sheetHeight > 0 ? [.height(sheetHeight)] : [.fraction(0.85)])
+    }
+
+    private func addIngredient() async {
+        guard !ingredientFood.isEmpty, !ingredientQuantity.isEmpty else { return }
+        isLoadingIngredient = true
+        ingredientError = nil
+        let query = "\(ingredientQuantity) \(ingredientMetric) \(ingredientFood)"
+        do {
+            let result = try await APIService.getNutrition(for: query)
+            addedIngredients.append(AddedIngredient(
+                food: ingredientFood,
+                quantity: ingredientQuantity,
+                metric: ingredientMetric,
+                calories: result.calories,
+                protein: result.protein,
+                carbs: result.carbs,
+                fats: result.fats
+            ))
+            ingredientFood = ""
+            ingredientQuantity = ""
+        } catch {
+            ingredientError = "Could not find nutrition info. Try again."
+        }
+        isLoadingIngredient = false
     }
 
     private func commitSave() {

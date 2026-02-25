@@ -90,6 +90,8 @@ struct TopNavigationBar: View {
                         Text(formatCompactNumber(streakCount))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(Color.primaryText(isDark))
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     .frame(height: 50)
                     .padding(.horizontal, 8)
@@ -180,6 +182,6 @@ struct TopNavigationBar: View {
         isDark: false,
         isInputFocused: .constant(false),
         hasUnreadNotifications: true,
-        streakCount: 100
+        streakCount: 10
     )
 }

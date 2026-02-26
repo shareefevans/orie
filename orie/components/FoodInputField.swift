@@ -181,7 +181,18 @@ struct FoodInputField: View {
                 print("Error analyzing image: \(error)")
                 await MainActor.run {
                     isAnalyzingImage = false
-                    onError?("Couldn't analyze the image. Please try again.")
+                    if let urlError = error as? URLError {
+                        switch urlError.code {
+                        case .notConnectedToInternet:
+                            onError?("No internet connection. Please check your network.")
+                        case .timedOut, .cannotConnectToHost, .networkConnectionLost:
+                            onError?("Server unreachable. Please try again shortly.")
+                        default:
+                            onError?("Couldn't analyze the image. Please try again.")
+                        }
+                    } else {
+                        onError?("Couldn't analyze the image. Please try again.")
+                    }
                 }
             }
         }

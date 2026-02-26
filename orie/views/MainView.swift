@@ -41,6 +41,7 @@ struct MainView: View {
     @State private var awardBannerQueue: [Achievement] = []
     @State private var autocompleteSuggestion: String? = nil
     @State private var keyboardHeight: CGFloat = 0
+    @StateObject private var networkMonitor = NetworkMonitor()
 
     // MARK: - ❇️ Default Daily Goals (from user profile)
 
@@ -161,6 +162,22 @@ struct MainView: View {
     @State private var weeklyFoodEntries: [FoodEntry] = []
 
     // MARK: - ❇️ Functions
+
+    // MARK: 👉 Handle Network Error
+    private func handleNetworkError(_ error: Error, fallback: String) {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet:
+                showError("No internet connection. Please check your network.")
+            case .timedOut, .cannotConnectToHost, .networkConnectionLost:
+                showError("Server unreachable. Please try again shortly.")
+            default:
+                showError(fallback)
+            }
+        } else {
+            showError(fallback)
+        }
+    }
 
     // MARK: 👉 Show Error Banner
     private func showError(_ message: String) {
@@ -290,7 +307,7 @@ struct MainView: View {
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     await MainActor.run {
                         foodEntries[index].isLoading = false
-                        showError("Couldn't calculate calories for \"\(foodName)\". Please try again.")
+                        handleNetworkError(error, fallback: "Couldn't calculate calories for \"\(foodName)\". Please try again.")
                     }
                 }
             }
@@ -333,6 +350,9 @@ struct MainView: View {
                 // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Error saving image-analyzed entry: \(error)")
+                await MainActor.run {
+                    handleNetworkError(error, fallback: "Couldn't save your entry. Please try again.")
+                }
             }
         }
     }
@@ -404,6 +424,7 @@ struct MainView: View {
                 print("Failed to update food entry: \(error)")
                 await MainActor.run {
                     foodEntries[index].isLoading = false
+                    handleNetworkError(error, fallback: "Couldn't update entry. Please try again.")
                 }
             }
         }
@@ -433,6 +454,9 @@ struct MainView: View {
                     // Already handled by withAuthRetry - user is logged out
                 } catch {
                     print("Failed to delete entry: \(error)")
+                    await MainActor.run {
+                        handleNetworkError(error, fallback: "Couldn't delete entry. Please try again.")
+                    }
                 }
             }
         }
@@ -466,6 +490,9 @@ struct MainView: View {
                 // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to update nutrition: \(error)")
+                await MainActor.run {
+                    handleNetworkError(error, fallback: "Couldn't update nutrition. Please try again.")
+                }
             }
         }
     }
@@ -495,6 +522,9 @@ struct MainView: View {
                 // Already handled by withAuthRetry - user is logged out
             } catch {
                 print("Failed to load user profile: \(error)")
+                await MainActor.run {
+                    handleNetworkError(error, fallback: "Couldn't load your profile. Please try again.")
+                }
             }
         }
     }
@@ -535,7 +565,10 @@ struct MainView: View {
                 await MainActor.run { isEntriesLoading = false }
             } catch {
                 print("Failed to load food entries: \(error)")
-                await MainActor.run { isEntriesLoading = false }
+                await MainActor.run {
+                    isEntriesLoading = false
+                    handleNetworkError(error, fallback: "Couldn't load your entries. Please try again.")
+                }
             }
         }
     }
@@ -1055,6 +1088,32 @@ struct MainView: View {
             }
             .allowsHitTesting(false)
             .ignoresSafeArea(edges: .bottom)
+
+            // MARK: - Offline Indicator
+            if !networkMonitor.isConnected {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 10) {
+                        Image(systemName: "wifi.slash")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        Text("No internet connection")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    #if os(iOS)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    #else
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    #endif
+                    .padding(.bottom, 24)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeOut(duration: 0.3), value: networkMonitor.isConnected)
+                .zIndex(12)
+            }
 
             // MARK: - ❇️ Error Banner
             if let errorMessage = apiErrorMessage {

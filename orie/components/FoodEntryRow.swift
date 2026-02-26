@@ -10,6 +10,7 @@ import SwiftUI
 struct FoodEntryRow: View {
     let entry: FoodEntry
     var isDark: Bool = false
+    var isOffline: Bool = false
     var onTimeChange: (Date) -> Void
     var onDelete: (() -> Void)?
     var onFoodNameChange: ((String) -> Void)?
@@ -27,9 +28,10 @@ struct FoodEntryRow: View {
     @State private var editedFoodName: String
     @FocusState private var isTextFieldFocused: Bool
 
-    init(entry: FoodEntry, isDark: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, onNutritionChange: ((Int, Double, Double, Double) -> Void)? = nil, onOpenSheet: (() -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
+    init(entry: FoodEntry, isDark: Bool = false, isOffline: Bool = false, onTimeChange: @escaping (Date) -> Void, onDelete: (() -> Void)? = nil, onFoodNameChange: ((String) -> Void)? = nil, onNutritionChange: ((Int, Double, Double, Double) -> Void)? = nil, onOpenSheet: (() -> Void)? = nil, isEditing: Binding<Bool> = .constant(false)) {
         self.entry = entry
         self.isDark = isDark
+        self.isOffline = isOffline
         self.onTimeChange = onTimeChange
         self.onDelete = onDelete
         self.onFoodNameChange = onFoodNameChange
@@ -150,6 +152,17 @@ struct FoodEntryRow: View {
                             .frame(width: 90, alignment: .trailing)
                     }
                     .buttonStyle(.plain)
+                } else {
+                    Button(action: {
+                        onOpenSheet?()
+                        showNutritionEdit = true
+                    }) {
+                        Text("Add")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.accentBlue)
+                            .frame(width: 90, alignment: .trailing)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.vertical, 12)
@@ -197,7 +210,7 @@ struct FoodEntryRow: View {
                 .presentationBackground(Color.cardBackground(isDark))
         }
         .sheet(isPresented: $showNutritionEdit) {
-            NutritionEditSheet(entry: entry, isDark: isDark) { calories, protein, carbs, fats in
+            NutritionEditSheet(entry: entry, isDark: isDark, isOffline: isOffline) { calories, protein, carbs, fats in
                 onNutritionChange?(calories, protein, carbs, fats)
             }
             .presentationDragIndicator(.visible)

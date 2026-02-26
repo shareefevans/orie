@@ -29,6 +29,7 @@ struct NutritionEditSheet: View {
     @Environment(\.dismiss) var dismiss
     let entry: FoodEntry
     var isDark: Bool = false
+    var isOffline: Bool = false
     var onSave: (Int, Double, Double, Double) -> Void
 
     @State private var editedCalories: String
@@ -76,12 +77,14 @@ struct NutritionEditSheet: View {
     init(
         entry: FoodEntry,
         isDark: Bool = false,
+        isOffline: Bool = false,
         onSave: @escaping (Int, Double, Double, Double) -> Void,
         initialIngredients: [AddedIngredient] = [],
         initialShowGetSpecific: Bool = false
     ) {
         self.entry = entry
         self.isDark = isDark
+        self.isOffline = isOffline
         self.onSave = onSave
         _editedCalories = State(initialValue: "\(entry.calories ?? 0)")
         _editedProtein = State(initialValue: String(format: "%.1f", entry.protein ?? 0))
@@ -393,39 +396,41 @@ struct NutritionEditSheet: View {
                         }
                         .glassEffect(in: .capsule)
 
-                        if showGetSpecific {
-                            Button(action: {
-                                onSave(totalCalories, totalProtein, totalCarbs, totalFats)
-                                dismiss()
-                            }) {
-                                Text("Update")
-                                    .font(.system(size: 14))
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
-                            }
-                            .glassEffect(in: .capsule)
-                            .disabled(addedIngredients.isEmpty)
-                            .opacity(addedIngredients.isEmpty ? 0.5 : 1.0)
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                        } else {
-                            Button(action: {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                                    showGetSpecific = true
+                        if !isOffline {
+                            if showGetSpecific {
+                                Button(action: {
+                                    onSave(totalCalories, totalProtein, totalCarbs, totalFats)
+                                    dismiss()
+                                }) {
+                                    Text("Update")
+                                        .font(.system(size: 14))
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
                                 }
-                            }) {
-                                Text("Get Specific")
-                                    .font(.system(size: 14))
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+                                .glassEffect(in: .capsule)
+                                .disabled(addedIngredients.isEmpty)
+                                .opacity(addedIngredients.isEmpty ? 0.5 : 1.0)
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                            } else {
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                        showGetSpecific = true
+                                    }
+                                }) {
+                                    Text("Get Specific")
+                                        .font(.system(size: 14))
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+                                }
+                                .glassEffect(in: .capsule)
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
                             }
-                            .glassEffect(in: .capsule)
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
                     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showGetSpecific)

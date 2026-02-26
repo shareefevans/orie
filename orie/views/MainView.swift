@@ -233,7 +233,15 @@ struct MainView: View {
     private func addFoodEntry(foodName: String) {
         guard !foodName.isEmpty else { return }
 
-        let newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
+        var newEntry = FoodEntry(foodName: foodName, entryDate: selectedDate)
+
+        // Offline: skip the nutrition fetch entirely, surface "Add" button immediately
+        if !networkMonitor.isConnected {
+            newEntry.isLoading = false
+            foodEntries.append(newEntry)
+            return
+        }
+
         foodEntries.append(newEntry)
 
         Task {
@@ -464,8 +472,7 @@ struct MainView: View {
 
     // MARK: 👉 UpdateEntryNutrition
     private func updateEntryNutrition(_ entryId: UUID, calories: Int, protein: Double, carbs: Double, fats: Double) {
-        guard let index = foodEntries.firstIndex(where: { $0.id == entryId }),
-              let dbId = foodEntries[index].dbId else { return }
+        guard let index = foodEntries.firstIndex(where: { $0.id == entryId }) else { return }
 
         // Update local state immediately
         withAnimation {
@@ -475,15 +482,30 @@ struct MainView: View {
             foodEntries[index].fats = fats
         }
 
-        // Persist to database
+        let existingDbId = foodEntries[index].dbId
+
+        // Persist to database — create if never synced, update if it already exists
         Task {
             do {
-                try await authManager.withAuthRetry { accessToken in
-                    _ = try await FoodEntryService.updateFoodEntry(
-                        accessToken: accessToken,
-                        id: dbId,
-                        entry: foodEntries[index]
-                    )
+                if let dbId = existingDbId {
+                    try await authManager.withAuthRetry { accessToken in
+                        _ = try await FoodEntryService.updateFoodEntry(
+                            accessToken: accessToken,
+                            id: dbId,
+                            entry: foodEntries[index]
+                        )
+                    }
+                } else {
+                    let dbEntry = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.createFoodEntry(
+                            accessToken: accessToken,
+                            entry: foodEntries[index]
+                        )
+                    }
+                    await MainActor.run {
+                        foodEntries[index].dbId = dbEntry.id
+                        localNotificationManager.scheduleMealNotification(for: foodEntries[index])
+                    }
                 }
                 loadWeeklyFoodEntries()
             } catch APIError.sessionExpired {
@@ -897,6 +919,7 @@ struct MainView: View {
                             FoodEntryRow(
                                 entry: entry,
                                 isDark: isDark,
+                                isOffline: !networkMonitor.isConnected,
                                 onTimeChange: { newTime in
                                     updateEntryTime(entry.id, newTime: newTime)
                                 },
@@ -1097,7 +1120,7 @@ struct MainView: View {
                         Image(systemName: "wifi.slash")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.secondary)
-                        Text("No internet connection")
+                        Text("Offline · manual entries enabled")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -1108,15 +1131,16 @@ struct MainView: View {
                     #else
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     #endif
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 36)
                 }
+                .ignoresSafeArea(.keyboard)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(.easeOut(duration: 0.3), value: networkMonitor.isConnected)
                 .zIndex(12)
             }
 
             // MARK: - ❇️ Error Banner
-            if let errorMessage = apiErrorMessage {
+            if let errorMessage = apiErrorMessage, networkMonitor.isConnected {
                 VStack {
                     Spacer()
                     ErrorBanner(message: errorMessage)
@@ -1205,6 +1229,34 @@ struct MainView: View {
         }
         .onChange(of: showNotifications) { _, shown in
             if shown { dismissAllInputs() }
+        }
+        .onChange(of: networkMonitor.isConnected) { _, isConnected in
+            guard isConnected else { return }
+            // Sync any entries that were added while offline and manually filled in
+            let unsynced = foodEntries.filter { $0.dbId == nil && !$0.isLoading && $0.calories != nil }
+            guard !unsynced.isEmpty else { return }
+            Task {
+                for entry in unsynced {
+                    guard let index = foodEntries.firstIndex(where: { $0.id == entry.id }) else { continue }
+                    do {
+                        let dbEntry = try await authManager.withAuthRetry { accessToken in
+                            try await FoodEntryService.createFoodEntry(
+                                accessToken: accessToken,
+                                entry: foodEntries[index]
+                            )
+                        }
+                        await MainActor.run {
+                            foodEntries[index].dbId = dbEntry.id
+                            localNotificationManager.scheduleMealNotification(for: foodEntries[index])
+                        }
+                    } catch APIError.sessionExpired {
+                        break
+                    } catch {
+                        print("Failed to sync offline entry: \(error)")
+                    }
+                }
+                loadWeeklyFoodEntries()
+            }
         }
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {

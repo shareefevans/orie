@@ -14,6 +14,9 @@ struct DailyMacroData: Identifiable {
     let protein: Int
     let carbs: Int
     let fats: Int
+    let fibre: Int
+    let sodium: Int
+    let sugar: Int
 }
 
 struct WeeklyOverviewCard: View {
@@ -101,6 +104,21 @@ struct WeeklyOverviewCard: View {
     private var avgFats: Int {
         guard !daysWithData.isEmpty else { return 0 }
         return daysWithData.reduce(0) { $0 + $1.fats } / daysWithData.count
+    }
+
+    private var avgFibre: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        return daysWithData.reduce(0) { $0 + $1.fibre } / daysWithData.count
+    }
+
+    private var avgSodium: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        return daysWithData.reduce(0) { $0 + $1.sodium } / daysWithData.count
+    }
+
+    private var avgSugar: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        return daysWithData.reduce(0) { $0 + $1.sugar } / daysWithData.count
     }
 
     // Check if value needs adjustment suggestion (20% threshold)
@@ -277,6 +295,38 @@ struct WeeklyOverviewCard: View {
                         isDark: isDark
                     )
 
+                    // Weekly Nutrition Avg. section
+                    Text("Weekly Nutrition Avg.")
+                        .font(.system(size: 16))
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+
+                    NutritionAverageRow(
+                        color: Color(red: 160/255, green: 80/255, blue: 255/255),
+                        title: "Fibre",
+                        value: avgFibre,
+                        unit: "g",
+                        isDark: isDark
+                    )
+
+                    NutritionAverageRow(
+                        color: Color(red: 255/255, green: 105/255, blue: 180/255),
+                        title: "Sodium",
+                        value: avgSodium,
+                        unit: "mg",
+                        isDark: isDark
+                    )
+
+                    NutritionAverageRow(
+                        color: Color(red: 255/255, green: 30/255, blue: 60/255),
+                        title: "Sugar",
+                        value: avgSugar,
+                        unit: "g",
+                        isDark: isDark
+                    )
+
                 }
             }
         }
@@ -362,6 +412,35 @@ struct MacroBar: View {
     }
 }
 
+// MARK: - Nutrition Average Row Component (no goal)
+struct NutritionAverageRow: View {
+    let color: Color
+    let title: String
+    let value: Int
+    let unit: String
+    let isDark: Bool
+
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+
+            Text(title)
+                .font(.system(size: 14))
+                .foregroundColor(Color.primaryText(isDark))
+
+            Spacer()
+
+            Text("\(value)\(unit)")
+                .font(.system(size: 13))
+                .fontWeight(.regular)
+                .italic()
+                .foregroundColor(Color.primaryText(isDark))
+        }
+    }
+}
+
 // MARK: - Macro Average Row Component
 struct MacroAverageRow: View {
     let color: Color
@@ -424,9 +503,9 @@ struct MacroAverageRow: View {
     let monday = calendar.date(from: components)!
 
     let sampleData = [
-        DailyMacroData(date: monday, calories: 2700, protein: 150, carbs: 200, fats: 70),
-        DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2300, protein: 180, carbs: 200, fats: 65),
-        DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2300, protein: 140, carbs: 200, fats: 60),
+        DailyMacroData(date: monday, calories: 2700, protein: 150, carbs: 200, fats: 70, fibre: 28, sodium: 1800, sugar: 45),
+        DailyMacroData(date: calendar.date(byAdding: .day, value: 1, to: monday)!, calories: 2300, protein: 180, carbs: 200, fats: 65, fibre: 32, sodium: 2100, sugar: 38),
+        DailyMacroData(date: calendar.date(byAdding: .day, value: 2, to: monday)!, calories: 2300, protein: 140, carbs: 200, fats: 60, fibre: 25, sodium: 1600, sugar: 50),
     ]
 
     return WeeklyOverviewCard(

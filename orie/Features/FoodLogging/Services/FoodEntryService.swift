@@ -49,11 +49,14 @@ class FoodEntryService {
         let protein: Double?
         let carbs: Double?
         let fats: Double?
+        let fibre: Double?
+        let sodium: Double?
+        let sugar: Double?
         let servingSize: String?
         let entryDate: String
         let timestamp: String
         let isLoading: Bool?
-        
+
         enum CodingKeys: String, CodingKey {
             case id
             case userId = "user_id"
@@ -62,6 +65,9 @@ class FoodEntryService {
             case protein
             case carbs
             case fats
+            case fibre
+            case sodium
+            case sugar
             case servingSize = "serving_size"
             case entryDate = "entry_date"
             case timestamp
@@ -133,6 +139,9 @@ class FoodEntryService {
             "protein": entry.protein ?? NSNull(),
             "carbs": entry.carbs ?? NSNull(),
             "fats": entry.fats ?? NSNull(),
+            "fibre": entry.fibre ?? NSNull(),
+            "sodium": entry.sodium ?? NSNull(),
+            "sugar": entry.sugar ?? NSNull(),
             "serving_size": entry.servingSize ?? NSNull(),
             "entry_date": entryDateString,
             "timestamp": timestampString
@@ -214,6 +223,9 @@ class FoodEntryService {
             "protein": entry.protein ?? NSNull(),
             "carbs": entry.carbs ?? NSNull(),
             "fats": entry.fats ?? NSNull(),
+            "fibre": entry.fibre ?? NSNull(),
+            "sodium": entry.sodium ?? NSNull(),
+            "sugar": entry.sugar ?? NSNull(),
             "serving_size": entry.servingSize ?? NSNull(),
             "timestamp": timestampString
         ]

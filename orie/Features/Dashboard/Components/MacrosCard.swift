@@ -282,6 +282,54 @@ struct SugarCard: View {
     }
 }
 
+// MARK: - ❇️ Nutrient Dot Card (no goal/progress)
+struct NutrientDotCard: View {
+    let title: String
+    let consumed: Int
+    let unit: String
+    let dotColor: Color
+    var isDark: Bool = false
+
+    var body: some View {
+        VStack {
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: 6, height: 6)
+
+                    Text(title)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .fontWeight(.medium)
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(consumed.formatted())
+                        .font(.system(size: 24))
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+
+                    Text(unit)
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fontWeight(.regular)
+                }
+                .padding(.top, 4)
+            }
+
+            Spacer()
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+        .frame(height: 160)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(32)
+    }
+}
+
 // MARK: - ❇️ Macro Dot Card
 struct BurnedMiniCard: View {
     let burned: Int

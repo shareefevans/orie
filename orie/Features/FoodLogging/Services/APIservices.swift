@@ -20,6 +20,9 @@ class APIService {
         let protein: Double
         let carbs: Double
         let fats: Double
+        let fibre: Double?
+        let sodium: Double?
+        let sugar: Double?
         let servingSize: String
         let imageUrl: String?
         let sources: [NutritionSource]?
@@ -41,6 +44,9 @@ class APIService {
         let protein: Double
         let carbs: Double
         let fats: Double
+        let fibre: Double?
+        let sodium: Double?
+        let sugar: Double?
         let servingSize: String
         let imageUrl: String?
         let sources: [NutritionSource]?

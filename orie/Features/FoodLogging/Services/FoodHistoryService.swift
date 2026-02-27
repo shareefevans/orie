@@ -17,10 +17,13 @@ class FoodHistoryService {
         let protein: Double?
         let carbs: Double?
         let fats: Double?
+        let fibre: Double?
+        let sodium: Double?
+        let sugar: Double?
         let servingSize: String?
 
         enum CodingKeys: String, CodingKey {
-            case calories, protein, carbs, fats
+            case calories, protein, carbs, fats, fibre, sodium, sugar
             case servingSize = "serving_size"
         }
     }
@@ -36,7 +39,7 @@ class FoodHistoryService {
     static func findPreviousEntry(
         accessToken: String,
         foodName: String
-    ) async throws -> (calories: Int, protein: Double, carbs: Double, fats: Double, servingSize: String)? {
+    ) async throws -> (calories: Int, protein: Double, carbs: Double, fats: Double, fibre: Double?, sodium: Double?, sugar: Double?, servingSize: String)? {
 
         guard let url = URL(string: "\(baseURL)/api/food-entries/search") else {
             throw URLError(.badURL)
@@ -75,6 +78,9 @@ class FoodHistoryService {
             protein: result.protein ?? 0,
             carbs: result.carbs ?? 0,
             fats: result.fats ?? 0,
+            fibre: result.fibre,
+            sodium: result.sodium,
+            sugar: result.sugar,
             servingSize: result.servingSize ?? "100g"
         )
     }

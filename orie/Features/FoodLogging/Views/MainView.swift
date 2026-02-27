@@ -72,6 +72,18 @@ struct MainView: View {
         Int(filteredEntries.reduce(0.0) { $0 + ($1.fats ?? 0) })
     }
 
+    private var consumedFibre: Int {
+        Int(filteredEntries.reduce(0.0) { $0 + ($1.fibre ?? 0) })
+    }
+
+    private var consumedSodium: Int {
+        Int(filteredEntries.reduce(0.0) { $0 + ($1.sodium ?? 0) })
+    }
+
+    private var consumedSugar: Int {
+        Int(filteredEntries.reduce(0.0) { $0 + ($1.sugar ?? 0) })
+    }
+
     private func macroSuggestion(consumed: Int, goal: Int) -> (String, Bool)? {
         let threshold = Double(goal) * 0.2
         let diff = Double(consumed - goal)
@@ -380,6 +392,9 @@ struct MainView: View {
                             dailyCarbsGoal: vm.dailyCarbsGoal,
                             consumedFats: consumedFats,
                             dailyFatsGoal: vm.dailyFatsGoal,
+                            consumedFibre: consumedFibre,
+                            consumedSodium: consumedSodium,
+                            consumedSugar: consumedSugar,
                             meals: mealBubbles,
                             weeklyData: vm.weeklyMacroData,
                             weeklyNote: vm.weeklyNote,

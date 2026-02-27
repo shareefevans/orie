@@ -32,6 +32,9 @@ struct FoodEntry: Identifiable, Comparable {
     var protein: Double?
     var carbs: Double?
     var fats: Double?
+    var fibre: Double?
+    var sodium: Double?
+    var sugar: Double?
     var servingSize: String?
     var imageUrl: String?
     var sources: [NutritionSource]?
@@ -46,6 +49,9 @@ struct FoodEntry: Identifiable, Comparable {
         self.protein = nil
         self.carbs = nil
         self.fats = nil
+        self.fibre = nil
+        self.sodium = nil
+        self.sugar = nil
         self.servingSize = nil
         self.imageUrl = nil
         self.sources = nil

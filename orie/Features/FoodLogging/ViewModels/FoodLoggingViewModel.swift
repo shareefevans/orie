@@ -57,7 +57,10 @@ final class FoodLoggingViewModel: ObservableObject {
                 calories: dayEntries.reduce(0) { $0 + ($1.calories ?? 0) },
                 protein: Int(dayEntries.reduce(0.0) { $0 + ($1.protein ?? 0) }),
                 carbs: Int(dayEntries.reduce(0.0) { $0 + ($1.carbs ?? 0) }),
-                fats: Int(dayEntries.reduce(0.0) { $0 + ($1.fats ?? 0) })
+                fats: Int(dayEntries.reduce(0.0) { $0 + ($1.fats ?? 0) }),
+                fibre: Int(dayEntries.reduce(0.0) { $0 + ($1.fibre ?? 0) }),
+                sodium: Int(dayEntries.reduce(0.0) { $0 + ($1.sodium ?? 0) }),
+                sugar: Int(dayEntries.reduce(0.0) { $0 + ($1.sugar ?? 0) })
             )
         }
     }
@@ -172,6 +175,9 @@ final class FoodLoggingViewModel: ObservableObject {
                         protein: cached.protein,
                         carbs: cached.carbs,
                         fats: cached.fats,
+                        fibre: cached.fibre,
+                        sodium: cached.sodium,
+                        sugar: cached.sugar,
                         servingSize: cached.servingSize,
                         imageUrl: nil,
                         sources: nil
@@ -187,6 +193,9 @@ final class FoodLoggingViewModel: ObservableObject {
                 foodEntries[index].protein = nutrition.protein
                 foodEntries[index].carbs = nutrition.carbs
                 foodEntries[index].fats = nutrition.fats
+                foodEntries[index].fibre = nutrition.fibre
+                foodEntries[index].sodium = nutrition.sodium
+                foodEntries[index].sugar = nutrition.sugar
                 foodEntries[index].servingSize = nutrition.servingSize
                 foodEntries[index].imageUrl = nutrition.imageUrl
                 foodEntries[index].sources = nutrition.sources
@@ -224,6 +233,9 @@ final class FoodLoggingViewModel: ObservableObject {
         newEntry.protein = result.nutrition.protein
         newEntry.carbs = result.nutrition.carbs
         newEntry.fats = result.nutrition.fats
+        newEntry.fibre = result.nutrition.fibre
+        newEntry.sodium = result.nutrition.sodium
+        newEntry.sugar = result.nutrition.sugar
         newEntry.servingSize = result.nutrition.servingSize
         newEntry.imageUrl = result.nutrition.imageUrl
         newEntry.sources = result.nutrition.sources
@@ -289,6 +301,9 @@ final class FoodLoggingViewModel: ObservableObject {
                 foodEntries[index].protein = nutrition.protein
                 foodEntries[index].carbs = nutrition.carbs
                 foodEntries[index].fats = nutrition.fats
+                foodEntries[index].fibre = nutrition.fibre
+                foodEntries[index].sodium = nutrition.sodium
+                foodEntries[index].sugar = nutrition.sugar
                 foodEntries[index].servingSize = nutrition.servingSize
                 foodEntries[index].imageUrl = nutrition.imageUrl
                 foodEntries[index].sources = nutrition.sources
@@ -379,6 +394,9 @@ final class FoodLoggingViewModel: ObservableObject {
                     entry.protein = dbEntry.protein
                     entry.carbs = dbEntry.carbs
                     entry.fats = dbEntry.fats
+                    entry.fibre = dbEntry.fibre
+                    entry.sodium = dbEntry.sodium
+                    entry.sugar = dbEntry.sugar
                     entry.servingSize = dbEntry.servingSize
                     entry.isLoading = false
                     if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
@@ -413,6 +431,9 @@ final class FoodLoggingViewModel: ObservableObject {
                         entry.protein = dbEntry.protein
                         entry.carbs = dbEntry.carbs
                         entry.fats = dbEntry.fats
+                        entry.fibre = dbEntry.fibre
+                        entry.sodium = dbEntry.sodium
+                        entry.sugar = dbEntry.sugar
                         entry.servingSize = dbEntry.servingSize
                         entry.isLoading = false
                         if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {

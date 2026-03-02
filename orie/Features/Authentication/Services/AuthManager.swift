@@ -18,6 +18,10 @@ class AuthManager: ObservableObject {
 
     private let accessTokenKey = "accessToken"
     private let refreshTokenKey = "refreshToken"
+    // Coalesces concurrent token-refresh attempts so only one uses the refresh
+    // token at a time (Supabase rotates it on each use — a second concurrent
+    // call with the same token would fail and log the user out).
+    private var refreshTask: Task<Bool, Never>? = nil
 
     init() {
         checkAuthState()
@@ -237,26 +241,38 @@ class AuthManager: ObservableObject {
     /// Attempts to refresh the token and returns whether it succeeded.
     /// Use this for 401 retry logic - only logs out if refresh fails.
     func attemptTokenRefresh() async -> Bool {
-        guard let refreshToken = getRefreshToken() else {
-            handleSessionExpired()
-            return false
+        // If a refresh is already in flight, wait for it instead of firing a
+        // second one with the same (now-consumed) refresh token.
+        if let existingTask = refreshTask {
+            return await existingTask.value
         }
 
-        do {
-            let response = try await AuthService.refreshSession(refreshToken: refreshToken)
+        let task = Task {
+            defer { self.refreshTask = nil }
 
-            if let session = response.session {
-                saveSession(session)
-                currentUser = response.user
-                return true
-            } else {
-                handleSessionExpired()
+            guard let refreshToken = self.getRefreshToken() else {
+                self.handleSessionExpired()
                 return false
             }
-        } catch {
-            handleSessionExpired()
-            return false
+
+            do {
+                let response = try await AuthService.refreshSession(refreshToken: refreshToken)
+                if let session = response.session {
+                    self.saveSession(session)
+                    self.currentUser = response.user
+                    return true
+                } else {
+                    self.handleSessionExpired()
+                    return false
+                }
+            } catch {
+                self.handleSessionExpired()
+                return false
+            }
         }
+
+        refreshTask = task
+        return await task.value
     }
 
     // MARK: - Session Management

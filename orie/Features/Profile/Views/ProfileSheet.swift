@@ -20,6 +20,9 @@ struct ProfileSheet: View {
     @State private var dailyProtein = 0
     @State private var dailyCarbs = 0
     @State private var dailyFats = 0
+    @State private var dailySodium = 0
+    @State private var dailyFibre = 0
+    @State private var dailySugar = 0
     @State private var isLoading = true
 
     // MARK: - ❇️ Personal data
@@ -138,6 +141,12 @@ struct ProfileSheet: View {
                             MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", isDark: isDark, onSave: saveProfile)
                             Divider()
                             MacroRow(label: "Fats", value: $dailyFats, unit: "g", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Sodium", value: $dailySodium, unit: "mg", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Fibre", value: $dailyFibre, unit: "g", isDark: isDark, onSave: saveProfile)
+                            Divider()
+                            MacroRow(label: "Sugar", value: $dailySugar, unit: "g", isDark: isDark, onSave: saveProfile)
                         }
                         .padding(24)
                         .background(Color.cardBackground(isDark))
@@ -385,6 +394,9 @@ struct ProfileSheet: View {
                     dailyProtein = profile.dailyProtein ?? 0
                     dailyCarbs = profile.dailyCarbs ?? 0
                     dailyFats = profile.dailyFats ?? 0
+                    dailySodium = profile.dailySodium ?? 0
+                    dailyFibre = profile.dailyFibre ?? 0
+                    dailySugar = profile.dailySugar ?? 0
                     isLoading = false
                 }
             } catch APIError.sessionExpired {
@@ -410,7 +422,10 @@ struct ProfileSheet: View {
                         dailyCalories: dailyCalories > 0 ? dailyCalories : nil,
                         dailyProtein: dailyProtein > 0 ? dailyProtein : nil,
                         dailyCarbs: dailyCarbs > 0 ? dailyCarbs : nil,
-                        dailyFats: dailyFats > 0 ? dailyFats : nil
+                        dailyFats: dailyFats > 0 ? dailyFats : nil,
+                        dailySodium: dailySodium,
+                        dailyFibre: dailyFibre,
+                        dailySugar: dailySugar
                     )
                 }
             } catch APIError.sessionExpired {
@@ -606,6 +621,12 @@ struct ProfileSheetSkeleton: View {
                 }
                 .padding(.bottom, 8)
 
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
+                Divider()
+                SkeletonRow(isDark: isDark)
                 Divider()
                 SkeletonRow(isDark: isDark)
                 Divider()

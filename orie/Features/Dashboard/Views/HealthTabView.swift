@@ -18,8 +18,11 @@ struct HealthTabView: View {
     let consumedFats: Int
     let dailyFatsGoal: Int
     let consumedFibre: Int
+    let dailyFibreGoal: Int
     let consumedSodium: Int
+    let dailySodiumGoal: Int
     let consumedSugar: Int
+    let dailySugarGoal: Int
     let meals: [MealBubble]
     let weeklyData: [DailyMacroData]
     let weeklyNote: String
@@ -44,6 +47,9 @@ struct HealthTabView: View {
                 dailyProteinGoal: dailyProteinGoal,
                 dailyCarbsGoal: dailyCarbsGoal,
                 dailyFatsGoal: dailyFatsGoal,
+                dailyFibreGoal: dailyFibreGoal,
+                dailySodiumGoal: dailySodiumGoal,
+                dailySugarGoal: dailySugarGoal,
                 isDark: isDark
             )
 
@@ -105,7 +111,9 @@ struct HealthTabView: View {
                     title: "Fibre",
                     consumed: consumedFibre,
                     unit: "g",
+                    displayUnit: "grams",
                     dotColor: fibreDotColor,
+                    goal: dailyFibreGoal,
                     isDark: isDark
                 )
 
@@ -114,6 +122,7 @@ struct HealthTabView: View {
                     consumed: consumedSodium,
                     unit: "mg",
                     dotColor: sodiumDotColor,
+                    goal: dailySodiumGoal,
                     isDark: isDark
                 )
             }
@@ -123,7 +132,9 @@ struct HealthTabView: View {
                 title: "Sugar",
                 consumed: consumedSugar,
                 unit: "g",
+                displayUnit: "grams",
                 dotColor: sugarDotColor,
+                goal: dailySugarGoal,
                 isDark: isDark
             )
         }
@@ -149,8 +160,11 @@ struct HealthTabView: View {
         consumedFats: 30,
         dailyFatsGoal: 65,
         consumedFibre: 22,
+        dailyFibreGoal: 30,
         consumedSodium: 1200,
+        dailySodiumGoal: 2300,
         consumedSugar: 35,
+        dailySugarGoal: 50,
         meals: [
             MealBubble(
                 timestamp: Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!,

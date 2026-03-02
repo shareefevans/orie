@@ -26,6 +26,9 @@ struct WeeklyOverviewCard: View {
     let dailyProteinGoal: Int
     let dailyCarbsGoal: Int
     let dailyFatsGoal: Int
+    var dailyFibreGoal: Int = 0
+    var dailySodiumGoal: Int = 0
+    var dailySugarGoal: Int = 0
     var isDark: Bool = false
 
     @AppStorage("isWeeklyOverviewExpanded") private var isExpanded: Bool = false
@@ -140,6 +143,15 @@ struct WeeklyOverviewCard: View {
             return ("Decrease", true)
         } else if diff < -threshold {
             return ("Increase", true)
+        }
+        return nil
+    }
+
+    private func nutritionSuggestion(avg: Int, goal: Int) -> (String, Bool)? {
+        let threshold = Double(goal) * 0.2
+        let diff = Double(avg - goal)
+        if diff > threshold {
+            return ("Decrease", true)
         }
         return nil
     }
@@ -301,31 +313,67 @@ struct WeeklyOverviewCard: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
                         .padding(.top, 24)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 16)
 
-                    NutritionAverageRow(
-                        color: Color(red: 160/255, green: 80/255, blue: 255/255),
-                        title: "Fibre",
-                        value: avgFibre,
-                        unit: "g",
-                        isDark: isDark
-                    )
+                    if dailyFibreGoal > 0 {
+                        MacroAverageRow(
+                            color: Color(red: 160/255, green: 80/255, blue: 255/255),
+                            title: "Fibre",
+                            value: avgFibre,
+                            goal: dailyFibreGoal,
+                            unit: "g",
+                            suggestion: nutritionSuggestion(avg: avgFibre, goal: dailyFibreGoal),
+                            isDark: isDark
+                        )
+                    } else {
+                        NutritionAverageRow(
+                            color: Color(red: 160/255, green: 80/255, blue: 255/255),
+                            title: "Fibre",
+                            value: avgFibre,
+                            unit: "g",
+                            isDark: isDark
+                        )
+                    }
 
-                    NutritionAverageRow(
-                        color: Color(red: 255/255, green: 105/255, blue: 180/255),
-                        title: "Sodium",
-                        value: avgSodium,
-                        unit: "mg",
-                        isDark: isDark
-                    )
+                    if dailySodiumGoal > 0 {
+                        MacroAverageRow(
+                            color: Color(red: 255/255, green: 105/255, blue: 180/255),
+                            title: "Sodium",
+                            value: avgSodium,
+                            goal: dailySodiumGoal,
+                            unit: "mg",
+                            suggestion: nutritionSuggestion(avg: avgSodium, goal: dailySodiumGoal),
+                            isDark: isDark
+                        )
+                    } else {
+                        NutritionAverageRow(
+                            color: Color(red: 255/255, green: 105/255, blue: 180/255),
+                            title: "Sodium",
+                            value: avgSodium,
+                            unit: "mg",
+                            isDark: isDark
+                        )
+                    }
 
-                    NutritionAverageRow(
-                        color: Color(red: 255/255, green: 30/255, blue: 60/255),
-                        title: "Sugar",
-                        value: avgSugar,
-                        unit: "g",
-                        isDark: isDark
-                    )
+                    if dailySugarGoal > 0 {
+                        MacroAverageRow(
+                            color: Color(red: 255/255, green: 30/255, blue: 60/255),
+                            title: "Sugar",
+                            value: avgSugar,
+                            goal: dailySugarGoal,
+                            unit: "g",
+                            suggestion: nutritionSuggestion(avg: avgSugar, goal: dailySugarGoal),
+                            isDark: isDark
+                        )
+                    } else {
+                        NutritionAverageRow(
+                            color: Color(red: 255/255, green: 30/255, blue: 60/255),
+                            title: "Sugar",
+                            value: avgSugar,
+                            unit: "g",
+                            isDark: isDark
+                        )
+                    }
 
                 }
             }

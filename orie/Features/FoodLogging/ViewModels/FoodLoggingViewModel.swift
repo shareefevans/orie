@@ -22,10 +22,13 @@ final class FoodLoggingViewModel: ObservableObject {
     @Published var apiErrorMessage: String? = nil
     @Published var awardBannerAchievement: Achievement? = nil
     @Published var awardBannerQueue: [Achievement] = []
-    @Published var dailyCalorieGoal: Int = 2300
-    @Published var dailyProteinGoal: Int = 150
-    @Published var dailyCarbsGoal: Int = 250
-    @Published var dailyFatsGoal: Int = 65
+    @Published var dailyCalorieGoal: Int = 0
+    @Published var dailyProteinGoal: Int = 0
+    @Published var dailyCarbsGoal: Int = 0
+    @Published var dailyFatsGoal: Int = 0
+    @Published var dailySodiumGoal: Int = 0
+    @Published var dailyFibreGoal: Int = 0
+    @Published var dailySugarGoal: Int = 0
     @Published var weeklyNote: String = "Tap to see your weekly overview and daily averages."
     @Published var weeklyTip: String? = nil
 
@@ -475,10 +478,13 @@ final class FoodLoggingViewModel: ObservableObject {
                 let profile = try await authManager.withAuthRetry { accessToken in
                     try await AuthService.getProfile(accessToken: accessToken)
                 }
-                if let calories = profile.dailyCalories, calories > 0 { dailyCalorieGoal = calories }
-                if let protein = profile.dailyProtein, protein > 0 { dailyProteinGoal = protein }
-                if let carbs = profile.dailyCarbs, carbs > 0 { dailyCarbsGoal = carbs }
-                if let fats = profile.dailyFats, fats > 0 { dailyFatsGoal = fats }
+                dailyCalorieGoal = profile.dailyCalories ?? 0
+                dailyProteinGoal = profile.dailyProtein ?? 0
+                dailyCarbsGoal = profile.dailyCarbs ?? 0
+                dailyFatsGoal = profile.dailyFats ?? 0
+                dailySodiumGoal = profile.dailySodium ?? 0
+                dailyFibreGoal = profile.dailyFibre ?? 0
+                dailySugarGoal = profile.dailySugar ?? 0
             } catch APIError.sessionExpired {
             } catch {
                 print("Failed to load user profile: \(error)")
@@ -517,10 +523,13 @@ final class FoodLoggingViewModel: ObservableObject {
     func resetForSignOut() {
         foodEntries = []
         weeklyFoodEntries = []
-        dailyCalorieGoal = 2300
-        dailyProteinGoal = 150
-        dailyCarbsGoal = 250
-        dailyFatsGoal = 65
+        dailyCalorieGoal = 0
+        dailyProteinGoal = 0
+        dailyCarbsGoal = 0
+        dailyFatsGoal = 0
+        dailySodiumGoal = 0
+        dailyFibreGoal = 0
+        dailySugarGoal = 0
         weeklyNote = "Tap to see your weekly overview and daily averages."
         weeklyTip = nil
     }

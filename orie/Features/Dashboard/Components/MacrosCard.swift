@@ -200,28 +200,30 @@ struct MacroDotCard: View {
                 }
                 .padding(.top, 4)
 
-                Text("\(remaining)g left")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.accessibleYellow(isDark))
-                    .padding(.top, 4)
+                if goal > 0 {
+                    Text("\(remaining)g left")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.accessibleYellow(isDark))
+                        .padding(.top, 4)
 
-                // Progress bar
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.chartBackground(isDark))
-                        .frame(width: 87, height: 6)
+                    // Progress bar
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.chartBackground(isDark))
+                            .frame(width: 87, height: 6)
 
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(
-                            LinearGradient(
-                                colors: gradientColors,
-                                startPoint: .leading,
-                                endPoint: .trailing
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(
+                                LinearGradient(
+                                    colors: gradientColors,
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(width: 87 * CGFloat(progress), height: 6)
+                            .frame(width: 87 * CGFloat(progress), height: 6)
+                    }
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
             }
 
             Spacer()
@@ -282,13 +284,29 @@ struct SugarCard: View {
     }
 }
 
-// MARK: - ❇️ Nutrient Dot Card (no goal/progress)
+// MARK: - ❇️ Nutrient Dot Card
 struct NutrientDotCard: View {
     let title: String
     let consumed: Int
     let unit: String
+    var displayUnit: String? = nil  // shown next to consumed number; falls back to unit
     let dotColor: Color
+    var goal: Int = 0
     var isDark: Bool = false
+
+    private let gradientColors = [
+        Color(red: 75/255, green: 78/255, blue: 255/255),
+        Color(red: 106/255, green: 118/255, blue: 255/255)
+    ]
+
+    private var remaining: Int {
+        goal > 0 ? goal - consumed : 0
+    }
+
+    private var progress: Double {
+        guard goal > 0 else { return 0 }
+        return min(Double(consumed) / Double(goal), 1.0)
+    }
 
     var body: some View {
         VStack {
@@ -312,19 +330,43 @@ struct NutrientDotCard: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
 
-                    Text(unit)
+                    Text(displayUnit ?? unit)
                         .font(.system(size: 14))
                         .foregroundColor(Color.primaryText(isDark))
                         .fontWeight(.regular)
                 }
                 .padding(.top, 4)
+
+                if goal > 0 {
+                    Text("\(remaining)\(unit) left")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.accessibleYellow(isDark))
+                        .padding(.top, 4)
+
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.chartBackground(isDark))
+                            .frame(width: 87, height: 6)
+
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(
+                                LinearGradient(
+                                    colors: gradientColors,
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 87 * CGFloat(progress), height: 6)
+                    }
+                    .padding(.top, 8)
+                }
             }
 
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .frame(height: 160)
+        .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
     }

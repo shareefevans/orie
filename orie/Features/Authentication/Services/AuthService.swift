@@ -75,6 +75,9 @@ class AuthService {
         let dailyProtein: Int?
         let dailyCarbs: Int?
         let dailyFats: Int?
+        let dailySodium: Int?
+        let dailyFibre: Int?
+        let dailySugar: Int?
 
         enum CodingKeys: String, CodingKey {
             case fullName = "full_name"
@@ -83,6 +86,9 @@ class AuthService {
             case dailyProtein = "daily_protein"
             case dailyCarbs = "daily_carbs"
             case dailyFats = "daily_fats"
+            case dailySodium = "daily_sodium"
+            case dailyFibre = "daily_fibre"
+            case dailySugar = "daily_sugar"
         }
     }
 
@@ -439,7 +445,10 @@ class AuthService {
         dailyCalories: Int? = nil,
         dailyProtein: Int? = nil,
         dailyCarbs: Int? = nil,
-        dailyFats: Int? = nil
+        dailyFats: Int? = nil,
+        dailySodium: Int? = nil,
+        dailyFibre: Int? = nil,
+        dailySugar: Int? = nil
     ) async throws -> UserProfile {
         guard let url = URL(string: "\(baseURL)/api/profile") else {
             throw URLError(.badURL)
@@ -460,6 +469,9 @@ class AuthService {
         if let dailyProtein = dailyProtein { body["daily_protein"] = dailyProtein }
         if let dailyCarbs = dailyCarbs { body["daily_carbs"] = dailyCarbs }
         if let dailyFats = dailyFats { body["daily_fats"] = dailyFats }
+        if let dailySodium = dailySodium { body["daily_sodium"] = dailySodium }
+        if let dailyFibre = dailyFibre { body["daily_fibre"] = dailyFibre }
+        if let dailySugar = dailySugar { body["daily_sugar"] = dailySugar }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 

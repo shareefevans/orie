@@ -92,6 +92,13 @@ struct MainView: View {
         return nil
     }
 
+    private func nutritionSuggestion(consumed: Int, goal: Int) -> (String, Bool)? {
+        let threshold = Double(goal) * 0.2
+        let diff = Double(consumed - goal)
+        if diff > threshold { return ("Decrease", true) }
+        return nil
+    }
+
     private var mealBubbles: [MealBubble] {
         filteredEntries
             .filter { !$0.isLoading }
@@ -288,6 +295,55 @@ struct MainView: View {
                                     suggestion: macroSuggestion(consumed: consumedFats, goal: vm.dailyFatsGoal),
                                     isDark: isDark
                                 )
+
+                                Text("Today's Nutrition")
+                                    .font(.system(size: 16))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color.primaryText(isDark))
+                                    .padding(.bottom, 8)
+                                    .padding(.top, 16)
+
+                                if vm.dailyFibreGoal > 0 {
+                                    MacroAverageRow(
+                                        color: Color(red: 160/255, green: 80/255, blue: 255/255),
+                                        title: "Fibre", value: consumedFibre, goal: vm.dailyFibreGoal, unit: "g",
+                                        suggestion: nutritionSuggestion(consumed: consumedFibre, goal: vm.dailyFibreGoal),
+                                        isDark: isDark
+                                    )
+                                } else {
+                                    NutritionAverageRow(
+                                        color: Color(red: 160/255, green: 80/255, blue: 255/255),
+                                        title: "Fibre", value: consumedFibre, unit: "g", isDark: isDark
+                                    )
+                                }
+
+                                if vm.dailySodiumGoal > 0 {
+                                    MacroAverageRow(
+                                        color: Color(red: 255/255, green: 105/255, blue: 180/255),
+                                        title: "Sodium", value: consumedSodium, goal: vm.dailySodiumGoal, unit: "mg",
+                                        suggestion: nutritionSuggestion(consumed: consumedSodium, goal: vm.dailySodiumGoal),
+                                        isDark: isDark
+                                    )
+                                } else {
+                                    NutritionAverageRow(
+                                        color: Color(red: 255/255, green: 105/255, blue: 180/255),
+                                        title: "Sodium", value: consumedSodium, unit: "mg", isDark: isDark
+                                    )
+                                }
+
+                                if vm.dailySugarGoal > 0 {
+                                    MacroAverageRow(
+                                        color: Color(red: 255/255, green: 30/255, blue: 60/255),
+                                        title: "Sugar", value: consumedSugar, goal: vm.dailySugarGoal, unit: "g",
+                                        suggestion: nutritionSuggestion(consumed: consumedSugar, goal: vm.dailySugarGoal),
+                                        isDark: isDark
+                                    )
+                                } else {
+                                    NutritionAverageRow(
+                                        color: Color(red: 255/255, green: 30/255, blue: 60/255),
+                                        title: "Sugar", value: consumedSugar, unit: "g", isDark: isDark
+                                    )
+                                }
                             }
                         }
                     }
@@ -393,8 +449,11 @@ struct MainView: View {
                             consumedFats: consumedFats,
                             dailyFatsGoal: vm.dailyFatsGoal,
                             consumedFibre: consumedFibre,
+                            dailyFibreGoal: vm.dailyFibreGoal,
                             consumedSodium: consumedSodium,
+                            dailySodiumGoal: vm.dailySodiumGoal,
                             consumedSugar: consumedSugar,
+                            dailySugarGoal: vm.dailySugarGoal,
                             meals: mealBubbles,
                             weeklyData: vm.weeklyMacroData,
                             weeklyNote: vm.weeklyNote,

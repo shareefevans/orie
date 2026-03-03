@@ -15,6 +15,7 @@ struct MainView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var notificationManager: NotificationManager
     @EnvironmentObject var localNotificationManager: LocalNotificationManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - ❇️ ViewModel
@@ -363,6 +364,7 @@ struct MainView: View {
                                 entry: entry,
                                 isDark: isDark,
                                 isOffline: !networkMonitor.isConnected,
+                                authManager: authManager,
                                 onTimeChange: { vm.updateEntryTime(entry.id, newTime: $0) },
                                 onDelete: { vm.deleteFoodEntry(entry) },
                                 onFoodNameChange: { vm.updateFoodEntry(entry.id, newFoodName: $0) },
@@ -598,6 +600,7 @@ struct MainView: View {
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
                 .environmentObject(localNotificationManager)
+                .environmentObject(subscriptionManager)
                 .presentationBackground(Color.appBackground(isDark))
         }
         .sheet(isPresented: $showNotifications) {

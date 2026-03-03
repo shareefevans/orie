@@ -31,6 +31,7 @@ final class FoodLoggingViewModel: ObservableObject {
     @Published var dailySugarGoal: Int = 0
     @Published var weeklyNote: String = "Tap to see your weekly overview and daily averages."
     @Published var weeklyTip: String? = nil
+    @Published var showUpgradePrompt: Bool = false
 
     @AppStorage("lastWeeklyProgressRefreshDate") var lastWeeklyProgressRefreshDate: String = ""
 
@@ -187,7 +188,9 @@ final class FoodLoggingViewModel: ObservableObject {
                     )
                 } else {
                     print("🌐 Fetching fresh nutrition for: \(foodName)")
-                    nutrition = try await APIService.getNutrition(for: foodName)
+                    nutrition = try await authManager.withAuthRetry { accessToken in
+                        try await APIService.getNutrition(for: foodName, accessToken: accessToken)
+                    }
                 }
 
                 guard let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) else { return }
@@ -220,6 +223,12 @@ final class FoodLoggingViewModel: ObservableObject {
 
             } catch APIError.sessionExpired {
                 // handled by withAuthRetry
+            } catch APIError.upgradeRequired {
+                withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
+                showUpgradePrompt = true
+            } catch APIError.aiLimitReached {
+                withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
+                showError("Daily AI limit reached. Resets at midnight.")
             } catch {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
@@ -299,7 +308,9 @@ final class FoodLoggingViewModel: ObservableObject {
         Task {
             guard let authManager else { return }
             do {
-                let nutrition = try await APIService.getNutrition(for: newFoodName)
+                let nutrition = try await authManager.withAuthRetry { accessToken in
+                    try await APIService.getNutrition(for: newFoodName, accessToken: accessToken)
+                }
                 foodEntries[index].calories = nutrition.calories
                 foodEntries[index].protein = nutrition.protein
                 foodEntries[index].carbs = nutrition.carbs

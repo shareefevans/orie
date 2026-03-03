@@ -102,18 +102,18 @@ struct LoginView: View {
                             HStack {
                                 if isLoading {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                 } else {
                                     Text(isSignUp ? "Sign Up" : "Log In")
                                         .font(.system(size: 16, weight: .semibold))
                                 }
                             }
-                            .foregroundColor(isDark ? .black : .white)
+                            .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(Color.yellow)
-                            .clipShape(RoundedRectangle(cornerRadius: 100))
+                            .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
                         }
+                        .glassEffect(in: .capsule)
                         .disabled(isLoading || !isFormValid)
                         .opacity(isFormValid ? 1 : 0.6)
                         .padding(.top, 8)
@@ -130,12 +130,11 @@ struct LoginView: View {
                         }) {
                             Text("Forgot Password?")
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(Color.primaryText(isDark))
+                                .foregroundStyle(isDark ? .white : .black)
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color.cardBackground(isDark))
-                                .clipShape(RoundedRectangle(cornerRadius: 100))
+                                .frame(height: 50)
                         }
+                        .glassEffect(in: .capsule)
                         .padding(.horizontal, 16)
                         .padding(.top, -12)
                     }
@@ -158,29 +157,18 @@ struct LoginView: View {
                     .padding(.horizontal, 32)
 
                     // MARK: - ❇️ Social Login Buttons
-                    VStack(spacing: 12) {
-                        // Google Sign In
-                        SocialLoginButton(
-                            title: "Continue with Google",
-                            icon: "g.circle.fill",
-                            backgroundColor: Color.cardBackground(isDark),
-                            textColor: Color.primaryText(isDark)
-                        ) {
-                            Task {
-                                await handleGoogleSignIn()
-                            }
+                    Button(action: { handleAppleSignIn() }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "apple.logo")
+                                .font(.system(size: 18))
+                            Text("Continue with Apple")
+                                .font(.system(size: 16, weight: .medium))
                         }
-
-                        // Apple Sign In
-                        SocialLoginButton(
-                            title: "Continue with Apple",
-                            icon: "apple.logo",
-                            backgroundColor: isDark ? Color.white : Color.black,
-                            textColor: isDark ? .black : .white
-                        ) {
-                            handleAppleSignIn()
-                        }
+                        .foregroundStyle(isDark ? .white : .black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
                     }
+                    .glassEffect(in: .capsule)
                     .padding(.horizontal, 16)
 
                     // MARK: - ❇️ Toggle Sign Up / Log In

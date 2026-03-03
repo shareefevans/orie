@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7B7D65742F568A3100A432DB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B7D65732F568A3000A432DB /* StoreKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		7B07F8262ED654030066FB97 /* orie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = orie.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B7D65732F568A3000A432DB /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B7D65742F568A3100A432DB /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +39,7 @@
 			isa = PBXGroup;
 			children = (
 				7B07F8282ED654030066FB97 /* orie */,
+				7B7D65722F568A3000A432DB /* Frameworks */,
 				7B07F8272ED654030066FB97 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +50,14 @@
 				7B07F8262ED654030066FB97 /* orie.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		7B7D65722F568A3000A432DB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7B7D65732F568A3000A432DB /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

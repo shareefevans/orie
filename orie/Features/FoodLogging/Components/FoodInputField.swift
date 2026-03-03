@@ -159,23 +159,38 @@ struct FoodInputField: View {
     // MARK: - ❇️ Functions
     #if os(iOS)
     private func handleCapturedImage(_ image: UIImage) {
+        guard let authManager = authManager else {
+            onError?("Please sign in to use image scanning.")
+            return
+        }
+
         isAnalyzingImage = true
 
         Task {
             do {
-                // Convert image to base64
                 guard let imageData = image.jpegData(compressionQuality: 0.8) else {
                     await MainActor.run { isAnalyzingImage = false }
                     return
                 }
                 let base64String = imageData.base64EncodedString()
 
-                // Call the API
-                let result = try await APIService.analyzeImageWithNutrition(imageBase64: base64String)
+                let result = try await authManager.withAuthRetry { accessToken in
+                    try await APIService.analyzeImageWithNutrition(imageBase64: base64String, accessToken: accessToken)
+                }
 
                 await MainActor.run {
                     isAnalyzingImage = false
                     onImageAnalyzed?(result)
+                }
+            } catch APIError.upgradeRequired {
+                await MainActor.run {
+                    isAnalyzingImage = false
+                    onError?("Image scanning requires Premium. Upgrade in Settings.")
+                }
+            } catch APIError.aiLimitReached {
+                await MainActor.run {
+                    isAnalyzingImage = false
+                    onError?("Daily AI limit reached. Resets at midnight.")
                 }
             } catch {
                 print("Error analyzing image: \(error)")

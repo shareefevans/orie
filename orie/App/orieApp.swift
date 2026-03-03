@@ -51,6 +51,7 @@ struct orieApp: App {
     @StateObject private var authManager = AuthManager()
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var notificationManager = NotificationManager()
+    @StateObject private var subscriptionManager = SubscriptionManager()
 
     @State private var showResetPassword = false
     @State private var resetPasswordToken: String = ""
@@ -76,19 +77,27 @@ struct orieApp: App {
                         }
                     }
                 } else if authManager.isAuthenticated {
-                    MainView()
-                        .environmentObject(authManager)
-                        .environmentObject(themeManager)
-                        .environmentObject(notificationManager)
-                        .environmentObject(localNotificationManager)
-                        .onAppear {
-                            // MARK: 👉 Record streak on app open
-                            StreakManager.shared.recordAppOpen()
-                            // MARK: 👉 Sync notifications when app opens
-                            Task {
-                                await notificationManager.syncSystemNotifications()
+                    let userId = authManager.currentUser?.id ?? ""
+                    if !subscriptionManager.hasSelectedPlan(userId: userId) {
+                        PlanSelectionView()
+                            .environmentObject(authManager)
+                            .environmentObject(themeManager)
+                            .environmentObject(subscriptionManager)
+                    } else {
+                        MainView()
+                            .environmentObject(authManager)
+                            .environmentObject(themeManager)
+                            .environmentObject(notificationManager)
+                            .environmentObject(localNotificationManager)
+                            .environmentObject(subscriptionManager)
+                            .onAppear {
+                                StreakManager.shared.recordAppOpen()
+                                Task {
+                                    await notificationManager.syncSystemNotifications()
+                                    await subscriptionManager.loadStatus(authManager: authManager)
+                                }
                             }
-                        }
+                    }
                 } else {
                     LoginView(
                         showResetPassword: $showResetPassword,

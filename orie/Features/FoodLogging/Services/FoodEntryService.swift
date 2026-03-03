@@ -11,6 +11,8 @@ enum APIError: Error {
     case sessionExpired
     case badResponse
     case badURL
+    case upgradeRequired   // 403 — free tier tried to use AI
+    case aiLimitReached    // 429 — premium daily limit hit
 }
 
 // MARK: - Weekly Progress Models

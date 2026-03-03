@@ -13,6 +13,7 @@ struct ProfileSheet: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var localNotificationManager: LocalNotificationManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     // MARK: - ❇️ User data
     @State private var userName = ""
@@ -147,6 +148,80 @@ struct ProfileSheet: View {
                             MacroRow(label: "Fibre", value: $dailyFibre, unit: "g", isDark: isDark, onSave: saveProfile)
                             Divider()
                             MacroRow(label: "Sugar", value: $dailySugar, unit: "g", isDark: isDark, onSave: saveProfile)
+                        }
+                        .padding(24)
+                        .background(Color.cardBackground(isDark))
+                        .cornerRadius(24)
+
+                        // MARK: - ❇️ Subscription Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Subscription")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color.primaryText(isDark))
+
+                                Text("Manage your plan.")
+                                    .font(.footnote)
+                                    .foregroundColor(Color.secondaryText(isDark))
+                            }
+                            .padding(.bottom, 8)
+
+                            Divider()
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Current Plan")
+                                        .font(.footnote)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                    Text(subscriptionManager.tier == .premium ? "Premium" : "Free")
+                                        .font(.caption)
+                                        .foregroundColor(subscriptionManager.tier == .premium ? .yellow : Color.secondaryText(isDark))
+                                }
+                                Spacer()
+                                if subscriptionManager.tier == .premium {
+                                    Text("AI: \(subscriptionManager.aiUsedToday)/\(subscriptionManager.aiLimit) today")
+                                        .font(.caption2)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                }
+                            }
+
+                            Divider()
+
+                            if subscriptionManager.tier == .free {
+                                Button(action: {
+                                    Task {
+                                        let userId = authManager.currentUser?.id ?? ""
+                                        await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("Upgrade to Premium")
+                                            .font(.footnote)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(Color.primaryText(isDark))
+                                        Spacer()
+                                        Image(systemName: "crown.fill")
+                                            .foregroundColor(.yellow)
+                                    }
+                                }
+                                .disabled(subscriptionManager.isLoading)
+                            } else {
+                                Button(action: {
+                                    subscriptionManager.manageSubscription()
+                                }) {
+                                    HStack {
+                                        Text("Manage Subscription")
+                                            .font(.footnote)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(Color.primaryText(isDark))
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right")
+                                            .foregroundColor(Color.iconColor(isDark))
+                                    }
+                                }
+                            }
                         }
                         .padding(24)
                         .background(Color.cardBackground(isDark))
@@ -698,4 +773,5 @@ private struct SkeletonRow: View {
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
         .environmentObject(LocalNotificationManager.shared)
+        .environmentObject(SubscriptionManager())
 }

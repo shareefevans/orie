@@ -30,6 +30,7 @@ struct NutritionEditSheet: View {
     let entry: FoodEntry
     var isDark: Bool = false
     var isOffline: Bool = false
+    var authManager: AuthManager? = nil
     var onSave: (Int, Double, Double, Double) -> Void
 
     @State private var editedCalories: String
@@ -78,6 +79,7 @@ struct NutritionEditSheet: View {
         entry: FoodEntry,
         isDark: Bool = false,
         isOffline: Bool = false,
+        authManager: AuthManager? = nil,
         onSave: @escaping (Int, Double, Double, Double) -> Void,
         initialIngredients: [AddedIngredient] = [],
         initialShowGetSpecific: Bool = false
@@ -85,6 +87,7 @@ struct NutritionEditSheet: View {
         self.entry = entry
         self.isDark = isDark
         self.isOffline = isOffline
+        self.authManager = authManager
         self.onSave = onSave
         _editedCalories = State(initialValue: "\(entry.calories ?? 0)")
         _editedProtein = State(initialValue: String(format: "%.1f", entry.protein ?? 0))
@@ -468,11 +471,17 @@ struct NutritionEditSheet: View {
 
     private func addIngredient() async {
         guard !ingredientFood.isEmpty, !ingredientQuantity.isEmpty else { return }
+        guard let authManager = authManager else {
+            ingredientError = "Sign in required."
+            return
+        }
         isLoadingIngredient = true
         ingredientError = nil
         let query = "\(ingredientQuantity) \(ingredientMetric) \(ingredientFood)"
         do {
-            let result = try await APIService.getNutrition(for: query)
+            let result = try await authManager.withAuthRetry { accessToken in
+                try await APIService.getNutrition(for: query, accessToken: accessToken)
+            }
             addedIngredients.append(AddedIngredient(
                 food: ingredientFood,
                 quantity: ingredientQuantity,
@@ -484,6 +493,10 @@ struct NutritionEditSheet: View {
             ))
             ingredientFood = ""
             ingredientQuantity = ""
+        } catch APIError.upgradeRequired {
+            ingredientError = "AI lookup requires Premium."
+        } catch APIError.aiLimitReached {
+            ingredientError = "Daily AI limit reached. Resets at midnight."
         } catch {
             ingredientError = "Could not find nutrition info. Try again."
         }

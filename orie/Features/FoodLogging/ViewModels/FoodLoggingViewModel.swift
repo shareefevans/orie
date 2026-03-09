@@ -224,8 +224,18 @@ final class FoodLoggingViewModel: ObservableObject {
             } catch APIError.sessionExpired {
                 // handled by withAuthRetry
             } catch APIError.upgradeRequired {
-                withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
-                showUpgradePrompt = true
+                // Free tier: keep the entry but save without nutrition (same as offline)
+                guard let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) else { return }
+                foodEntries[index].isLoading = false
+                do {
+                    let dbEntry = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
+                    }
+                    foodEntries[index].dbId = dbEntry.id
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
+                } catch {
+                    print("Failed to save free tier entry: \(error)")
+                }
             } catch APIError.aiLimitReached {
                 withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
                 showError("Daily AI limit reached. Resets at midnight.")

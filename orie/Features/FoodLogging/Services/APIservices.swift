@@ -173,6 +173,27 @@ class APIService {
         guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
     }
 
+    static func selectPremiumTier(accessToken: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/subscriptions/select-premium") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode([String: String]())
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
+        guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
+    }
+
     static func verifyAppleTransaction(accessToken: String, jwsRepresentation: String) async throws {
         guard let url = URL(string: "\(baseURL)/api/subscriptions/apple/verify") else {
             throw URLError(.badURL)

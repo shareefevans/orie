@@ -16,7 +16,7 @@ enum SubscriptionTier: String {
 @MainActor
 final class SubscriptionManager: ObservableObject {
 
-    static let premiumProductId = "com.shareefevans.orie.premium.monthly"
+    static let premiumProductId = "orie.premium.monthly"
 
     @Published var tier: SubscriptionTier = .free
     @Published var aiUsedToday: Int = 0
@@ -25,6 +25,7 @@ final class SubscriptionManager: ObservableObject {
     @Published var purchaseError: String? = nil
 
     private var transactionListener: Task<Void, Never>?
+    private weak var authManager: AuthManager?
 
     init() {
         transactionListener = listenForTransactions()
@@ -47,6 +48,7 @@ final class SubscriptionManager: ObservableObject {
     // MARK: - Load status from backend
 
     func loadStatus(authManager: AuthManager) async {
+        self.authManager = authManager
         isLoading = true
         do {
             let status = try await authManager.withAuthRetry { accessToken in
@@ -75,6 +77,23 @@ final class SubscriptionManager: ObservableObject {
             markPlanSelected(userId: userId)
         } catch {
             print("Failed to select free tier: \(error)")
+        }
+        isLoading = false
+    }
+
+    // MARK: - Select premium tier directly
+
+    func selectPremium(authManager: AuthManager, userId: String) async {
+        isLoading = true
+        do {
+            try await authManager.withAuthRetry { accessToken in
+                try await APIService.selectPremiumTier(accessToken: accessToken)
+            }
+            tier = .premium
+            aiLimit = 15
+            markPlanSelected(userId: userId)
+        } catch {
+            print("Failed to select premium tier: \(error)")
         }
         isLoading = false
     }
@@ -169,21 +188,15 @@ final class SubscriptionManager: ObservableObject {
             for await verificationResult in Transaction.updates {
                 if case .verified(let transaction) = verificationResult {
                     await transaction.finish()
-                    // Refresh status from backend after any transaction update
-                    await self?.refreshTierFromEntitlements()
+                    // Always re-fetch from backend so Supabase is the source of truth
+                    await self?.refreshFromBackend()
                 }
             }
         }
     }
 
-    private func refreshTierFromEntitlements() async {
-        var hasPremium = false
-        for await verificationResult in Transaction.currentEntitlements {
-            if case .verified(let transaction) = verificationResult,
-               transaction.productID == Self.premiumProductId {
-                hasPremium = true
-            }
-        }
-        tier = hasPremium ? .premium : .free
+    private func refreshFromBackend() async {
+        guard let authManager = authManager else { return }
+        await loadStatus(authManager: authManager)
     }
 }

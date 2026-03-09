@@ -689,4 +689,5 @@ private extension DateFormatter {
         .environmentObject(ThemeManager())
         .environmentObject(NotificationManager())
         .environmentObject(LocalNotificationManager.shared)
+        .environmentObject(SubscriptionManager())
 }

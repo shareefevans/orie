@@ -189,38 +189,59 @@ struct ProfileSheet: View {
 
                             Divider()
 
-                            if subscriptionManager.tier == .free {
+                            HStack(spacing: 8) {
+                                // Free option
                                 Button(action: {
                                     Task {
                                         let userId = authManager.currentUser?.id ?? ""
-                                        await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                                        await subscriptionManager.selectFree(authManager: authManager, userId: userId)
                                     }
                                 }) {
-                                    HStack {
-                                        Text("Upgrade to Premium")
-                                            .font(.footnote)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(Color.primaryText(isDark))
-                                        Spacer()
-                                        Image(systemName: "crown.fill")
-                                            .foregroundColor(.yellow)
-                                    }
+                                    Text("Free")
+                                        .font(.footnote)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(subscriptionManager.tier == .free ? .white : Color.secondaryText(isDark))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 40)
+                                        .background(
+                                            subscriptionManager.tier == .free
+                                                ? (isDark ? Color(red: 50/255, green: 50/255, blue: 50/255) : Color(red: 180/255, green: 180/255, blue: 180/255))
+                                                : Color.clear
+                                        )
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color.gray.opacity(0.3), lineWidth: subscriptionManager.tier == .free ? 0 : 1)
+                                        )
                                 }
-                                .disabled(subscriptionManager.isLoading)
-                            } else {
+                                .disabled(subscriptionManager.isLoading || subscriptionManager.tier == .free)
+
+                                // Premium option
                                 Button(action: {
-                                    subscriptionManager.manageSubscription()
+                                    Task {
+                                        let userId = authManager.currentUser?.id ?? ""
+                                        await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
+                                    }
                                 }) {
-                                    HStack {
-                                        Text("Manage Subscription")
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "crown.fill")
+                                            .font(.caption)
+                                            .foregroundColor(subscriptionManager.tier == .premium ? .black : .yellow)
+                                        Text("Premium")
                                             .font(.footnote)
                                             .fontWeight(.medium)
-                                            .foregroundColor(Color.primaryText(isDark))
-                                        Spacer()
-                                        Image(systemName: "arrow.up.right")
-                                            .foregroundColor(Color.iconColor(isDark))
+                                            .foregroundColor(subscriptionManager.tier == .premium ? .black : Color.primaryText(isDark))
                                     }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 40)
+                                    .background(subscriptionManager.tier == .premium ? Color.yellow : Color.clear)
+                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.yellow.opacity(0.5), lineWidth: subscriptionManager.tier == .premium ? 0 : 1)
+                                    )
                                 }
+                                .disabled(subscriptionManager.isLoading || subscriptionManager.tier == .premium)
                             }
                         }
                         .padding(24)

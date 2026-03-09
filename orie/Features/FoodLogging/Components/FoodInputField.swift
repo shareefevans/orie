@@ -62,6 +62,11 @@ struct FoodInputField: View {
                     .textInputAutocapitalization(.never)
                     #endif
                     .onChange(of: text) { oldValue, newValue in
+                        if newValue.count > 300 {
+                            text = String(newValue.prefix(300))
+                            onError?("Entry is too long — please keep it under 300 characters.")
+                            return
+                        }
                         if newValue.contains("\n") {
                             let trimmed = newValue.replacingOccurrences(of: "\n", with: "")
                                 .trimmingCharacters(in: .whitespacesAndNewlines)

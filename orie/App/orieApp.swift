@@ -112,9 +112,9 @@ struct orieApp: App {
             }
             .onChange(of: scenePhase) { oldPhase, newPhase in
                 if newPhase == .active && authManager.isAuthenticated {
-                    // Refresh session when app becomes active to prevent stale tokens
                     Task {
                         await authManager.refreshSession()
+                        await subscriptionManager.loadStatus(authManager: authManager)
                     }
                 }
             }

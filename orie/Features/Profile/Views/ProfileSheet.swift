@@ -377,6 +377,9 @@ struct ProfileSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear {
             loadProfile()
+            Task {
+                await subscriptionManager.loadStatus(authManager: authManager)
+            }
         }
         .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
             Button("Open Settings") {

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct ProfileSheet: View {
     @Environment(\.dismiss) var dismiss
@@ -250,19 +249,15 @@ struct ProfileSheet: View {
 
                         // MARK: - ❇️ App Section
                         VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("App")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color.primaryText(isDark))
 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("App")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color.primaryText(isDark))
-
-                                    Text("Manage your app settings.")
-                                        .font(.footnote)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                        .lineLimit(2)
-                                }
+                                Text("Manage your app settings.")
+                                    .font(.footnote)
+                                    .foregroundColor(Color.secondaryText(isDark))
                             }
                             .padding(.bottom, 8)
 
@@ -534,6 +529,7 @@ struct ProfileSheet: View {
             }
         }
     }
+
 }
 
 // MARK: - ❇️ Macro Row Component

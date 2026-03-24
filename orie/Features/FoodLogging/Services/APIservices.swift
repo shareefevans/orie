@@ -243,4 +243,5 @@ class APIService {
         if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
         guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
     }
+
 }

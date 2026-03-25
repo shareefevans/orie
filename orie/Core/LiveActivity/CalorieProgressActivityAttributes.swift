@@ -38,6 +38,9 @@ struct CalorieProgressActivityAttributes: ActivityAttributes {
         /// Fats goal
         var goalFats: Int
 
+        /// Current streak days
+        var streakDays: Int
+
         /// Time when last updated
         var lastUpdated: Date
 
@@ -82,6 +85,7 @@ class CalorieProgressActivityManager: ObservableObject {
     static let shared = CalorieProgressActivityManager()
 
     @Published private(set) var currentActivity: Activity<CalorieProgressActivityAttributes>?
+    private var monitorTask: Task<Void, Never>?
 
     private init() {}
 
@@ -95,7 +99,8 @@ class CalorieProgressActivityManager: ObservableObject {
         consumedCarbs: Int,
         goalCarbs: Int,
         consumedFats: Int,
-        goalFats: Int
+        goalFats: Int,
+        streakDays: Int = 0
     ) {
         // Don't start a new one if already running
         guard currentActivity == nil else {
@@ -107,7 +112,8 @@ class CalorieProgressActivityManager: ObservableObject {
                 consumedCarbs: consumedCarbs,
                 goalCarbs: goalCarbs,
                 consumedFats: consumedFats,
-                goalFats: goalFats
+                goalFats: goalFats,
+                streakDays: streakDays
             )
             return
         }
@@ -127,6 +133,7 @@ class CalorieProgressActivityManager: ObservableObject {
             goalCarbs: goalCarbs,
             consumedFats: consumedFats,
             goalFats: goalFats,
+            streakDays: streakDays,
             lastUpdated: Date()
         )
 
@@ -138,6 +145,9 @@ class CalorieProgressActivityManager: ObservableObject {
             )
             currentActivity = activity
             print("✅ Calorie Progress Live Activity started")
+
+            // Monitor activity state to detect dismissal
+            monitorActivityState(activity)
 
             // Auto-dismiss at midnight
             scheduleEndOfDayDismissal()
@@ -156,7 +166,8 @@ class CalorieProgressActivityManager: ObservableObject {
         consumedCarbs: Int,
         goalCarbs: Int,
         consumedFats: Int,
-        goalFats: Int
+        goalFats: Int,
+        streakDays: Int = 0
     ) {
         guard let activity = currentActivity else { return }
 
@@ -170,6 +181,7 @@ class CalorieProgressActivityManager: ObservableObject {
                 goalCarbs: goalCarbs,
                 consumedFats: consumedFats,
                 goalFats: goalFats,
+                streakDays: streakDays,
                 lastUpdated: Date()
             )
 
@@ -180,6 +192,21 @@ class CalorieProgressActivityManager: ObservableObject {
                 )
             )
             print("🔄 Calorie Progress updated: \(consumedCalories)/\(goalCalories)")
+        }
+    }
+
+    /// Monitor activity state to detect when it's dismissed
+    private func monitorActivityState(_ activity: Activity<CalorieProgressActivityAttributes>) {
+        monitorTask?.cancel()
+        monitorTask = Task { @MainActor in
+            for await state in activity.activityStateUpdates {
+                if state == .dismissed || state == .ended {
+                    print("🔔 Live Activity dismissed/ended by system")
+                    currentActivity = nil
+                    monitorTask?.cancel()
+                    break
+                }
+            }
         }
     }
 
@@ -199,6 +226,7 @@ class CalorieProgressActivityManager: ObservableObject {
             )
             await MainActor.run {
                 currentActivity = nil
+                monitorTask?.cancel()
             }
             print("🛑 Calorie Progress Live Activity ended")
         }

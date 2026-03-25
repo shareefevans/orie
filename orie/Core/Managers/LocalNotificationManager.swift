@@ -47,7 +47,7 @@ class LocalNotificationManager: ObservableObject {
     // MARK: - ❇️ Schedule Notifications
 
     /// Schedule a notification for a food entry at its timestamp
-    func scheduleMealNotification(for entry: FoodEntry) {
+    func scheduleMealNotification(for entry: FoodEntry, userName: String? = nil) {
         print("📅 Attempting to schedule notification for: \(entry.foodName)")
         print("   - notificationsEnabled: \(notificationsEnabled)")
         print("   - isAuthorized: \(isAuthorized)")
@@ -66,8 +66,15 @@ class LocalNotificationManager: ObservableObject {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Que Pasa Puto!"
-        content.body = "Time to eat: \(entry.foodName)"
+
+        // Personalized message with user's name if available
+        if let name = userName {
+            content.title = "Hey \(name), time to eat!"
+        } else {
+            content.title = "Time to eat!"
+        }
+
+        content.body = ""
         content.sound = .default
         content.userInfo = ["entryId": entry.id.uuidString]
 
@@ -95,10 +102,10 @@ class LocalNotificationManager: ObservableObject {
     }
 
     /// Update notification when entry time changes
-    func updateMealNotification(for entry: FoodEntry) {
+    func updateMealNotification(for entry: FoodEntry, userName: String? = nil) {
         print("🔄 Updating notification for: \(entry.foodName) to time: \(entry.timestamp)")
         cancelMealNotification(for: entry.id)
-        scheduleMealNotification(for: entry)
+        scheduleMealNotification(for: entry, userName: userName)
     }
 
     /// Cancel notification for a specific entry
@@ -119,14 +126,14 @@ class LocalNotificationManager: ObservableObject {
     }
 
     /// Reschedule all notifications for entries (useful after app restart)
-    func rescheduleAllNotifications(for entries: [FoodEntry]) {
+    func rescheduleAllNotifications(for entries: [FoodEntry], userName: String? = nil) {
         guard notificationsEnabled && isAuthorized else { return }
 
         // 👉 Cancel existing and reschedule
         cancelAllMealNotifications()
 
         for entry in entries where entry.timestamp > Date() {
-            scheduleMealNotification(for: entry)
+            scheduleMealNotification(for: entry, userName: userName)
         }
     }
 }

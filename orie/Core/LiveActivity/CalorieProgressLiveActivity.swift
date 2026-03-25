@@ -19,106 +19,88 @@ struct CalorieProgressLiveActivity: Widget {
                 .activitySystemActionForegroundColor(Color.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded view - Full macro breakdown
-                DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        // Calories
-                        HStack(spacing: 4) {
-                            Text("\(context.state.consumedCalories)")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("/ \(context.state.goalCalories)")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-
-                        Text("cal")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-
-                DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        let remaining = context.state.remainingCalories
-                        Text("\(abs(remaining))")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(
-                                context.state.isOverGoal ? .red : .green
-                            )
-
-                        Text(context.state.isOverGoal ? "over" : "left")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-
+                // Expanded view - Horizontal donut charts
                 DynamicIslandExpandedRegion(.bottom) {
-                    // Macro bars
-                    VStack(spacing: 8) {
+                    HStack(spacing: 0) {
+                        // Streak (Far left)
+                        StreakDisplay(streakDays: context.state.streakDays)
+
+                        // Divider
+                        Rectangle()
+                            .fill(Color.white.opacity(0.5))
+                            .frame(width: 1, height: 15)
+                            .padding(.horizontal, 24)
+
+                        // Calories
+                        MacroDonutChart(
+                            label: "Calories",
+                            value: context.state.consumedCalories,
+                            progress: context.state.progress,
+                            showUnit: false
+                        )
+
+                        Spacer()
+
                         // Protein
-                        MacroProgressRow(
+                        MacroDonutChart(
                             label: "Protein",
                             value: context.state.consumedProtein,
-                            goal: context.state.goalProtein,
                             progress: context.state.proteinProgress,
-                            color: Color(red: 49/255, green: 209/255, blue: 149/255)
+                            showUnit: true
                         )
+
+                        Spacer()
 
                         // Carbs
-                        MacroProgressRow(
+                        MacroDonutChart(
                             label: "Carbs",
                             value: context.state.consumedCarbs,
-                            goal: context.state.goalCarbs,
                             progress: context.state.carbsProgress,
-                            color: Color(red: 135/255, green: 206/255, blue: 250/255)
+                            showUnit: true
                         )
+
+                        Spacer()
 
                         // Fats
-                        MacroProgressRow(
+                        MacroDonutChart(
                             label: "Fats",
                             value: context.state.consumedFats,
-                            goal: context.state.goalFats,
                             progress: context.state.fatsProgress,
-                            color: Color(red: 255/255, green: 180/255, blue: 50/255)
+                            showUnit: true
                         )
                     }
-                    .padding(.top, 8)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
                 }
             } compactLeading: {
-                // Compact view - Calorie count with progress ring
+                // Compact view - Total calories consumed
+                HStack(spacing: 1) {
+                    Text("\(context.state.consumedCalories)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("cal")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            } compactTrailing: {
+                // Compact view - Small progress ring
                 ZStack {
-                    // Progress ring
+                    // Background ring
                     Circle()
                         .stroke(Color.white.opacity(0.3), lineWidth: 3)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 18, height: 18)
 
+                    // Progress ring
                     Circle()
                         .trim(from: 0, to: context.state.progress)
                         .stroke(
                             context.state.isOverGoal ? Color.red : Color.green,
                             style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 32, height: 32)
+                        .frame(width: 18, height: 18)
                         .rotationEffect(.degrees(-90))
-
-                    // Calorie count
-                    Text("\(context.state.consumedCalories)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
                 }
-            } compactTrailing: {
-                // Compact view - Remaining calories
-                HStack(spacing: 2) {
-                    Text("\(abs(context.state.remainingCalories))")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(
-                            context.state.isOverGoal ? .red : .white
-                        )
-                    Text(context.state.isOverGoal ? "+" : "")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(context.state.isOverGoal ? .red : .white.opacity(0.7))
-                }
+                .padding(.leading, 2)
             } minimal: {
                 // Minimal view - Just progress ring
                 ZStack {
@@ -196,36 +178,62 @@ struct LockScreenCalorieView: View {
 }
 
 @available(iOS 16.2, *)
-struct MacroProgressRow: View {
-    let label: String
-    let value: Int
-    let goal: Int
-    let progress: Double
-    let color: Color
+struct StreakDisplay: View {
+    let streakDays: Int
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
+        VStack(spacing: 4) {
+            // Flame icon - same height as donut charts
+            Text("🔥")
+                .font(.system(size: 17))
+
+            // Streak label
+            Text("Streak")
+                .font(.system(size: 9, weight: .medium))
                 .foregroundColor(.white.opacity(0.8))
-                .frame(width: 50, alignment: .leading)
 
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.2))
-
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color)
-                        .frame(width: geometry.size.width * progress)
-                }
-            }
-            .frame(height: 6)
-
-            Text("\(value)g")
-                .font(.system(size: 11, weight: .semibold))
+            // Streak days
+            Text("\(streakDays) days")
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white)
-                .frame(width: 35, alignment: .trailing)
+        }
+    }
+}
+
+@available(iOS 16.2, *)
+struct MacroDonutChart: View {
+    let label: String
+    let value: Int
+    let progress: Double
+    let showUnit: Bool
+
+    var body: some View {
+        VStack(spacing: 4) {
+            // Donut chart
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.3), lineWidth: 3)
+                    .frame(width: 18, height: 18)
+
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        Color.green,
+                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                    )
+                    .frame(width: 18, height: 18)
+                    .rotationEffect(.degrees(-90))
+            }
+
+            // Label
+            Text(label)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+
+            // Value
+            Text(showUnit ? "\(value)g" : "\(value)")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white)
         }
     }
 }

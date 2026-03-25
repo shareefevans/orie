@@ -77,6 +77,13 @@ final class FoodLoggingViewModel: ObservableObject {
         self.localNotificationManager = localNotificationManager
     }
 
+    /// Get the current user's first name for notifications
+    private var userName: String? {
+        guard let fullName = authManager?.currentUser?.userMetadata?.fullName else { return nil }
+        // Extract first name from full name
+        return fullName.components(separatedBy: " ").first
+    }
+
     func load(for date: Date) {
         loadFoodEntries(for: date)
         loadWeeklyFoodEntries()
@@ -227,7 +234,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
 
                 foodEntries[index].dbId = dbEntry.id
-                localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
+                localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                 loadWeeklyFoodEntries()
 
                 // Update calorie progress activity
@@ -250,7 +257,7 @@ final class FoodLoggingViewModel: ObservableObject {
                         try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
                     }
                     foodEntries[index].dbId = dbEntry.id
-                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                 } catch {
                     print("Failed to save free tier entry: \(error)")
                 }
@@ -299,7 +306,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     foodEntries[index].dbId = dbEntry.id
-                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                     loadWeeklyFoodEntries()
 
                     // Update calorie progress activity
@@ -320,7 +327,7 @@ final class FoodLoggingViewModel: ObservableObject {
               let dbId = foodEntries[index].dbId else { return }
 
         withAnimation { foodEntries[index].timestamp = newTime }
-        localNotificationManager?.updateMealNotification(for: foodEntries[index])
+        localNotificationManager?.updateMealNotification(for: foodEntries[index], userName: userName)
 
         Task {
             guard let authManager else { return }
@@ -422,7 +429,7 @@ final class FoodLoggingViewModel: ObservableObject {
                         try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
                     }
                     foodEntries[index].dbId = dbEntry.id
-                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                 }
                 loadWeeklyFoodEntries()
 
@@ -464,6 +471,13 @@ final class FoodLoggingViewModel: ObservableObject {
                     return entry
                 }
                 isEntriesLoading = false
+
+                // Restart Live Activity if dismissed and we have entries for today
+                let calendar = Calendar.current
+                let today = calendar.startOfDay(for: Date())
+                if calendar.isDate(date, inSameDayAs: today) && !foodEntries.isEmpty {
+                    updateCalorieProgressActivity()
+                }
             } catch APIError.sessionExpired {
                 isEntriesLoading = false
             } catch {
@@ -563,7 +577,7 @@ final class FoodLoggingViewModel: ObservableObject {
                         try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
                     }
                     foodEntries[index].dbId = dbEntry.id
-                    localNotificationManager.scheduleMealNotification(for: foodEntries[index])
+                    localNotificationManager.scheduleMealNotification(for: foodEntries[index], userName: userName)
                 } catch APIError.sessionExpired {
                     break
                 } catch {
@@ -643,7 +657,8 @@ final class FoodLoggingViewModel: ObservableObject {
             consumedCarbs: consumedCarbs,
             goalCarbs: dailyCarbsGoal,
             consumedFats: consumedFats,
-            goalFats: dailyFatsGoal
+            goalFats: dailyFatsGoal,
+            streakDays: StreakManager.shared.currentStreak
         )
     }
 

@@ -9,6 +9,19 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
+/// Format calorie value with k suffix for values >= 1000
+private func formatCalories(_ calories: Int) -> String {
+    if calories >= 1000 {
+        let value = Double(calories) / 1000.0
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0fk", value)
+        } else {
+            return String(format: "%.1fk", value)
+        }
+    }
+    return "\(calories)"
+}
+
 @available(iOS 16.2, *)
 struct CalorieProgressLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -74,48 +87,44 @@ struct CalorieProgressLiveActivity: Widget {
                 }
             } compactLeading: {
                 // Compact view - Total calories consumed
-                HStack(spacing: 1) {
-                    Text("\(context.state.consumedCalories)")
+                HStack(spacing: 0) {
+                    Text(formatCalories(context.state.consumedCalories))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                     Text("cal")
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
                 }
+                .padding(.leading, 2)
             } compactTrailing: {
                 // Compact view - Small progress ring
                 ZStack {
                     // Background ring
                     Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 3)
-                        .frame(width: 18, height: 18)
+                        .stroke(Color.white.opacity(0.3), lineWidth: 2.5)
+                        .frame(width: 16, height: 16)
 
                     // Progress ring
                     Circle()
                         .trim(from: 0, to: context.state.progress)
                         .stroke(
                             context.state.isOverGoal ? Color.red : Color.green,
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                         )
-                        .frame(width: 18, height: 18)
+                        .frame(width: 16, height: 16)
                         .rotationEffect(.degrees(-90))
                 }
-                .padding(.leading, 2)
+                .padding(.leading, 1)
             } minimal: {
-                // Minimal view - Just progress ring
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 2)
-
-                    Circle()
-                        .trim(from: 0, to: context.state.progress)
-                        .stroke(
-                            context.state.isOverGoal ? Color.red : Color.green,
-                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
+                // Minimal view - Just calories text (when another app uses Dynamic Island)
+                HStack(spacing: 1) {
+                    Text(formatCalories(context.state.consumedCalories))
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("cal")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
                 }
-                .frame(width: 20, height: 20)
             }
             .keylineTint(context.state.isOverGoal ? Color.red : Color.green)
         }

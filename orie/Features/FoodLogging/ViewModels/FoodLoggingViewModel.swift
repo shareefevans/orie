@@ -472,10 +472,10 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
                 isEntriesLoading = false
 
-                // Restart Live Activity if dismissed and we have entries for today
+                // Restart Live Activity if dismissed for today
                 let calendar = Calendar.current
                 let today = calendar.startOfDay(for: Date())
-                if calendar.isDate(date, inSameDayAs: today) && !foodEntries.isEmpty {
+                if calendar.isDate(date, inSameDayAs: today) {
                     updateCalorieProgressActivity()
                 }
             } catch APIError.sessionExpired {

@@ -86,6 +86,7 @@ class CalorieProgressActivityManager: ObservableObject {
 
     @Published private(set) var currentActivity: Activity<CalorieProgressActivityAttributes>?
     private var monitorTask: Task<Void, Never>?
+    private var dismissalTask: Task<Void, Never>?
 
     private init() {}
 
@@ -102,8 +103,9 @@ class CalorieProgressActivityManager: ObservableObject {
         goalFats: Int,
         streakDays: Int = 0
     ) {
-        // Don't start a new one if already running
-        guard currentActivity == nil else {
+        // If already running, update it and restart the timer
+        if currentActivity != nil {
+            print("🔄 Updating existing activity and restarting timer")
             updateCalorieProgress(
                 consumedCalories: consumedCalories,
                 goalCalories: goalCalories,
@@ -115,6 +117,8 @@ class CalorieProgressActivityManager: ObservableObject {
                 goalFats: goalFats,
                 streakDays: streakDays
             )
+            // Restart the dismissal timer
+            scheduleAutoDismissal()
             return
         }
 
@@ -144,13 +148,13 @@ class CalorieProgressActivityManager: ObservableObject {
                 pushType: nil
             )
             currentActivity = activity
-            print("✅ Calorie Progress Live Activity started")
+            print("✅ Calorie Progress Live Activity started (will auto-dismiss in 10 seconds)")
 
             // Monitor activity state to detect dismissal
             monitorActivityState(activity)
 
-            // Auto-dismiss at midnight
-            scheduleEndOfDayDismissal()
+            // Schedule forced dismissal after 10 seconds
+            scheduleAutoDismissal()
         } catch {
             print("❌ Failed to start calorie tracking activity: \(error)")
         }
@@ -213,39 +217,50 @@ class CalorieProgressActivityManager: ObservableObject {
     /// End the calorie tracking activity
     @MainActor
     func endCalorieTracking() {
-        guard let activity = currentActivity else { return }
+        guard let activity = currentActivity else {
+            print("⚠️ No activity to end")
+            return
+        }
 
         Task {
+            // Set stale date to past to force immediate dismissal
+            let pastDate = Calendar.current.date(byAdding: .second, value: -10, to: Date()) ?? Date()
             let finalState = activity.content.state
+
             await activity.end(
                 ActivityContent(
                     state: finalState,
-                    staleDate: Date()
+                    staleDate: pastDate
                 ),
                 dismissalPolicy: .immediate
             )
+
             await MainActor.run {
                 currentActivity = nil
                 monitorTask?.cancel()
+                dismissalTask?.cancel()
             }
-            print("🛑 Calorie Progress Live Activity ended")
+            print("✅ Calorie Progress Live Activity ended successfully")
         }
     }
 
-    /// Schedule auto-dismissal at midnight
-    private func scheduleEndOfDayDismissal() {
-        Task { @MainActor in
-            let calendar = Calendar.current
-            let now = Date()
+    /// Schedule auto-dismissal after 10 seconds
+    private func scheduleAutoDismissal() {
+        dismissalTask?.cancel()
+        dismissalTask = Task { @MainActor in
+            print("⏱️ Dismissal timer started - will dismiss in 10 seconds")
 
-            // Get midnight tonight
-            if let midnight = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now),
-               midnight > now {
-                let timeUntilMidnight = midnight.timeIntervalSince(now)
+            // Wait 10 seconds
+            try? await Task.sleep(for: .seconds(10))
 
-                try? await Task.sleep(for: .seconds(timeUntilMidnight))
-                endCalorieTracking()
+            guard !Task.isCancelled else {
+                print("⚠️ Dismissal task was cancelled")
+                return
             }
+
+            // Time's up, force dismiss the activity
+            print("⏰ 10 seconds elapsed - calling endCalorieTracking()")
+            endCalorieTracking()
         }
     }
 }

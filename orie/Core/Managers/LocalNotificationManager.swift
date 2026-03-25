@@ -74,7 +74,7 @@ class LocalNotificationManager: ObservableObject {
             content.title = "Time to eat!"
         }
 
-        content.body = ""
+        content.body = entry.foodName
         content.sound = .default
         content.userInfo = ["entryId": entry.id.uuidString]
 

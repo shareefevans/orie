@@ -40,6 +40,7 @@ struct ProfileSheet: View {
     @State private var feedbackText = ""
     @State private var isSendingFeedback = false
     @State private var showFeedbackSentAlert = false
+    @AppStorage("calorieProgressActivityEnabled") private var calorieProgressActivityEnabled = true
 
     private var isDark: Bool { themeManager.isDarkMode }
 
@@ -317,6 +318,34 @@ struct ProfileSheet: View {
                                 Spacer()
                                 Toggle("", isOn: $themeManager.isDarkMode)
                                     .labelsHidden()
+                            }
+
+                            Divider()
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Calorie Progress")
+                                        .font(.footnote)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(Color.primaryText(isDark))
+                                    Text("Show all-day tracker in Dynamic Island")
+                                        .font(.caption2)
+                                        .foregroundColor(Color.secondaryText(isDark))
+                                }
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { calorieProgressActivityEnabled },
+                                    set: { newValue in
+                                        calorieProgressActivityEnabled = newValue
+                                        // End activity if disabled
+                                        if !newValue {
+                                            if #available(iOS 16.1, *) {
+                                                CalorieProgressActivityManager.shared.endCalorieTracking()
+                                            }
+                                        }
+                                    }
+                                ))
+                                .labelsHidden()
                             }
 
                             Divider()

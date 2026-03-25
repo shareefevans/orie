@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Combine
+import ActivityKit
 
 @MainActor
 final class FoodLoggingViewModel: ObservableObject {
@@ -153,15 +154,29 @@ final class FoodLoggingViewModel: ObservableObject {
 
     func addFoodEntry(foodName: String, date: Date, isOffline: Bool) {
         guard !foodName.isEmpty else { return }
+
+        // Check if this is the first entry of the day
+        let isFirstEntryToday = isFirstEntryOfDay(for: date)
+
         var newEntry = FoodEntry(foodName: foodName, entryDate: date)
 
         if isOffline {
             newEntry.isLoading = false
             foodEntries.append(newEntry)
+
+            // Trigger streak celebration for first entry
+            if isFirstEntryToday {
+                triggerStreakCelebration()
+            }
             return
         }
 
         foodEntries.append(newEntry)
+
+        // Trigger streak celebration for first entry
+        if isFirstEntryToday {
+            triggerStreakCelebration()
+        }
 
         Task {
             guard let authManager else { return }
@@ -215,6 +230,9 @@ final class FoodLoggingViewModel: ObservableObject {
                 localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
                 loadWeeklyFoodEntries()
 
+                // Update calorie progress activity
+                updateCalorieProgressActivity()
+
                 if let syncResult = try? await authManager.withAuthRetry({ accessToken in
                     try await AchievementService.syncAchievements(accessToken: accessToken)
                 }), !syncResult.newlyUnlocked.isEmpty {
@@ -250,6 +268,9 @@ final class FoodLoggingViewModel: ObservableObject {
     }
 
     func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse, date: Date) {
+        // Check if this is the first entry of the day
+        let isFirstEntryToday = isFirstEntryOfDay(for: date)
+
         var newEntry = FoodEntry(foodName: result.description, entryDate: date)
         newEntry.calories = result.nutrition.calories
         newEntry.protein = result.nutrition.protein
@@ -265,6 +286,11 @@ final class FoodLoggingViewModel: ObservableObject {
 
         foodEntries.append(newEntry)
 
+        // Trigger streak celebration for first entry
+        if isFirstEntryToday {
+            triggerStreakCelebration()
+        }
+
         Task {
             guard let authManager else { return }
             do {
@@ -275,6 +301,9 @@ final class FoodLoggingViewModel: ObservableObject {
                     foodEntries[index].dbId = dbEntry.id
                     localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
                     loadWeeklyFoodEntries()
+
+                    // Update calorie progress activity
+                    updateCalorieProgressActivity()
                 }
             } catch APIError.sessionExpired {
             } catch {
@@ -358,6 +387,9 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
                 loadFoodEntries(for: entry.entryDate)
                 loadWeeklyFoodEntries()
+
+                // Update calorie progress activity after deletion
+                updateCalorieProgressActivity()
             } catch APIError.sessionExpired {
             } catch {
                 print("Failed to delete entry: \(error)")
@@ -393,6 +425,9 @@ final class FoodLoggingViewModel: ObservableObject {
                     localNotificationManager?.scheduleMealNotification(for: foodEntries[index])
                 }
                 loadWeeklyFoodEntries()
+
+                // Update calorie progress activity
+                updateCalorieProgressActivity()
             } catch APIError.sessionExpired {
             } catch {
                 print("Failed to update nutrition: \(error)")
@@ -554,4 +589,62 @@ final class FoodLoggingViewModel: ObservableObject {
         weeklyNote = "Tap to see your weekly overview and daily averages."
         weeklyTip = nil
     }
+
+    // MARK: - ❇️ Streak Live Activity
+
+    /// Check if this is the first food entry logged today
+    private func isFirstEntryOfDay(for date: Date) -> Bool {
+        let calendar = Calendar.current
+        let todayEntries = foodEntries.filter { calendar.isDate($0.entryDate, inSameDayAs: date) }
+        return todayEntries.isEmpty
+    }
+
+    /// Trigger the streak celebration Live Activity
+    private func triggerStreakCelebration() {
+        if #available(iOS 16.1, *) {
+            let currentStreak = StreakManager.shared.currentStreak
+            // Only show if streak is greater than 0
+            guard currentStreak > 0 else { return }
+            StreakActivityManager.shared.startStreakCelebration(streakDays: currentStreak)
+        }
+    }
+
+    /// Start or update the all-day calorie progress Live Activity
+    private func updateCalorieProgressActivity() {
+        guard #available(iOS 16.1, *) else { return }
+
+        // Check if user has enabled the feature
+        let isEnabled = UserDefaults.standard.bool(forKey: "calorieProgressActivityEnabled")
+        // Default to true if not set (first time use)
+        let shouldShow = UserDefaults.standard.object(forKey: "calorieProgressActivityEnabled") == nil ? true : isEnabled
+
+        guard shouldShow else {
+            // If disabled, end any running activity
+            CalorieProgressActivityManager.shared.endCalorieTracking()
+            return
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let todayEntries = foodEntries.filter { calendar.isDate($0.entryDate, inSameDayAs: today) }
+
+        // Calculate totals
+        let consumedCalories = todayEntries.reduce(0) { $0 + ($1.calories ?? 0) }
+        let consumedProtein = Int(todayEntries.reduce(0.0) { $0 + ($1.protein ?? 0) })
+        let consumedCarbs = Int(todayEntries.reduce(0.0) { $0 + ($1.carbs ?? 0) })
+        let consumedFats = Int(todayEntries.reduce(0.0) { $0 + ($1.fats ?? 0) })
+
+        // Start or update the activity
+        CalorieProgressActivityManager.shared.startCalorieTracking(
+            consumedCalories: consumedCalories,
+            goalCalories: dailyCalorieGoal,
+            consumedProtein: consumedProtein,
+            goalProtein: dailyProteinGoal,
+            consumedCarbs: consumedCarbs,
+            goalCarbs: dailyCarbsGoal,
+            consumedFats: consumedFats,
+            goalFats: dailyFatsGoal
+        )
+    }
+
 }

@@ -212,6 +212,7 @@ struct MainView: View {
             HStack(spacing: 32) {
                 TabButton(title: "Overview", isSelected: selectedTab == "health", isDark: isDark, action: { selectedTab = "health" })
                 TabButton(title: "Consumed", isSelected: selectedTab == "consumed", isDark: isDark, action: { selectedTab = "consumed" })
+                TabButton(title: "Assistance", isSelected: false, isDark: isDark, action: { })
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 40)
@@ -233,42 +234,38 @@ struct MainView: View {
                 } else {
                     // Daily intake card
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Daily intake")
-                            .font(.system(size: 12))
-                            .foregroundColor(Color.secondaryText(isDark))
-                            .fontWeight(.medium)
+                        if isIntakeCardExpanded {
+                            Text("Daily intake")
+                                .font(.system(size: 12))
+                                .foregroundColor(Color.secondaryText(isDark))
+                                .fontWeight(.medium)
 
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text(consumedCalories.formatted())
-                                .font(.system(size: 24))
+                            Text("\(remainingCalories) calories remaining")
+                                .font(.system(size: 16))
+                                .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
+                                .padding(.top, 4)
                                 .fontWeight(.semibold)
-                                .foregroundColor(Color.primaryText(isDark))
-                            Text("cal")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color.primaryText(isDark))
-                                .fontWeight(.regular)
                         }
-                        .padding(.top, 4)
-
-                        Text("\(remainingCalories) remaining")
-                            .font(.system(size: 14))
-                            .foregroundColor(remainingCalories < -100 ? .red : Color.accessibleYellow(isDark))
-                            .padding(.top, 4)
 
                         VStack(spacing: 8) {
                             HStack {
-                                Text("0")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color.secondaryText(isDark))
+                                Text("\(consumedCalories) cal")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(isDark ? Color.accessibleYellow(isDark) : Color(red: 106/255, green: 118/255, blue: 255/255))
+                                    .fontWeight(.medium)
                                 Spacer()
-                                Text(vm.dailyCalorieGoal.formatted())
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color.primaryText(isDark))
+                                Text("\(vm.dailyCalorieGoal) cal")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.secondaryText(isDark))
+                                    .fontWeight(.medium)
                             }
+
                             MealProgressBar(progress: calorieProgress, meals: mealBubbles, isDark: isDark)
                                 .id(consumedTabId)
                         }
-                        .padding(.top, 32)
+                        .padding(.top, isIntakeCardExpanded ? 32 : 15)
+                        .padding(.bottom, isIntakeCardExpanded ? 0 : 15)
+                        .padding(.horizontal, isIntakeCardExpanded ? 0 : 4)
 
                         if isIntakeCardExpanded {
                             VStack(alignment: .leading, spacing: 16) {
@@ -280,7 +277,7 @@ struct MainView: View {
                                             .fontWeight(.semibold)
                                             .foregroundColor(Color.primaryText(isDark))
                                         Text("Start to dig a little deeper")
-                                            .font(.system(size: 14))
+                                            .font(.system(size: 12))
                                             .foregroundColor(Color.secondaryText(isDark))
                                     }
 
@@ -368,12 +365,12 @@ struct MainView: View {
                             }
                         }
                     }
-                    .padding(.top, 32)
+                    .padding(.top, isIntakeCardExpanded ? 32 : 22)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, isIntakeCardExpanded ? 32 : 22)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.cardBackground(isDark))
-                    .cornerRadius(32)
+                    .cornerRadius(isIntakeCardExpanded ? 32 : 32)
                     .contentShape(Rectangle())
                     .onTapGesture { isIntakeCardExpanded.toggle() }
 

@@ -168,7 +168,7 @@ struct FoodEntryRow: View {
                 }
             }
             .padding(.vertical, 12)
-            .background(Color.cardBackground(isDark))
+            // .background(Color.cardBackground(isDark))
             .offset(x: offset)
             .simultaneousGesture(
                 DragGesture(minimumDistance: 20)

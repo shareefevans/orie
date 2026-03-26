@@ -32,6 +32,7 @@ struct WeeklyOverviewCard: View {
     var isDark: Bool = false
 
     @AppStorage("isWeeklyOverviewExpanded") private var isExpanded: Bool = false
+    @AppStorage("isOrieAssistEnabled") private var isOrieAssistEnabled: Bool = true
 
     // Macro colors
     private let proteinColor = Color(red: 49/255, green: 209/255, blue: 149/255)
@@ -157,25 +158,26 @@ struct WeeklyOverviewCard: View {
     }
 
     private var noteAttributedString: AttributedString {
-        var noteLabel = AttributedString("*Note: ")
-        noteLabel.font = .system(size: 14, weight: .semibold)
-        noteLabel.foregroundColor = Color.primaryText(isDark)
-
         var noteText = AttributedString(note)
         noteText.font = .system(size: 14).italic()
         noteText.foregroundColor = Color.accessibleYellow(isDark)
 
-        return noteLabel + noteText
+        return noteText
     }
 
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            Text("Weekly Overview")
-                .font(.system(size: 12))
-                .foregroundColor(Color.secondaryText(isDark))
-                .fontWeight(.medium)
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                Text("Weekly Overview")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.secondaryText(isDark))
+                    .fontWeight(.medium)
+            }
 
             // Note section
             Text(noteAttributedString)
@@ -256,12 +258,31 @@ struct WeeklyOverviewCard: View {
             // Expanded section - Daily averages
             if isExpanded {
                 VStack(alignment: .leading, spacing: 16) {
+                    // Orie Assist Toggle
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Orie Assist")
+                                .font(.system(size: 16))
+                                .fontWeight(.semibold)
+                                .foregroundColor(Color.primaryText(isDark))
+                            Text("Start to dig a little deeper")
+                                .font(.system(size: 12))
+                                .foregroundColor(Color.secondaryText(isDark))
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: $isOrieAssistEnabled)
+                            .labelsHidden()
+                    }
+                    .padding(.top, 32)
+
                     Text("Weekly Macro Avgs.")
                         .font(.system(size: 16))
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
-                        .padding(.top, 32)
-                        .padding(.bottom, 16)
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
 
                     // Calories row
                     MacroAverageRow(
@@ -270,7 +291,7 @@ struct WeeklyOverviewCard: View {
                         value: avgCalories,
                         goal: dailyCalorieGoal,
                         unit: "cal",
-                        suggestion: caloriesSuggestion(),
+                        suggestion: isOrieAssistEnabled ? caloriesSuggestion() : nil,
                         isDark: isDark
                     )
 
@@ -281,7 +302,7 @@ struct WeeklyOverviewCard: View {
                         value: avgProtein,
                         goal: dailyProteinGoal,
                         unit: "g",
-                        suggestion: macroSuggestion(avg: avgProtein, goal: dailyProteinGoal),
+                        suggestion: isOrieAssistEnabled ? macroSuggestion(avg: avgProtein, goal: dailyProteinGoal) : nil,
                         isDark: isDark
                     )
 
@@ -292,7 +313,7 @@ struct WeeklyOverviewCard: View {
                         value: avgCarbs,
                         goal: dailyCarbsGoal,
                         unit: "g",
-                        suggestion: macroSuggestion(avg: avgCarbs, goal: dailyCarbsGoal),
+                        suggestion: isOrieAssistEnabled ? macroSuggestion(avg: avgCarbs, goal: dailyCarbsGoal) : nil,
                         isDark: isDark
                     )
 
@@ -303,7 +324,7 @@ struct WeeklyOverviewCard: View {
                         value: avgFats,
                         goal: dailyFatsGoal,
                         unit: "g",
-                        suggestion: macroSuggestion(avg: avgFats, goal: dailyFatsGoal),
+                        suggestion: isOrieAssistEnabled ? macroSuggestion(avg: avgFats, goal: dailyFatsGoal) : nil,
                         isDark: isDark
                     )
 
@@ -313,7 +334,7 @@ struct WeeklyOverviewCard: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
                         .padding(.top, 24)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 8)
 
                     if dailyFibreGoal > 0 {
                         MacroAverageRow(
@@ -322,7 +343,7 @@ struct WeeklyOverviewCard: View {
                             value: avgFibre,
                             goal: dailyFibreGoal,
                             unit: "g",
-                            suggestion: nutritionSuggestion(avg: avgFibre, goal: dailyFibreGoal),
+                            suggestion: isOrieAssistEnabled ? nutritionSuggestion(avg: avgFibre, goal: dailyFibreGoal) : nil,
                             isDark: isDark
                         )
                     } else {
@@ -342,7 +363,7 @@ struct WeeklyOverviewCard: View {
                             value: avgSodium,
                             goal: dailySodiumGoal,
                             unit: "mg",
-                            suggestion: nutritionSuggestion(avg: avgSodium, goal: dailySodiumGoal),
+                            suggestion: isOrieAssistEnabled ? nutritionSuggestion(avg: avgSodium, goal: dailySodiumGoal) : nil,
                             isDark: isDark
                         )
                     } else {
@@ -362,7 +383,7 @@ struct WeeklyOverviewCard: View {
                             value: avgSugar,
                             goal: dailySugarGoal,
                             unit: "g",
-                            suggestion: nutritionSuggestion(avg: avgSugar, goal: dailySugarGoal),
+                            suggestion: isOrieAssistEnabled ? nutritionSuggestion(avg: avgSugar, goal: dailySugarGoal) : nil,
                             isDark: isDark
                         )
                     } else {
@@ -563,7 +584,7 @@ struct MacroAverageRow: View {
         dailyProteinGoal: 150,
         dailyCarbsGoal: 200,
         dailyFatsGoal: 65,
-        isDark: false
+        isDark: true
     )
     .padding()
     .background(Color.black)

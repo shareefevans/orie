@@ -629,7 +629,7 @@ struct MainView: View {
 
         // MARK: - ❇️ Lifecycle Handlers
         .onAppear {
-            vm.configure(authManager: authManager, localNotificationManager: localNotificationManager)
+            vm.configure(authManager: authManager, localNotificationManager: localNotificationManager, networkMonitor: networkMonitor)
             vm.load(for: selectedDate)
         }
         .onChange(of: selectedDate) { _, _ in
@@ -654,11 +654,14 @@ struct MainView: View {
         .onChange(of: showNotifications) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: networkMonitor.isConnected) { _, isConnected in
             guard isConnected else { return }
+            // First calculate pending entries (entries without calories)
+            vm.calculatePendingEntries()
+            // Then sync entries that already have calories
             vm.syncOfflineEntries()
         }
         .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated {
-                vm.configure(authManager: authManager, localNotificationManager: localNotificationManager)
+                vm.configure(authManager: authManager, localNotificationManager: localNotificationManager, networkMonitor: networkMonitor)
                 vm.load(for: selectedDate)
             } else {
                 vm.resetForSignOut()

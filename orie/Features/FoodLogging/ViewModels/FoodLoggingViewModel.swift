@@ -14,6 +14,7 @@ final class FoodLoggingViewModel: ObservableObject {
 
     private var authManager: AuthManager?
     private var localNotificationManager: LocalNotificationManager?
+    private var networkMonitor: NetworkMonitor?
 
     // MARK: - ❇️ Published State
 
@@ -72,9 +73,10 @@ final class FoodLoggingViewModel: ObservableObject {
 
     // MARK: - ❇️ Setup
 
-    func configure(authManager: AuthManager, localNotificationManager: LocalNotificationManager) {
+    func configure(authManager: AuthManager, localNotificationManager: LocalNotificationManager, networkMonitor: NetworkMonitor) {
         self.authManager = authManager
         self.localNotificationManager = localNotificationManager
+        self.networkMonitor = networkMonitor
     }
 
     /// Get the current user's first name for notifications
@@ -268,7 +270,10 @@ final class FoodLoggingViewModel: ObservableObject {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
                     foodEntries[index].isLoading = false
-                    handleNetworkError(error, fallback: "Couldn't calculate calories for \"\(foodName)\". Please try again.")
+                    // Only show error if we're online - offline banner already informs user
+                    if networkMonitor?.isConnected ?? true {
+                        handleNetworkError(error, fallback: "Couldn't calculate calories for \"\(foodName)\". Please try again.")
+                    }
                 }
             }
         }
@@ -585,6 +590,117 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
             }
             loadWeeklyFoodEntries()
+        }
+    }
+
+    /// Calculate calories for entries that were added offline without manual nutrition data
+    func calculatePendingEntries() {
+        // Find entries that need calorie calculation (added offline without manual calories)
+        let pending = foodEntries.filter { $0.calories == nil && $0.dbId == nil && !$0.isLoading }
+        guard !pending.isEmpty else { return }
+
+        print("📊 Auto-calculating \(pending.count) pending entries...")
+
+        Task {
+            guard let authManager, let localNotificationManager else { return }
+
+            // Process entries one by one in order
+            for entry in pending {
+                guard let index = foodEntries.firstIndex(where: { $0.id == entry.id }) else { continue }
+
+                // Set loading state
+                foodEntries[index].isLoading = true
+
+                do {
+                    // Check for cached nutrition data first
+                    let previousData = try await authManager.withAuthRetry { accessToken in
+                        try await FoodHistoryService.findPreviousEntry(accessToken: accessToken, foodName: entry.foodName)
+                    }
+
+                    var nutrition: APIService.NutritionResponse
+                    if let cached = previousData {
+                        print("📦 Using cached nutrition for: \(entry.foodName)")
+                        nutrition = APIService.NutritionResponse(
+                            foodName: entry.foodName,
+                            calories: cached.calories,
+                            protein: cached.protein,
+                            carbs: cached.carbs,
+                            fats: cached.fats,
+                            fibre: cached.fibre,
+                            sodium: cached.sodium,
+                            sugar: cached.sugar,
+                            servingSize: cached.servingSize,
+                            imageUrl: nil,
+                            sources: nil
+                        )
+                    } else {
+                        print("🌐 Fetching fresh nutrition for: \(entry.foodName)")
+                        nutrition = try await authManager.withAuthRetry { accessToken in
+                            try await APIService.getNutrition(for: entry.foodName, accessToken: accessToken)
+                        }
+                    }
+
+                    // Update entry with nutrition data
+                    foodEntries[index].calories = nutrition.calories
+                    foodEntries[index].protein = nutrition.protein
+                    foodEntries[index].carbs = nutrition.carbs
+                    foodEntries[index].fats = nutrition.fats
+                    foodEntries[index].fibre = nutrition.fibre
+                    foodEntries[index].sodium = nutrition.sodium
+                    foodEntries[index].sugar = nutrition.sugar
+                    foodEntries[index].servingSize = nutrition.servingSize
+                    foodEntries[index].imageUrl = nutrition.imageUrl
+                    foodEntries[index].sources = nutrition.sources
+                    foodEntries[index].isLoading = false
+
+                    // Save to database
+                    let dbEntry = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
+                    }
+
+                    foodEntries[index].dbId = dbEntry.id
+                    localNotificationManager.scheduleMealNotification(for: foodEntries[index], userName: userName)
+
+                    print("✅ Auto-calculated: \(entry.foodName)")
+
+                } catch APIError.sessionExpired {
+                    // Stop processing if session expires
+                    foodEntries[index].isLoading = false
+                    break
+                } catch APIError.upgradeRequired {
+                    // Free tier: save without nutrition (same as offline)
+                    foodEntries[index].isLoading = false
+                    do {
+                        let dbEntry = try await authManager.withAuthRetry { accessToken in
+                            try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
+                        }
+                        foodEntries[index].dbId = dbEntry.id
+                        localNotificationManager.scheduleMealNotification(for: foodEntries[index], userName: userName)
+                    } catch {
+                        print("Failed to save free tier entry during auto-calc: \(error)")
+                    }
+                } catch APIError.aiLimitReached {
+                    // AI limit reached - stop processing remaining entries
+                    foodEntries[index].isLoading = false
+                    print("⚠️ AI limit reached during auto-calculation")
+                    break
+                } catch {
+                    // Silent failure for auto-calculation - don't show error banner
+                    foodEntries[index].isLoading = false
+                    print("Failed to auto-calculate \(entry.foodName): \(error)")
+                }
+            }
+
+            // Reload weekly data and update calorie progress
+            loadWeeklyFoodEntries()
+            updateCalorieProgressActivity()
+
+            // Sync achievements after auto-calculation
+            if let syncResult = try? await authManager.withAuthRetry({ accessToken in
+                try await AchievementService.syncAchievements(accessToken: accessToken)
+            }), !syncResult.newlyUnlocked.isEmpty {
+                showAwardBanners(syncResult.newlyUnlocked)
+            }
         }
     }
 

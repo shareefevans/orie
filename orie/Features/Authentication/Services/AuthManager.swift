@@ -18,6 +18,7 @@ class AuthManager: ObservableObject {
 
     private let accessTokenKey = "accessToken"
     private let refreshTokenKey = "refreshToken"
+    private let currentUserKey = "currentUser"
     // Coalesces concurrent token-refresh attempts so only one uses the refresh
     // token at a time (Supabase rotates it on each use — a second concurrent
     // call with the same token would fail and log the user out).
@@ -34,6 +35,9 @@ class AuthManager: ObservableObject {
 
         // If we have a refresh token, try to get a fresh session
         if let _ = getRefreshToken() {
+            // Load saved user data immediately for offline scenarios
+            currentUser = loadSavedUser()
+
             Task {
                 await refreshSession()
                 await MainActor.run {
@@ -57,6 +61,9 @@ class AuthManager: ObservableObject {
             if let session = response.session {
                 saveSession(session)
                 currentUser = response.user
+                if let user = response.user {
+                    saveUser(user)
+                }
                 isAuthenticated = true
             } else {
                 // Email confirmation might be required
@@ -80,6 +87,9 @@ class AuthManager: ObservableObject {
             if let session = response.session {
                 saveSession(session)
                 currentUser = response.user
+                if let user = response.user {
+                    saveUser(user)
+                }
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -113,6 +123,9 @@ class AuthManager: ObservableObject {
             if let session = response.session {
                 saveSession(session)
                 currentUser = response.user
+                if let user = response.user {
+                    saveUser(user)
+                }
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -131,6 +144,9 @@ class AuthManager: ObservableObject {
             if let session = response.session {
                 saveSession(session)
                 currentUser = response.user
+                if let user = response.user {
+                    saveUser(user)
+                }
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -152,6 +168,7 @@ class AuthManager: ObservableObject {
         do {
             let user = try await AuthService.getCurrentUser(accessToken: accessToken)
             currentUser = user
+            saveUser(user)
             isAuthenticated = true
         } catch {
             // Tokens are saved, mark as authenticated even if user fetch fails
@@ -260,6 +277,9 @@ class AuthManager: ObservableObject {
                 if let session = response.session {
                     self.saveSession(session)
                     self.currentUser = response.user
+                    if let user = response.user {
+                        self.saveUser(user)
+                    }
                     return true
                 } else {
                     self.handleSessionExpired()
@@ -285,6 +305,7 @@ class AuthManager: ObservableObject {
     private func clearSession() {
         UserDefaults.standard.removeObject(forKey: accessTokenKey)
         UserDefaults.standard.removeObject(forKey: refreshTokenKey)
+        UserDefaults.standard.removeObject(forKey: currentUserKey)
     }
 
     func getAccessToken() -> String? {
@@ -293,6 +314,21 @@ class AuthManager: ObservableObject {
 
     func getRefreshToken() -> String? {
         return UserDefaults.standard.string(forKey: refreshTokenKey)
+    }
+
+    // MARK: - User Data Persistence
+
+    private func saveUser(_ user: AuthService.User) {
+        if let encoded = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(encoded, forKey: currentUserKey)
+        }
+    }
+
+    private func loadSavedUser() -> AuthService.User? {
+        guard let data = UserDefaults.standard.data(forKey: currentUserKey) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(AuthService.User.self, from: data)
     }
 
     // MARK: - API Call with Retry
@@ -338,6 +374,9 @@ class AuthManager: ObservableObject {
             if let session = response.session {
                 saveSession(session)
                 currentUser = response.user
+                if let user = response.user {
+                    saveUser(user)
+                }
                 isAuthenticated = true
             } else {
                 // Server responded but returned no session — refresh token is invalid
@@ -352,6 +391,8 @@ class AuthManager: ObservableObject {
             // Network or other transient error — preserve the existing session.
             // Don't log out the user just because of connectivity issues.
             if getAccessToken() != nil {
+                // Restore user from local storage when offline
+                currentUser = loadSavedUser()
                 isAuthenticated = true
             }
         }

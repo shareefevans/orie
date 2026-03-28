@@ -10,13 +10,17 @@ import SwiftUI
 struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
+    @Binding var showNotifications: Bool
     @Binding var isDateSelectionMode: Bool
     @Binding var selectedDate: Date
+    @Binding var selectedTab: String
     var isToday: Bool
     var isDark: Bool = false
     @Binding var isInputFocused: Bool
     var streakCount: Int = StreakManager.shared.currentStreak
+    var hasUnreadNotifications: Bool = false
 
+    @State private var showSettingsDropdown = false
     @Namespace private var animation
 
     var body: some View {
@@ -90,12 +94,12 @@ struct TopNavigationBar: View {
                             .fixedSize()
                     }
                     .frame(height: 50)
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 16)
                 }
                 .glassEffect(.regular.interactive())
 
                 Button(action: {
-                    showProfile = true
+                    showSettingsDropdown.toggle()
                 }) {
                     Image(systemName: "ellipsis")
                         .font(.callout)
@@ -124,6 +128,99 @@ struct TopNavigationBar: View {
         .padding(.vertical, 12)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isInputFocused)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDateSelectionMode)
+        .overlay(alignment: .topTrailing) {
+            if showSettingsDropdown {
+                settingsDropdownView
+                    .padding(.top, 74)
+                    .padding(.trailing, 16)
+                    .transaction { $0.animation = nil }
+            }
+        }
+    }
+
+    private var settingsDropdownContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: { showProfile = true; showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Profile")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { showNotifications = true; showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Notifications")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = "health"; showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Overview")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { selectedTab = "assistance"; showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Assistance")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(24)
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private var settingsDropdownView: some View {
+        if isDark {
+            settingsDropdownContent
+                .background(
+                    Color(red: 37/255, green: 37/255, blue: 37/255),
+                    in: RoundedRectangle(cornerRadius: 32, style: .continuous)
+                )
+        } else {
+            #if os(iOS)
+            settingsDropdownContent
+                .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+            #else
+            settingsDropdownContent
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+            #endif
+        }
     }
 
     private func formatSelectedDate(_ date: Date) -> String {
@@ -157,14 +254,21 @@ struct TopNavigationBar: View {
 }
 
 #Preview {
-    TopNavigationBar(
-        showAwards: .constant(false),
-        showProfile: .constant(false),
-        isDateSelectionMode: .constant(false),
-        selectedDate: .constant(Date()),
-        isToday: true,
-        isDark: false,
-        isInputFocused: .constant(false),
-        streakCount: 20
-    )
+    ZStack(alignment: .top) {
+        Color(red: 24/255, green: 24/255, blue: 24/255)
+            .ignoresSafeArea()
+        TopNavigationBar(
+            showAwards: .constant(false),
+            showProfile: .constant(false),
+            showNotifications: .constant(false),
+            isDateSelectionMode: .constant(false),
+            selectedDate: .constant(Date()),
+            selectedTab: .constant("consumed"),
+            isToday: true,
+            isDark: true,
+            isInputFocused: .constant(false),
+            streakCount: 20
+        )
+    }
+    .preferredColorScheme(.dark)
 }

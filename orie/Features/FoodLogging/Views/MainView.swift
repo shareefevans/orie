@@ -28,6 +28,7 @@ struct MainView: View {
     @State private var currentInput = ""
     @State private var showAwards = false
     @State private var showProfile = false
+    @State private var showNotifications = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var selectedTab: String = "consumed"
     @State private var isDateSelectionMode = false
@@ -233,18 +234,16 @@ struct MainView: View {
                 } else {
                     // Daily intake card
                     VStack(alignment: .leading, spacing: 0) {
-                        if isIntakeCardExpanded {
-                            Text("Daily intake")
-                                .font(.system(size: 12))
-                                .foregroundColor(Color.secondaryText(isDark))
-                                .fontWeight(.medium)
+                        Text("Today's intake")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.secondaryText(isDark))
+                            .fontWeight(.medium)
 
-                            Text("\(remainingCalories) calories remaining")
-                                .font(.system(size: 16))
-                                .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
-                                .padding(.top, 4)
-                                .fontWeight(.semibold)
-                        }
+                        Text("\(remainingCalories) calories remaining")
+                            .font(.system(size: 16))
+                            .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
+                            .padding(.top, 4)
+                            .fontWeight(.semibold)
 
                         VStack(spacing: 8) {
                             HStack {
@@ -262,9 +261,9 @@ struct MainView: View {
                             MealProgressBar(progress: calorieProgress, meals: mealBubbles, isDark: isDark)
                                 .id(consumedTabId)
                         }
-                        .padding(.top, isIntakeCardExpanded ? 32 : 15)
-                        .padding(.bottom, isIntakeCardExpanded ? 0 : 15)
-                        .padding(.horizontal, isIntakeCardExpanded ? 0 : 4)
+                        .padding(.top, isIntakeCardExpanded ? 32 : 16)
+                        .padding(.bottom, isIntakeCardExpanded ? 0 : 0)
+                        .padding(.horizontal, isIntakeCardExpanded ? 0 : 0)
 
                         if isIntakeCardExpanded {
                             VStack(alignment: .leading, spacing: 16) {
@@ -506,8 +505,10 @@ struct MainView: View {
             TopNavigationBar(
                 showAwards: $showAwards,
                 showProfile: $showProfile,
+                showNotifications: $showNotifications,
                 isDateSelectionMode: $isDateSelectionMode,
                 selectedDate: $selectedDate,
+                selectedTab: $selectedTab,
                 isToday: isToday,
                 isDark: isDark,
                 isInputFocused: Binding(
@@ -520,7 +521,8 @@ struct MainView: View {
                             isInputFocused = newValue
                         }
                     }
-                )
+                ),
+                hasUnreadNotifications: notificationManager.unreadCount > 0
             )
             .background(
                 LinearGradient(
@@ -617,6 +619,12 @@ struct MainView: View {
                 .environmentObject(subscriptionManager)
                 .presentationBackground(Color.appBackground(isDark))
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationSheet()
+                .environmentObject(notificationManager)
+                .environmentObject(themeManager)
+                .presentationBackground(Color.appBackground(isDark))
+        }
 
         // MARK: - ❇️ Lifecycle Handlers
         .onAppear {
@@ -642,6 +650,7 @@ struct MainView: View {
         }
         .onChange(of: showAwards) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: showProfile) { _, shown in if shown { dismissAllInputs() } }
+        .onChange(of: showNotifications) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: networkMonitor.isConnected) { _, isConnected in
             guard isConnected else { return }
             // First calculate pending entries (entries without calories)

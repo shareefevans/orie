@@ -10,13 +10,11 @@ import SwiftUI
 struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
-    @Binding var showNotifications: Bool
     @Binding var isDateSelectionMode: Bool
     @Binding var selectedDate: Date
     var isToday: Bool
     var isDark: Bool = false
     @Binding var isInputFocused: Bool
-    var hasUnreadNotifications: Bool = false
     var streakCount: Int = StreakManager.shared.currentStreak
 
     @Namespace private var animation
@@ -31,14 +29,14 @@ struct TopNavigationBar: View {
                         if isDateSelectionMode { isInputFocused = false }
                     }
                 }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "circle.hexagonpath.fill")
-                            .font(.system(size: 20))
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 14))
                             .foregroundColor(Color.iconColor(isDark))
                             .frame(width: 24)
                         if !isDateSelectionMode {
-                            Text(isToday ? "Today" : formatSelectedDate(selectedDate))
-                                .font(.callout.bold())
+                            Text(formatDateWithToday(selectedDate, isToday: isToday))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color.primaryText(isDark))
                         }
                     }
@@ -67,10 +65,8 @@ struct TopNavigationBar: View {
 
             Spacer()
 
-            // MARK: - ❇️ Right side - Grouped buttons (bell, settings, trophy)
-            HStack(spacing: 0) {
-                Spacer().frame(width: 4)
-
+            // MARK: - ❇️ Right side - Hotstreak and settings buttons
+            HStack(spacing: 8) {
                 Button(action: {
                     showAwards = true
                 }) {
@@ -94,38 +90,20 @@ struct TopNavigationBar: View {
                             .fixedSize()
                     }
                     .frame(height: 50)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 12)
                 }
-
-                Button(action: {
-                    showNotifications = true
-                }) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell")
-                            .font(.callout)
-                            .foregroundColor(Color.iconColor(isDark))
-                            .frame(width: 50, height: 50)
-
-                        if hasUnreadNotifications {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 8, height: 8)
-                                .offset(x: -14, y: 14)
-                        }
-                    }
-                }
+                .glassEffect(.regular.interactive())
 
                 Button(action: {
                     showProfile = true
                 }) {
-                    Image(systemName: "gearshape")
+                    Image(systemName: "ellipsis")
                         .font(.callout)
                         .foregroundColor(Color.iconColor(isDark))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 50, height: 50)
                 }
-
+                .glassEffect(.regular.interactive())
             }
-            .glassEffect(.regular.interactive())
 
             // MARK: 👉 Keyboard dismiss button (only shows when keyboard is open)
             if isInputFocused {
@@ -154,6 +132,13 @@ struct TopNavigationBar: View {
         return formatter.string(from: date)
     }
 
+    private func formatDateWithToday(_ date: Date, isToday: Bool) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        let dateString = formatter.string(from: date)
+        return isToday ? "Today, \(dateString)" : dateString
+    }
+
     private func formatCompactNumber(_ value: Int) -> String {
         switch value {
         case 1_000_000_000...:
@@ -175,13 +160,11 @@ struct TopNavigationBar: View {
     TopNavigationBar(
         showAwards: .constant(false),
         showProfile: .constant(false),
-        showNotifications: .constant(false),
         isDateSelectionMode: .constant(false),
         selectedDate: .constant(Date()),
         isToday: true,
         isDark: false,
         isInputFocused: .constant(false),
-        hasUnreadNotifications: true,
-        streakCount: 10
+        streakCount: 20
     )
 }

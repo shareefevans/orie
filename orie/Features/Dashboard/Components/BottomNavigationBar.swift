@@ -9,11 +9,14 @@ import SwiftUI
 
 struct BottomNavigationBar: View {
     var isDark: Bool = false
+    var isRecording: Bool = false
+    var onFocusInput: (() -> Void)? = nil
+    var onTriggerMic: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 8) {
-            // MARK: - Left nav button (Λ)
-            Button(action: {}) {
+            // MARK: - Left nav button (pencil / food entry)
+            Button(action: { onFocusInput?() }) {
                 Image(systemName: "pencil.tip")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.primaryText(isDark))
@@ -38,11 +41,17 @@ struct BottomNavigationBar: View {
             .glassEffect(.regular.interactive())
 
             // MARK: - Microphone button
-            Button(action: {}) {
-                Image(systemName: "mic.fill")
+            Button(action: { onTriggerMic?() }) {
+                Image(systemName: isRecording ? "waveform.circle.fill" : "mic.fill")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color.primaryText(isDark))
+                    .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.primaryText(isDark))
                     .frame(width: 50, height: 50)
+                    .background(isRecording ? Color.yellow : Color.clear, in: Circle())
+                    .scaleEffect(isRecording ? 1.1 : 1.0)
+                    .animation(
+                        isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
+                        value: isRecording
+                    )
             }
             .glassEffect(.regular.interactive())
 

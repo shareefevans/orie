@@ -21,6 +21,9 @@ struct FoodInputField: View {
     @FocusState.Binding var isFocused: Bool
     var authManager: AuthManager? = nil
     var onSuggestionChanged: ((String?) -> Void)? = nil
+    var triggerRecording: Binding<Bool> = .constant(false)
+    var triggerStopRecording: Binding<Bool> = .constant(false)
+    var onRecordingChanged: ((Bool) -> Void)? = nil
 
     #if os(iOS)
     @State private var isRecording = false
@@ -121,28 +124,6 @@ struct FoodInputField: View {
                     .contentShape(Circle())
                     .disabled(isAnalyzingImage)
 
-                    // MARK: 👉 Voice-to-text button
-                    Button(action: {
-                        if isRecording {
-                            stopRecording()
-                        } else {
-                            startRecording()
-                        }
-                    }) {
-                        Image(systemName: isRecording ? "waveform.circle.fill" : "waveform")
-                            .font(.system(size: 14))
-                            .foregroundColor(isRecording ? (isDark ? .black : .white) : Color.secondaryText(isDark))
-                            .frame(width: 44, height: 44)
-                            .background(isRecording ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
-                            .clipShape(Circle())
-                            .scaleEffect(isRecording ? 1.1 : 1.0)
-                            .animation(
-                                isRecording ? Animation.easeInOut(duration: 0.6).repeatForever(autoreverses: true) : .default,
-                                value: isRecording
-                            )
-                    }
-                    .buttonStyle(BorderlessButtonStyle())
-                    .contentShape(Circle())
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
@@ -151,6 +132,23 @@ struct FoodInputField: View {
         .frame(minHeight: 44)
         .animation(.easeInOut(duration: 0.2), value: isFocused)
         .padding(.vertical, 12)
+        #if os(iOS)
+        .onChange(of: triggerRecording.wrappedValue) { _, shouldStart in
+            if shouldStart {
+                startRecording()
+                triggerRecording.wrappedValue = false
+            }
+        }
+        .onChange(of: triggerStopRecording.wrappedValue) { _, shouldStop in
+            if shouldStop {
+                stopRecording()
+                triggerStopRecording.wrappedValue = false
+            }
+        }
+        .onChange(of: isRecording) { _, recording in
+            onRecordingChanged?(recording)
+        }
+        #endif
         #if os(iOS)
         .sheet(isPresented: $showCameraPicker) {
             ImagePicker(sourceType: .camera) { image in

@@ -40,6 +40,10 @@ struct MainView: View {
     @AppStorage("isOrieAssistEnabled") private var isOrieAssistEnabled: Bool = true
     @State private var autocompleteSuggestion: String? = nil
     @State private var keyboardHeight: CGFloat = 0
+    @State private var shouldScrollToInput = false
+    @State private var triggerMicFromNav = false
+    @State private var triggerStopMicFromNav = false
+    @State private var isRecordingFromField = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -403,7 +407,10 @@ struct MainView: View {
                             authManager: authManager,
                             onSuggestionChanged: { suggestion in
                                 withAnimation(.easeInOut(duration: 0.2)) { autocompleteSuggestion = suggestion }
-                            }
+                            },
+                            triggerRecording: $triggerMicFromNav,
+                            triggerStopRecording: $triggerStopMicFromNav,
+                            onRecordingChanged: { isRecordingFromField = $0 }
                         )
                     }
                     .padding(.top, 16)
@@ -510,6 +517,12 @@ struct MainView: View {
                         withAnimation { proxy.scrollTo("inputField", anchor: .top) }
                     }
                 }
+                .onChange(of: shouldScrollToInput) { _, newValue in
+                    if newValue {
+                        withAnimation { proxy.scrollTo("inputField", anchor: .top) }
+                        shouldScrollToInput = false
+                    }
+                }
             }
 
             // MARK: - ❇️ Floating Navigation Bar
@@ -614,7 +627,26 @@ struct MainView: View {
             // MARK: - ❇️ Bottom Navigation Bar
             VStack {
                 Spacer()
-                BottomNavigationBar(isDark: isDark)
+                BottomNavigationBar(
+                    isDark: isDark,
+                    isRecording: isRecordingFromField,
+                    onFocusInput: {
+                        selectedTab = "consumed"
+                        isInputFocused = true
+                        shouldScrollToInput = true
+                    },
+                    onTriggerMic: {
+                        if isRecordingFromField {
+                            triggerStopMicFromNav = true
+                        } else {
+                            selectedTab = "consumed"
+                            shouldScrollToInput = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                triggerMicFromNav = true
+                            }
+                        }
+                    }
+                )
             }
             .ignoresSafeArea(.keyboard)
 

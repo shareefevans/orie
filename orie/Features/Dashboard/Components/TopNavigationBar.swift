@@ -210,7 +210,7 @@ struct TopNavigationBar: View {
                         .foregroundColor(Color.primaryText(isDark))
                     Spacer()
                 }
-                .padding(.vertical, 14)
+                .padding(.top, 14)
             }
             .buttonStyle(.plain)
         }

@@ -204,7 +204,7 @@ struct MainView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 32)
-            .padding(.bottom, 40)
+            .padding(.bottom, 24)
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
@@ -237,7 +237,7 @@ struct MainView: View {
                             HStack {
                                 Text("\(consumedCalories) cal")
                                     .font(.system(size: 14))
-                                    .foregroundColor(isDark ? Color.accessibleYellow(isDark) : Color(red: 106/255, green: 118/255, blue: 255/255))
+                                    .foregroundColor(.yellow)
                                     .fontWeight(.medium)
                                 Spacer()
                                 Text("\(vm.dailyCalorieGoal) cal")
@@ -414,7 +414,7 @@ struct MainView: View {
                     .cornerRadius(32)
 
                     if filteredEntries.isEmpty {
-                        VStack(spacing: 12) {
+                        VStack(spacing: -32) {
                             Image("lazy_man")
                                 .resizable()
                                 .scaledToFit()
@@ -610,6 +610,13 @@ struct MainView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .zIndex(11)
             }
+
+            // MARK: - ❇️ Bottom Navigation Bar
+            VStack {
+                Spacer()
+                BottomNavigationBar(isDark: isDark)
+            }
+            .ignoresSafeArea(.keyboard)
 
             // MARK: - ❇️ Autocomplete Pill
             autocompletePillOverlay

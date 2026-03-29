@@ -25,45 +25,59 @@ struct TopNavigationBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // MARK: - ❇️ Left side - Date selector and close button
+            // MARK: - ❇️ Left side - Back button (overview) or Date selector
             HStack(spacing: 8) {
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        isDateSelectionMode.toggle()
-                        if isDateSelectionMode { isInputFocused = false }
-                    }
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.iconColor(isDark))
-                            .frame(width: 24)
-                        if !isDateSelectionMode {
-                            Text(formatDateWithToday(selectedDate, isToday: isToday))
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color.primaryText(isDark))
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 50)
-                    .glassEffect(.regular.interactive())
-                }
-
-                // MARK: 👉 X button when in date selection mode (matches keyboard dismiss button)
-                if isDateSelectionMode {
+                if selectedTab == "health" {
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isDateSelectionMode = false
+                            selectedTab = "consumed"
                         }
                     }) {
-                        Image(systemName: "xmark")
-                            .font(.callout)
-                            .foregroundColor(.black)
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color.primaryText(isDark))
                             .frame(width: 50, height: 50)
-                            .background(Color.accessibleYellow(isDark).opacity(0.55), in: Circle())
-                            .glassEffect(in: Circle())
+                            .glassEffect(.regular.interactive())
                     }
-                    .transition(.move(edge: .leading).combined(with: .opacity).combined(with: .scale))
+                } else {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isDateSelectionMode.toggle()
+                            if isDateSelectionMode { isInputFocused = false }
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color.iconColor(isDark))
+                                .frame(width: 24)
+                            if !isDateSelectionMode {
+                                Text(formatDateWithToday(selectedDate, isToday: isToday))
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(Color.primaryText(isDark))
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 50)
+                        .glassEffect(.regular.interactive())
+                    }
+
+                    // MARK: 👉 X button when in date selection mode (matches keyboard dismiss button)
+                    if isDateSelectionMode {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isDateSelectionMode = false
+                            }
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.callout)
+                                .foregroundColor(.black)
+                                .frame(width: 50, height: 50)
+                                .background(Color.accessibleYellow(isDark).opacity(0.55), in: Circle())
+                                .glassEffect(in: Circle())
+                        }
+                        .transition(.move(edge: .leading).combined(with: .opacity).combined(with: .scale))
+                    }
                 }
             }
 

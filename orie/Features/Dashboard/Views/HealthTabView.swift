@@ -138,6 +138,7 @@ struct HealthTabView: View {
                 isDark: isDark
             )
         }
+        .padding(.top, 24)
         .padding(.horizontal, 16)
     }
 }

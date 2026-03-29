@@ -208,18 +208,6 @@ struct MainView: View {
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
-        } else {
-            HStack(spacing: 32) {
-                TabButton(title: "Overview", isSelected: selectedTab == "health", isDark: isDark, action: { selectedTab = "health" })
-                TabButton(title: "Consumed", isSelected: selectedTab == "consumed", isDark: isDark, action: { selectedTab = "consumed" })
-                TabButton(title: "Assistance", isSelected: false, isDark: isDark, action: { })
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            .padding(.bottom, 40)
-            .listRowInsets(EdgeInsets())
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
         }
     }
 
@@ -240,7 +228,7 @@ struct MainView: View {
                             .fontWeight(.medium)
 
                         Text("\(remainingCalories) calories remaining")
-                            .font(.system(size: 16))
+                            .font(.system(size: 14))
                             .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
                             .padding(.top, 4)
                             .fontWeight(.semibold)
@@ -424,8 +412,31 @@ struct MainView: View {
                     .frame(maxWidth: .infinity)
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(32)
+
+                    if filteredEntries.isEmpty {
+                        VStack(spacing: 12) {
+                            Image("lazy_man")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 200, height: 200)
+
+                            VStack(spacing: 4) {
+                                Text("Hey lazy...Watchu doing?")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.secondaryText(isDark))
+
+                                Text("Sleeping on your macros?")
+                                    .font(.system(size: 18))
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color.primaryText(isDark))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 48)
+                    }
                 }
             }
+            .padding(.top, 24)
             .padding(.horizontal, 16)
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)

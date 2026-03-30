@@ -37,8 +37,41 @@ struct HealthTabView: View {
     private let sodiumDotColor = Color(red: 255/255, green: 105/255, blue: 180/255)    // Pink
     private let sugarDotColor = Color(red: 255/255, green: 30/255, blue: 60/255)       // Candy red
 
+    private var activeDays: [DailyMacroData] { weeklyData.filter { $0.calories > 0 } }
+
+    private var weeklyAvgCalories: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.calories } / activeDays.count
+    }
+    private var weeklyAvgProtein: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.protein } / activeDays.count
+    }
+    private var weeklyAvgCarbs: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.carbs } / activeDays.count
+    }
+    private var weeklyAvgFats: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.fats } / activeDays.count
+    }
+    private var weeklyAvgFibre: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.fibre } / activeDays.count
+    }
+    private var weeklyAvgSodium: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.sodium } / activeDays.count
+    }
+    private var weeklyAvgSugar: Int {
+        guard !activeDays.isEmpty else { return 0 }
+        return activeDays.reduce(0) { $0 + $1.sugar } / activeDays.count
+    }
+
     var body: some View {
         VStack(spacing: 8) {
+            
+
             // MARK: - ❇️ Weekly Overview Card
             WeeklyOverviewCard(
                 weekData: weeklyData,
@@ -53,63 +86,52 @@ struct HealthTabView: View {
                 isDark: isDark
             )
 
-            // MARK: - ❇️ Today's Intake Header
-            VStack(spacing: 4) {
-                Text("Today's Intake")
-                    .font(.callout)
-                    .fontWeight(.semibold)
-                    .foregroundColor(isDark ? .white : .black)
-
-                Text(Date(), format: .dateTime.weekday(.wide).day().month(.abbreviated).year())
-                    .font(.system(size: 12))
-                    .fontWeight(.medium)
-                    .foregroundColor(.gray)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-
             // MARK: - ❇️ Row 1: Daily Intake (left) | Protein (right)
             HStack(spacing: 8) {
                 DailyIntakeCard(
-                    consumed: consumedCalories,
+                    consumed: weeklyAvgCalories,
                     goal: dailyCalorieGoal,
-                    meals: meals,
-                    isDark: isDark
+                    meals: [],
+                    isDark: isDark,
+                    daysLogged: activeDays.count
                 )
 
                 MacroDotCard(
-                    title: "Protein",
-                    consumed: consumedProtein,
+                    title: "Protein Avg.",
+                    consumed: weeklyAvgProtein,
                     goal: dailyProteinGoal,
                     dotColor: proteinDotColor,
-                    isDark: isDark
+                    isDark: isDark,
+                    daysLogged: activeDays.count
                 )
             }
 
             // MARK: - ❇️ Row 2: Carbs (left) | Fats (right)
             HStack(spacing: 8) {
                 MacroDotCard(
-                    title: "Carbs",
-                    consumed: consumedCarbs,
+                    title: "Carbs Avg.",
+                    consumed: weeklyAvgCarbs,
                     goal: dailyCarbsGoal,
                     dotColor: carbsDotColor,
-                    isDark: isDark
+                    isDark: isDark,
+                    daysLogged: activeDays.count
                 )
 
                 MacroDotCard(
-                    title: "Fats",
-                    consumed: consumedFats,
+                    title: "Fats Avg.",
+                    consumed: weeklyAvgFats,
                     goal: dailyFatsGoal,
                     dotColor: fatsDotColor,
-                    isDark: isDark
+                    isDark: isDark,
+                    daysLogged: activeDays.count
                 )
             }
 
             // MARK: - ❇️ Row 3: Fibre (left) | Sodium (right)
             HStack(spacing: 8) {
                 NutrientDotCard(
-                    title: "Fibre",
-                    consumed: consumedFibre,
+                    title: "Fibre Avg.",
+                    consumed: weeklyAvgFibre,
                     unit: "g",
                     displayUnit: "grams",
                     dotColor: fibreDotColor,
@@ -118,24 +140,28 @@ struct HealthTabView: View {
                 )
 
                 NutrientDotCard(
-                    title: "Sodium",
-                    consumed: consumedSodium,
+                    title: "Sodium Avg.",
+                    consumed: weeklyAvgSodium,
                     unit: "mg",
                     dotColor: sodiumDotColor,
                     goal: dailySodiumGoal,
-                    isDark: isDark
+                    isDark: isDark,
+                    daysLogged: activeDays.count,
+                    heavyOverOnly: true
                 )
             }
 
             // MARK: - ❇️ Row 4: Sugar (full width)
             NutrientDotCard(
-                title: "Sugar",
-                consumed: consumedSugar,
+                title: "Sugar Avg.",
+                consumed: weeklyAvgSugar,
                 unit: "g",
                 displayUnit: "grams",
                 dotColor: sugarDotColor,
                 goal: dailySugarGoal,
-                isDark: isDark
+                isDark: isDark,
+                daysLogged: activeDays.count,
+                heavyOverOnly: true
             )
         }
         .padding(.top, 24)

@@ -12,6 +12,17 @@ struct DailyIntakeCard: View {
     let goal: Int
     let meals: [MealBubble]
     var isDark: Bool = false
+    var daysLogged: Int = 0
+
+    private func formatK(_ n: Int) -> String {
+        guard n >= 1000 else { return n.formatted() }
+        let value = Double(n) / 1000.0
+        let truncated = Double(Int(value * 10)) / 10.0
+        return truncated == Double(Int(truncated)) ? "\(Int(truncated))k" : "\(truncated)k"
+    }
+
+    private var formattedConsumed: String { formatK(consumed) }
+    private var formattedGoal: String { formatK(goal) }
 
     private var remaining: Int {
         goal - consumed
@@ -27,49 +38,35 @@ struct DailyIntakeCard: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: 0) {
-                Text("Daily intake")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.secondaryText(isDark))
-                    .fontWeight(.medium)
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color(red: 106/255, green: 118/255, blue: 255/255))
+                        .frame(width: 6, height: 6)
+                    Text("Calorie Avg.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .fontWeight(.medium)
+                }
 
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(consumed.formatted())
+                    Text(formattedConsumed)
                         .font(.system(size: 24))
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
 
-                    Text("cal")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark))
-                        .fontWeight(.regular)
+                    if goal > 0 {
+                        Text("/\(formattedGoal)cal")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.medium)
+                    } else {
+                        Text("cal")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.medium)
+                    }
                 }
                 .padding(.top, 4)
-
-                Text("\(remaining)cal left")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.accessibleYellow(isDark))
-                    .padding(.top, 4)
-
-                // Progress bar
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.chartBackground(isDark))
-                        .frame(width: 87, height: 6)
-
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 75/255, green: 78/255, blue: 255/255),
-                                    Color(red: 106/255, green: 118/255, blue: 255/255)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: 87 * CGFloat(progress), height: 6)
-                }
-                .padding(.top, 8)
             }
 
             Spacer()
@@ -79,6 +76,12 @@ struct DailyIntakeCard: View {
         .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
+        .overlay(alignment: .topTrailing) {
+            if daysLogged >= 3, let (message, severity) = cardSuggestion(consumed: consumed, goal: goal) {
+                AlertPill(message: message, severity: severity)
+                    .padding(12)
+            }
+        }
     }
 }
 

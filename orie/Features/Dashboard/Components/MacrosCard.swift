@@ -147,6 +147,59 @@ struct SingleMacroCard: View {
     }
 }
 
+// MARK: - ❇️ Alert Pill
+enum AlertSeverity { case warning, danger }
+
+struct AlertPill: View {
+    let message: String
+    let severity: AlertSeverity
+    @State private var isPulsing = false
+
+    private var color: Color {
+        severity == .danger ? .red : Color(red: 253/255, green: 181/255, blue: 0/255)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 24, height: 24)
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+                    .scaleEffect(isPulsing ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: isPulsing)
+            }
+            Text(message)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(color)
+        }
+        .padding(.leading, 4)
+        .padding(.trailing, 12)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .onAppear { isPulsing = true }
+    }
+}
+
+func cardSuggestion(consumed: Int, goal: Int) -> (String, AlertSeverity)? {
+    guard goal > 0 else { return nil }
+    let ratio = Double(consumed - goal) / Double(goal)
+    if ratio > 0.4 { return ("Decrease", .danger) }
+    if ratio < -0.4 { return ("Increase", .danger) }
+    if ratio > 0.2 { return ("Decrease", .warning) }
+    if ratio < -0.2 { return ("Increase", .warning) }
+    return nil
+}
+
+func heavyOverSuggestion(consumed: Int, goal: Int) -> (String, AlertSeverity)? {
+    guard goal > 0 else { return nil }
+    let ratio = Double(consumed - goal) / Double(goal)
+    if ratio > 0.4 { return ("Decrease", .danger) }
+    return nil
+}
+
 // MARK: - ❇️ Macro Dot Card
 struct MacroDotCard: View {
     let title: String
@@ -154,6 +207,7 @@ struct MacroDotCard: View {
     let goal: Int
     let dotColor: Color
     var isDark: Bool = false
+    var daysLogged: Int = 0
 
     // MARK: 👉 Original gradient blue colors
     private let gradientColors = [
@@ -193,37 +247,19 @@ struct MacroDotCard: View {
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
 
-                    Text("grams")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark))
-                        .fontWeight(.regular)
+                    if goal > 0 {
+                        Text("/\(goal)g")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.medium)
+                    } else {
+                        Text("grams")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.medium)
+                    }
                 }
                 .padding(.top, 4)
-
-                if goal > 0 {
-                    Text("\(remaining)g left")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.accessibleYellow(isDark))
-                        .padding(.top, 4)
-
-                    // Progress bar
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.chartBackground(isDark))
-                            .frame(width: 87, height: 6)
-
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(
-                                LinearGradient(
-                                    colors: gradientColors,
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: 87 * CGFloat(progress), height: 6)
-                    }
-                    .padding(.top, 8)
-                }
             }
 
             Spacer()
@@ -233,6 +269,12 @@ struct MacroDotCard: View {
         .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
+        .overlay(alignment: .topTrailing) {
+            if daysLogged >= 3, let (message, severity) = cardSuggestion(consumed: consumed, goal: goal) {
+                AlertPill(message: message, severity: severity)
+                    .padding(12)
+            }
+        }
     }
 }
 
@@ -293,11 +335,20 @@ struct NutrientDotCard: View {
     let dotColor: Color
     var goal: Int = 0
     var isDark: Bool = false
+    var daysLogged: Int = 0
+    var heavyOverOnly: Bool = false
 
     private let gradientColors = [
         Color(red: 75/255, green: 78/255, blue: 255/255),
         Color(red: 106/255, green: 118/255, blue: 255/255)
     ]
+
+    private func formatK(_ n: Int) -> String {
+        guard n >= 1000 else { return n.formatted() }
+        let value = Double(n) / 1000.0
+        let truncated = Double(Int(value * 10)) / 10.0
+        return truncated == Double(Int(truncated)) ? "\(Int(truncated))k" : "\(truncated)k"
+    }
 
     private var remaining: Int {
         goal > 0 ? goal - consumed : 0
@@ -325,41 +376,24 @@ struct NutrientDotCard: View {
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(consumed.formatted())
+                    Text(formatK(consumed))
                         .font(.system(size: 24))
                         .fontWeight(.semibold)
                         .foregroundColor(Color.primaryText(isDark))
 
-                    Text(displayUnit ?? unit)
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark))
-                        .fontWeight(.regular)
+                    if goal > 0 {
+                        Text("/\(formatK(goal))\(unit)")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.medium)
+                    } else {
+                        Text(displayUnit ?? unit)
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                            .fontWeight(.regular)
+                    }
                 }
                 .padding(.top, 4)
-
-                if goal > 0 {
-                    Text("\(remaining)\(unit) left")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.accessibleYellow(isDark))
-                        .padding(.top, 4)
-
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.chartBackground(isDark))
-                            .frame(width: 87, height: 6)
-
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(
-                                LinearGradient(
-                                    colors: gradientColors,
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: 87 * CGFloat(progress), height: 6)
-                    }
-                    .padding(.top, 8)
-                }
             }
 
             Spacer()
@@ -369,6 +403,13 @@ struct NutrientDotCard: View {
         .frame(height: 200)
         .background(Color.cardBackground(isDark))
         .cornerRadius(32)
+        .overlay(alignment: .topTrailing) {
+            if heavyOverOnly && daysLogged >= 3,
+               let (message, severity) = heavyOverSuggestion(consumed: consumed, goal: goal) {
+                AlertPill(message: message, severity: severity)
+                    .padding(12)
+            }
+        }
     }
 }
 

@@ -256,7 +256,7 @@ struct MainView: View {
                 .font(.system(size: 14))
                 .foregroundColor(Color.accessibleYellow(isDark))
                 .frame(width: 24, height: 24)
-                .background(Color(red: 0x2A/255, green: 0x2A/255, blue: 0x2A/255), in: Circle())
+                .background(isDark ? Color(red: 0x2A/255, green: 0x2A/255, blue: 0x2A/255) : Color(red: 0xF7/255, green: 0xF7/255, blue: 0xF7/255), in: Circle())
             Text("\(period.rawValue) - \(calories) calories")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color.secondaryText(isDark))
@@ -281,27 +281,26 @@ struct MainView: View {
                     // Daily intake card
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Today's intake")
-                            .font(.system(size: 12))
+                            .font(.system(size: 14))
                             .foregroundColor(Color.secondaryText(isDark))
                             .fontWeight(.medium)
 
                         Text("\(remainingCalories) calories remaining")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
                             .padding(.top, 4)
-                            .fontWeight(.semibold)
+                            .padding(.bottom, 4)
+                            .fontWeight(.medium)
 
                         VStack(spacing: 8) {
                             HStack {
                                 Text("\(consumedCalories) cal")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.yellow)
-                                    .fontWeight(.medium)
+                                    .foregroundColor(Color.accessibleYellow(isDark))
                                 Spacer()
                                 Text("\(vm.dailyCalorieGoal) cal")
                                     .font(.system(size: 14))
                                     .foregroundColor(Color.secondaryText(isDark))
-                                    .fontWeight(.medium)
                             }
 
                             MealProgressBar(progress: calorieProgress, meals: mealBubbles, isDark: isDark)
@@ -478,7 +477,7 @@ struct MainView: View {
                     .padding(.horizontal, 24)
                     .frame(maxWidth: .infinity)
 
-                    if filteredEntries.isEmpty {
+                    if filteredEntries.isEmpty && isDark {
                         VStack(spacing: -32) {
                             Image("lazy_man")
                                 .resizable()

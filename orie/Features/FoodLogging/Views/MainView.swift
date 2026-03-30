@@ -54,6 +54,37 @@ struct MainView: View {
         vm.foodEntries.filter { Calendar.current.isDate($0.entryDate, inSameDayAs: selectedDate) }
     }
 
+    private enum MealPeriod: String, CaseIterable, Hashable {
+        case morning = "Morning"
+        case afternoon = "Afternoon"
+        case night = "Night"
+
+        var icon: String {
+            switch self {
+            case .morning: return "sun.horizon.circle"
+            case .afternoon: return "sun.max.circle"
+            case .night: return "moon.stars.circle"
+            }
+        }
+
+        static func from(timestamp: Date) -> MealPeriod {
+            let hour = Calendar.current.component(.hour, from: timestamp)
+            switch hour {
+            case 0..<12: return .morning
+            case 12..<18: return .afternoon
+            default: return .night
+            }
+        }
+    }
+
+    private var entriesByPeriod: [(period: MealPeriod, entries: [FoodEntry])] {
+        let sorted = filteredEntries.sorted()
+        return MealPeriod.allCases.compactMap { period in
+            let entries = sorted.filter { MealPeriod.from(timestamp: $0.timestamp) == period }
+            return entries.isEmpty ? nil : (period: period, entries: entries)
+        }
+    }
+
     private var consumedCalories: Int {
         filteredEntries.reduce(0) { $0 + ($1.calories ?? 0) }
     }
@@ -219,6 +250,28 @@ struct MainView: View {
     // MARK: - ❇️ Consumed Tab Content
 
     @ViewBuilder
+    private func mealPeriodHeader(period: MealPeriod, calories: Int) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: period.icon)
+                .font(.system(size: 14))
+                .foregroundColor(Color.accessibleYellow(isDark))
+                .frame(width: 24, height: 24)
+                .background(Color(red: 0x2A/255, green: 0x2A/255, blue: 0x2A/255), in: Circle())
+            Text("\(period.rawValue) - \(calories) calories")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color.secondaryText(isDark))
+        }
+        .padding(.leading, 4)
+        .padding(.trailing, 12)
+        .padding(.vertical, 4)
+        .background(Color.cardBackground(isDark), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.top, 16)
+        .padding(.bottom, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, -24)
+    }
+
+    @ViewBuilder
     private func consumedTabContent(proxy: ScrollViewProxy) -> some View {
         if selectedTab == "consumed" {
             VStack(spacing: 8) {
@@ -367,25 +420,31 @@ struct MainView: View {
 
                     // Food entries + input
                     VStack(spacing: 0) {
-                        ForEach(filteredEntries.sorted()) { entry in
-                            FoodEntryRow(
-                                entry: entry,
-                                isDark: isDark,
-                                isOffline: !networkMonitor.isConnected,
-                                authManager: authManager,
-                                onTimeChange: { vm.updateEntryTime(entry.id, newTime: $0) },
-                                onDelete: { vm.deleteFoodEntry(entry) },
-                                onFoodNameChange: { vm.updateFoodEntry(entry.id, newFoodName: $0) },
-                                onNutritionChange: { vm.updateEntryNutrition(entry.id, calories: $0, protein: $1, carbs: $2, fats: $3) },
-                                onOpenSheet: { dismissAllInputs() },
-                                isEditing: Binding(
-                                    get: { editingEntryId == entry.id },
-                                    set: { isEditing in
-                                        if isEditing { editingEntryId = entry.id }
-                                        else if editingEntryId == entry.id { editingEntryId = nil }
-                                    }
-                                )
+                        ForEach(entriesByPeriod, id: \.period) { group in
+                            mealPeriodHeader(
+                                period: group.period,
+                                calories: group.entries.reduce(0) { $0 + ($1.calories ?? 0) }
                             )
+                            ForEach(group.entries) { entry in
+                                FoodEntryRow(
+                                    entry: entry,
+                                    isDark: isDark,
+                                    isOffline: !networkMonitor.isConnected,
+                                    authManager: authManager,
+                                    onTimeChange: { vm.updateEntryTime(entry.id, newTime: $0) },
+                                    onDelete: { vm.deleteFoodEntry(entry) },
+                                    onFoodNameChange: { vm.updateFoodEntry(entry.id, newFoodName: $0) },
+                                    onNutritionChange: { vm.updateEntryNutrition(entry.id, calories: $0, protein: $1, carbs: $2, fats: $3) },
+                                    onOpenSheet: { dismissAllInputs() },
+                                    isEditing: Binding(
+                                        get: { editingEntryId == entry.id },
+                                        set: { isEditing in
+                                            if isEditing { editingEntryId = entry.id }
+                                            else if editingEntryId == entry.id { editingEntryId = nil }
+                                        }
+                                    )
+                                )
+                            }
                         }
 
                         FoodInputField(
@@ -415,12 +474,9 @@ struct MainView: View {
                             onRecordingChanged: { isRecordingFromField = $0 }
                         )
                     }
-                    .padding(.top, 16)
+                    
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 16)
                     .frame(maxWidth: .infinity)
-                    .background(Color.cardBackground(isDark))
-                    .cornerRadius(32)
 
                     if filteredEntries.isEmpty {
                         VStack(spacing: -32) {

@@ -45,6 +45,7 @@ struct MainView: View {
     @State private var triggerStopMicFromNav = false
     @State private var isRecordingFromField = false
     @State private var triggerCameraFromNav = false
+    @State private var showOrieChat = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -478,7 +479,7 @@ struct MainView: View {
                     .frame(maxWidth: .infinity)
 
                     if filteredEntries.isEmpty && isDark {
-                        VStack(spacing: -32) {
+                        VStack(spacing: -24) {
                             Image("lazy_man")
                                 .resizable()
                                 .scaledToFit()
@@ -490,13 +491,13 @@ struct MainView: View {
                                     .foregroundColor(Color.secondaryText(isDark))
 
                                 Text("Sleeping on your macros?")
-                                    .font(.system(size: 18))
-                                    .fontWeight(.bold)
+                                    .font(.system(size: 16))
+                                    .fontWeight(.medium)
                                     .foregroundColor(Color.primaryText(isDark))
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 48)
+                        .padding(.top, 32)
                     }
                 }
             }
@@ -692,6 +693,10 @@ struct MainView: View {
                         isInputFocused = true
                         shouldScrollToInput = true
                     },
+                    onAskOrie: {
+                        dismissAllInputs()
+                        showOrieChat = true
+                    },
                     onTriggerMic: {
                         if isRecordingFromField {
                             triggerStopMicFromNav = true
@@ -738,6 +743,14 @@ struct MainView: View {
                 .environmentObject(notificationManager)
                 .environmentObject(themeManager)
                 .presentationBackground(Color.appBackground(isDark))
+        }
+        .sheet(isPresented: $showOrieChat) {
+            AskOrieModal(
+                remainingCalories: remainingCalories,
+                consumedProtein: consumedProtein,
+                consumedCarbs: consumedCarbs
+            )
+            .presentationBackground(Color(red: 18/255, green: 18/255, blue: 18/255))
         }
 
         // MARK: - ❇️ Lifecycle Handlers

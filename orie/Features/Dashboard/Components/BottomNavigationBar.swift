@@ -11,6 +11,7 @@ struct BottomNavigationBar: View {
     var isDark: Bool = false
     var isRecording: Bool = false
     var onFocusInput: (() -> Void)? = nil
+    var onAskOrie: (() -> Void)? = nil
     var onTriggerMic: (() -> Void)? = nil
     var onTriggerCamera: (() -> Void)? = nil
 
@@ -26,7 +27,7 @@ struct BottomNavigationBar: View {
             .glassEffect(.regular.interactive())
 
             // MARK: - Center "Ask Orie..." pill
-            Button(action: {}) {
+            Button(action: { onAskOrie?() }) {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 14, weight: .medium))

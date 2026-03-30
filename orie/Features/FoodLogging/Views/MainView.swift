@@ -44,6 +44,7 @@ struct MainView: View {
     @State private var triggerMicFromNav = false
     @State private var triggerStopMicFromNav = false
     @State private var isRecordingFromField = false
+    @State private var triggerCameraFromNav = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -410,6 +411,7 @@ struct MainView: View {
                             },
                             triggerRecording: $triggerMicFromNav,
                             triggerStopRecording: $triggerStopMicFromNav,
+                            triggerCamera: $triggerCameraFromNav,
                             onRecordingChanged: { isRecordingFromField = $0 }
                         )
                     }
@@ -644,6 +646,13 @@ struct MainView: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                 triggerMicFromNav = true
                             }
+                        }
+                    },
+                    onTriggerCamera: {
+                        selectedTab = "consumed"
+                        shouldScrollToInput = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            triggerCameraFromNav = true
                         }
                     }
                 )

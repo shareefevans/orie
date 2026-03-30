@@ -12,6 +12,7 @@ struct BottomNavigationBar: View {
     var isRecording: Bool = false
     var onFocusInput: (() -> Void)? = nil
     var onTriggerMic: (() -> Void)? = nil
+    var onTriggerCamera: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 8) {
@@ -56,7 +57,7 @@ struct BottomNavigationBar: View {
             .glassEffect(.regular.interactive())
 
             // MARK: - Photo button
-            Button(action: {}) {
+            Button(action: { onTriggerCamera?() }) {
                 Image(systemName: "photo")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Color.primaryText(isDark))

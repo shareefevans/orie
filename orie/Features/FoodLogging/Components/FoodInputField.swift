@@ -23,6 +23,7 @@ struct FoodInputField: View {
     var onSuggestionChanged: ((String?) -> Void)? = nil
     var triggerRecording: Binding<Bool> = .constant(false)
     var triggerStopRecording: Binding<Bool> = .constant(false)
+    var triggerCamera: Binding<Bool> = .constant(false)
     var onRecordingChanged: ((Bool) -> Void)? = nil
 
     #if os(iOS)
@@ -99,33 +100,12 @@ struct FoodInputField: View {
             Spacer()
 
             #if os(iOS)
-            if !isFocused || isRecording || isAnalyzingImage {
-                HStack(spacing: 8) {
-                    // MARK: 👉 Camera button
-                    Button(action: {
-                        showCameraPicker = true
-                    }) {
-                        ZStack {
-                            Image(systemName: "camera.macro")
-                                .font(.system(size: 14))
-                                .foregroundColor(isAnalyzingImage ? .clear : Color.secondaryText(isDark))
-                                .frame(width: 44, height: 44)
-                                .background(isAnalyzingImage ? Color.yellow : (isDark ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.933, green: 0.933, blue: 0.933)))
-                                .clipShape(Circle())
-
-                            if isAnalyzingImage {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .black : .white))
-                                    .scaleEffect(0.8)
-                            }
-                        }
-                    }
-                    .buttonStyle(BorderlessButtonStyle())
-                    .contentShape(Circle())
-                    .disabled(isAnalyzingImage)
-
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+            if isAnalyzingImage {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: Color.secondaryText(isDark)))
+                    .scaleEffect(0.8)
+                    .frame(width: 44, height: 44)
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
             #endif
         }
@@ -133,6 +113,12 @@ struct FoodInputField: View {
         .animation(.easeInOut(duration: 0.2), value: isFocused)
         .padding(.vertical, 12)
         #if os(iOS)
+        .onChange(of: triggerCamera.wrappedValue) { _, shouldOpen in
+            if shouldOpen {
+                showCameraPicker = true
+                triggerCamera.wrappedValue = false
+            }
+        }
         .onChange(of: triggerRecording.wrappedValue) { _, shouldStart in
             if shouldStart {
                 startRecording()

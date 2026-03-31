@@ -747,10 +747,16 @@ struct MainView: View {
         .sheet(isPresented: $showOrieChat) {
             AskOrieModal(
                 remainingCalories: remainingCalories,
+                consumedCalories: consumedCalories,
                 consumedProtein: consumedProtein,
-                consumedCarbs: consumedCarbs
+                consumedCarbs: consumedCarbs,
+                consumedFats: consumedFats,
+                calorieGoal: vm.dailyCalorieGoal,
+                proteinGoal: vm.dailyProteinGoal,
+                carbsGoal: vm.dailyCarbsGoal,
+                foodEntries: filteredEntries
             )
-            .presentationBackground(Color(red: 18/255, green: 18/255, blue: 18/255))
+            .presentationBackground(Color.appBackground(isDark))
         }
 
         // MARK: - ❇️ Lifecycle Handlers

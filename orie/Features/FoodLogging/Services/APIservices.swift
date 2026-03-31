@@ -215,6 +215,70 @@ class APIService {
         guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
     }
 
+    // MARK: - Chat
+
+    struct ChatMessagePayload: Codable {
+        let role: String
+        let content: String
+    }
+
+    struct ChatContext: Codable {
+        let remainingCalories: Int
+        let consumedCalories: Int
+        let consumedProtein: Int
+        let consumedCarbs: Int
+        let consumedFats: Int
+        let calorieGoal: Int
+        let proteinGoal: Int
+        let carbsGoal: Int
+        let foodEntries: [String]
+    }
+
+    struct ChatRequest: Codable {
+        let messages: [ChatMessagePayload]
+        let context: ChatContext
+    }
+
+    struct ChatResponse: Codable {
+        let message: String
+    }
+
+    static func chat(
+        messages: [ChatMessagePayload],
+        context: ChatContext,
+        accessToken: String
+    ) async throws -> ChatResponse {
+        guard let url = URL(string: "\(baseURL)/api/chat") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 30
+        request.httpBody = try JSONEncoder().encode(ChatRequest(messages: messages, context: context))
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return try JSONDecoder().decode(ChatResponse.self, from: data)
+        case 401:
+            throw APIError.sessionExpired
+        case 403:
+            throw APIError.upgradeRequired
+        case 429:
+            throw APIError.aiLimitReached
+        default:
+            throw URLError(.badServerResponse)
+        }
+    }
+
     // MARK: - Feedback
 
     struct FeedbackRequest: Codable {

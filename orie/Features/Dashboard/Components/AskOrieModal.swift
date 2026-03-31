@@ -38,49 +38,49 @@ struct AskOrieModal: View {
 
     // MARK: - Body
 
-    var body: some View {
-        VStack(spacing: 0) {
-
-            // MARK: - Fixed Top Controls
-            HStack {
-                Button(action: { clearChat() }) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                }
-                .glassEffect(.regular.interactive())
-                Spacer()
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                }
-                .glassEffect(.regular.interactive())
+    private var topControls: some View {
+        HStack {
+            Button(action: { clearChat() }) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 12)
-
-            // MARK: - Content
-            ScrollViewReader { proxy in
-                ScrollView {
-                    if showingIntro {
-                        introContent
-                    } else {
-                        chatContent
-                    }
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .onTapGesture { isTextFieldFocused = false }
-                .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 4) }
-                .onAppear { scrollProxy = proxy }
+            #if os(iOS)
+            .glassEffect(in: Circle())
+            #endif
+            Spacer()
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
             }
-
-            // MARK: - Input Bar
-            inputBar
+            #if os(iOS)
+            .glassEffect(in: Circle())
+            #endif
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                if showingIntro {
+                    introContent
+                } else {
+                    chatContent
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .onTapGesture { isTextFieldFocused = false }
+            .safeAreaInset(edge: .top) { Color.clear.frame(height: 76) }
+            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 100) }
+            .onAppear { scrollProxy = proxy }
+        }
+        .overlay(alignment: .top) { topControls }
+        .overlay(alignment: .bottom) { inputBar }
         .environment(\.colorScheme, .dark)
         .onAppear {
             loadHistory()
@@ -142,6 +142,8 @@ struct AskOrieModal: View {
                                  text: "\(consumedProtein)g Protein")
                     OrieStatPill(color: Color(red: 135/255, green: 206/255, blue: 250/255),
                                  text: "\(consumedCarbs)g Carbs")
+                    OrieStatPill(color: Color(red: 255/255, green: 204/255, blue: 51/255),
+                                 text: "\(consumedFats)g Fat")
                 }
                 .padding(.horizontal, 20)
             }
@@ -173,7 +175,7 @@ struct AskOrieModal: View {
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: .bottom, spacing: 0) {
             TextField("Ask anything food related...", text: $messageText, axis: .vertical)
                 .font(.system(size: 16))
                 .foregroundColor(.white)
@@ -196,7 +198,8 @@ struct AskOrieModal: View {
                     )
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
-            .padding(.trailing, 12)
+            .padding(.trailing, isTextFieldFocused ? 8 : 8)
+            .padding(.bottom, isTextFieldFocused ? 8 : 7)
         }
         .overlay(alignment: .bottomLeading) {
             if isTextFieldFocused {

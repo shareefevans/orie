@@ -80,7 +80,8 @@ struct FoodEntryRow: View {
                 // MARK: 👉 Food name - Tap to edit, long press for nutrition detail
                 if isEditing {
                     TextField("", text: $editedFoodName, axis: .vertical)
-                        .font(.subheadline)
+                        .font(.system(size: 14))
+                        .lineSpacing(6)
                         .foregroundColor(Color.primaryText(isDark))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -100,7 +101,8 @@ struct FoodEntryRow: View {
                         }
                 } else {
                     Text(entry.foodName)
-                        .font(.subheadline)
+                        .font(.system(size: 14))
+                        .lineSpacing(6)
                         .foregroundColor(Color.primaryText(isDark))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

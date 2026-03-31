@@ -411,7 +411,7 @@ struct MainView: View {
                     }
                     .padding(.top, isIntakeCardExpanded ? 32 : 22)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, isIntakeCardExpanded ? 32 : 22)
+                    .padding(.bottom, isIntakeCardExpanded ? (isOrieAssistEnabled ? 32 : 40) : 22)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(isIntakeCardExpanded ? 32 : 32)
@@ -421,11 +421,14 @@ struct MainView: View {
                     // Food entries + input
                     VStack(spacing: 0) {
                         ForEach(entriesByPeriod, id: \.period) { group in
-                            mealPeriodHeader(
-                                period: group.period,
-                                calories: group.entries.reduce(0) { $0 + ($1.calories ?? 0) }
-                            )
+                            if isOrieAssistEnabled {
+                                mealPeriodHeader(
+                                    period: group.period,
+                                    calories: group.entries.reduce(0) { $0 + ($1.calories ?? 0) }
+                                )
+                            }
                             ForEach(group.entries) { entry in
+                                let isFirstEntry = !isOrieAssistEnabled && group.period == entriesByPeriod.first?.period && entry.id == group.entries.first?.id
                                 FoodEntryRow(
                                     entry: entry,
                                     isDark: isDark,
@@ -444,6 +447,7 @@ struct MainView: View {
                                         }
                                     )
                                 )
+                                .padding(.top, isFirstEntry ? 8 : 0)
                             }
                         }
 

@@ -29,7 +29,7 @@ struct BottomNavigationBar: View {
             // MARK: - Center "Ask Orie..." pill
             Button(action: { onAskOrie?() }) {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "circle.hexagonpath.fill")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.primaryText(isDark))
                     Text("Ask Orie...")

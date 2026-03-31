@@ -8,6 +8,7 @@ import SwiftUI
 struct AskOrieModal: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var remainingCalories: Int
     var consumedCalories: Int
@@ -28,6 +29,8 @@ struct AskOrieModal: View {
     private let historyKey = "orie_chat_history"
     private let maxHistory = 20
 
+    private var isDark: Bool { themeManager.isDarkMode }
+
     private let suggestions: [(icon: String, text: String)] = [
         ("magnifyingglass", "How many calories in 100g of rice?"),
         ("doc.plaintext", "Create a high protein recipe for dinner?"),
@@ -43,17 +46,32 @@ struct AskOrieModal: View {
             Button(action: { clearChat() }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primaryText(isDark))
                     .frame(width: 44, height: 44)
             }
             #if os(iOS)
             .glassEffect(in: Circle())
             #endif
             Spacer()
+            Button(action: {}) {
+                HStack(spacing: 6) {
+                    Image(systemName: "circle.hexagonpath.fill")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Orie")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(Color.primaryText(isDark))
+                .padding(.horizontal, 14)
+                .frame(height: 44)
+            }
+            #if os(iOS)
+            .glassEffect(in: Capsule())
+            #endif
+            Spacer()
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primaryText(isDark))
                     .frame(width: 44, height: 44)
             }
             #if os(iOS)
@@ -81,7 +99,6 @@ struct AskOrieModal: View {
         }
         .overlay(alignment: .top) { topControls }
         .overlay(alignment: .bottom) { inputBar }
-        .environment(\.colorScheme, .dark)
         .onAppear {
             loadHistory()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -96,18 +113,18 @@ struct AskOrieModal: View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack {
                 Circle()
-                    .fill(Color.white)
+                    .fill(Color.primaryText(isDark))
                     .frame(width: 64, height: 64)
                 Image(systemName: "circle.hexagonpath.fill")
                     .font(.system(size: 26))
-                    .foregroundColor(.black)
+                    .foregroundColor(isDark ? .black : .white)
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
 
             Text("How can I help you today?")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(Color.primaryText(isDark))
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
 
@@ -120,11 +137,11 @@ struct AskOrieModal: View {
                         HStack(spacing: 12) {
                             Image(systemName: suggestion.icon)
                                 .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.secondaryText(isDark))
                                 .frame(width: 20)
                             Text(suggestion.text)
                                 .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(Color.secondaryText(isDark))
                                 .multilineTextAlignment(.leading)
                         }
                     }
@@ -137,13 +154,13 @@ struct AskOrieModal: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     OrieStatPill(color: Color(red: 106/255, green: 118/255, blue: 255/255),
-                                 text: "\(remainingCalories)cal Remaining")
+                                 text: "\(remainingCalories)cal Remaining", isDark: isDark)
                     OrieStatPill(color: Color(red: 49/255, green: 209/255, blue: 149/255),
-                                 text: "\(consumedProtein)g Protein")
+                                 text: "\(consumedProtein)g Protein", isDark: isDark)
                     OrieStatPill(color: Color(red: 135/255, green: 206/255, blue: 250/255),
-                                 text: "\(consumedCarbs)g Carbs")
+                                 text: "\(consumedCarbs)g Carbs", isDark: isDark)
                     OrieStatPill(color: Color(red: 255/255, green: 204/255, blue: 51/255),
-                                 text: "\(consumedFats)g Fat")
+                                 text: "\(consumedFats)g Fat", isDark: isDark)
                 }
                 .padding(.horizontal, 20)
             }
@@ -158,11 +175,11 @@ struct AskOrieModal: View {
     private var chatContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             ForEach(messages) { message in
-                ChatBubble(message: message)
+                ChatBubble(message: message, isLast: message.id == messages.last?.id, isDark: isDark)
                     .id(message.id)
             }
             if isLoading {
-                TypingIndicator()
+                TypingIndicator(isDark: isDark)
                     .id("typing")
             }
         }
@@ -178,8 +195,8 @@ struct AskOrieModal: View {
         HStack(alignment: .bottom, spacing: 0) {
             TextField("Ask anything food related...", text: $messageText, axis: .vertical)
                 .font(.system(size: 16))
-                .foregroundColor(.white)
-                .tint(.white)
+                .foregroundColor(Color.primaryText(isDark))
+                .tint(Color.primaryText(isDark))
                 .focused($isTextFieldFocused)
                 .padding(.horizontal, 16)
                 .padding(.vertical, isTextFieldFocused ? 14 : 13)
@@ -192,7 +209,7 @@ struct AskOrieModal: View {
                     .frame(width: 32, height: 32)
                     .background(
                         messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading
-                            ? Color.white.opacity(0.25)
+                            ? Color.primaryText(isDark).opacity(0.25)
                             : Color(red: 0.25, green: 0.45, blue: 1.0),
                         in: Circle()
                     )
@@ -207,12 +224,12 @@ struct AskOrieModal: View {
                     Button(action: {}) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(Color.secondaryText(isDark))
                     }
                     Button(action: {}) {
                         Image(systemName: "face.smiling")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(Color.secondaryText(isDark))
                     }
                 }
                 .padding(.leading, 16)
@@ -232,6 +249,25 @@ struct AskOrieModal: View {
 
     // MARK: - Actions
 
+    private func isFoodRelated(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        let keywords = [
+            "calorie", "calori", "kcal", "kj", "kilojoule",
+            "protein", "carb", "carbohydrate", "fat", "fibre", "fiber", "sugar", "sodium", "macro",
+            "food", "eat", "eating", "meal", "breakfast", "lunch", "dinner", "snack", "diet",
+            "recipe", "ingredient", "cook", "portion", "serving", "nutrition", "nutrient",
+            "weight", "lose weight", "gain weight", "bulk", "cut", "deficit", "surplus",
+            "vegetable", "fruit", "meat", "chicken", "beef", "fish", "seafood", "dairy", "egg",
+            "bread", "rice", "pasta", "grain", "legume", "bean", "nut", "seed", "oil", "sauce",
+            "drink", "juice", "smoothie", "shake", "supplement", "vitamin", "mineral",
+            "hunger", "hungry", "full", "satiat", "appetite", "bmi", "body mass",
+            "health", "healthy", "workout", "gym", "exercise", "training", "muscle",
+            "log", "track", "today", "yesterday", "remaining", "goal", "target",
+            "how many", "how much", "what should", "what can", "suggest", "recommend"
+        ]
+        return keywords.contains { lower.contains($0) }
+    }
+
     private func sendMessage() {
         let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
@@ -241,6 +277,17 @@ struct AskOrieModal: View {
         messageText = ""
         isLoading = true
         scrollToBottom()
+
+        guard isFoodRelated(text) else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                isLoading = false
+                messages.append(ChatMessage(role: .assistant, content: "I can only help with food, nutrition, and calorie-related questions. Try asking me about a meal, your macros, or what to eat today."))
+                trimHistory()
+                saveHistory()
+                scrollToBottom()
+            }
+            return
+        }
 
         Task {
             do {
@@ -337,6 +384,8 @@ struct AskOrieModal: View {
 
 private struct ChatBubble: View {
     let message: ChatMessage
+    var isLast: Bool = false
+    var isDark: Bool = true
 
     var body: some View {
         if message.role == .user {
@@ -345,17 +394,59 @@ private struct ChatBubble: View {
                 Text(message.content)
                     .font(.system(size: 14, weight: .regular))
                     .lineSpacing(4)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.primaryText(isDark))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(
+                        isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    )
             }
         } else {
-            Text(message.content)
-                .font(.system(size: 14, weight: .regular))
-                .lineSpacing(6)
-                .foregroundColor(.white.opacity(0.9))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(message.content)
+                    .font(.system(size: 14, weight: .regular))
+                    .lineSpacing(6)
+                    .foregroundColor(Color.primaryText(isDark).opacity(0.9))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 16) {
+                    Button(action: {}) {
+                        Image(systemName: "hand.thumbsup")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: {}) {
+                        Image(systemName: "hand.thumbsdown")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: {}) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 2)
+
+                if isLast {
+                    HStack(spacing: 8) {
+                        Image(systemName: "circle.hexagonpath.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.primaryText(isDark))
+                        Text("Orie is AI and can make mistakes.")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.secondaryText(isDark))
+                        Spacer()
+                    }
+                    .padding(.top, 14)
+                }
+            }
         }
     }
 }
@@ -363,22 +454,54 @@ private struct ChatBubble: View {
 // MARK: - Typing Indicator
 
 private struct TypingIndicator: View {
-    @State private var animating = false
+    var isDark: Bool = true
+    @State private var displayedText = ""
+    @State private var phaseIndex = 0
+    @State private var charIndex = 0
+    @State private var sparkleScale: CGFloat = 1.0
+    @State private var sparkleOpacity: Double = 1.0
+
+    private let phases = ["Thinking", "Generating", "Almost there"]
+    private let typingSpeed: Double = 0.055
+    private let pauseDuration: Double = 0.75
 
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<3, id: \.self) { i in
-                Circle()
-                    .fill(Color.white.opacity(0.5))
-                    .frame(width: 6, height: 6)
-                    .scaleEffect(animating ? 1.2 : 0.8)
-                    .animation(
-                        .easeInOut(duration: 0.5).repeatForever().delay(Double(i) * 0.15),
-                        value: animating
-                    )
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color.primaryText(isDark).opacity(0.85))
+                .scaleEffect(sparkleScale)
+                .opacity(sparkleOpacity)
+            Text(displayedText)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(Color.secondaryText(isDark))
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
+                sparkleScale = 1.35
+                sparkleOpacity = 0.45
+            }
+            typeNextChar()
+        }
+    }
+
+    private func typeNextChar() {
+        let phrase = phases[phaseIndex]
+        if charIndex < phrase.count {
+            let idx = phrase.index(phrase.startIndex, offsetBy: charIndex)
+            displayedText += String(phrase[idx])
+            charIndex += 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + typingSpeed) {
+                typeNextChar()
+            }
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + pauseDuration) {
+                displayedText = ""
+                charIndex = 0
+                phaseIndex = (phaseIndex + 1) % phases.count
+                typeNextChar()
             }
         }
-        .onAppear { animating = true }
     }
 }
 
@@ -387,6 +510,7 @@ private struct TypingIndicator: View {
 private struct OrieStatPill: View {
     var color: Color
     var text: String
+    var isDark: Bool = true
 
     var body: some View {
         HStack(spacing: 6) {
@@ -395,13 +519,13 @@ private struct OrieStatPill: View {
                 .frame(width: 6, height: 6)
             Text(text)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(Color.primaryText(isDark).opacity(0.85))
                 .lineLimit(1)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.1), in: Capsule())
-        .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+        .background(isDark ? Color.white.opacity(0.1) : Color.black.opacity(0.06), in: Capsule())
+        .overlay(Capsule().stroke(isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.1), lineWidth: 1))
     }
 }
 

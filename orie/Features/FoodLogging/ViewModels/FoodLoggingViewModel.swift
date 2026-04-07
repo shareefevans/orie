@@ -325,6 +325,42 @@ final class FoodLoggingViewModel: ObservableObject {
         }
     }
 
+    func addFoodEntryFromChat(_ suggestion: MealSuggestion, date: Date) {
+        let isFirstEntryToday = isFirstEntryOfDay(for: date)
+
+        var newEntry = FoodEntry(foodName: suggestion.foodName, entryDate: date)
+        newEntry.calories = suggestion.calories
+        newEntry.protein = suggestion.protein
+        newEntry.carbs = suggestion.carbs
+        newEntry.fats = suggestion.fats
+        newEntry.servingSize = suggestion.servingSize
+        newEntry.isLoading = false
+
+        foodEntries.append(newEntry)
+
+        if isFirstEntryToday {
+            triggerStreakCelebration()
+        }
+
+        Task {
+            guard let authManager else { return }
+            do {
+                let dbEntry = try await authManager.withAuthRetry { accessToken in
+                    try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: newEntry)
+                }
+                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                    foodEntries[index].dbId = dbEntry.id
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
+                    loadWeeklyFoodEntries()
+                    updateCalorieProgressActivity()
+                }
+            } catch APIError.sessionExpired {
+            } catch {
+                handleNetworkError(error, fallback: "Couldn't save your entry. Please try again.")
+            }
+        }
+    }
+
     // MARK: - ❇️ Update / Delete
 
     func updateEntryTime(_ entryId: UUID, newTime: Date) {

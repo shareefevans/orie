@@ -19,6 +19,7 @@ struct AskOrieModal: View {
     var proteinGoal: Int
     var carbsGoal: Int
     var foodEntries: [FoodEntry]
+    var onAddMeal: ((MealSuggestion) -> Void)? = nil
 
     @State private var messages: [ChatMessage] = []
     @State private var messageText = ""
@@ -33,6 +34,8 @@ struct AskOrieModal: View {
 
     private let suggestions: [(icon: String, text: String)] = [
         ("magnifyingglass", "How many calories in 100g of rice?"),
+        ("tray.and.arrow.down", "Log 150g of grilled chicken breast"),
+        ("plus.circle", "Add a bowl of oats to my log"),
         ("doc.plaintext", "Create a high protein recipe for dinner?"),
         ("sparkles", "What should i eat for lunch?")
     ]
@@ -99,8 +102,12 @@ struct AskOrieModal: View {
         }
         .overlay(alignment: .top) { topControls }
         .overlay(alignment: .bottom) { inputBar }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            scrollToBottom()
+        }
         .onAppear {
             loadHistory()
+            scrollToBottom()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 isTextFieldFocused = true
             }
@@ -175,7 +182,7 @@ struct AskOrieModal: View {
     private var chatContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             ForEach(messages) { message in
-                ChatBubble(message: message, isLast: message.id == messages.last?.id, isDark: isDark)
+                bubbleView(for: message)
                     .id(message.id)
             }
             if isLoading {
@@ -187,6 +194,31 @@ struct AskOrieModal: View {
         .padding(.top, 8)
         .padding(.bottom, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func bubbleView(for message: ChatMessage) -> some View {
+        let isLast = message.id == messages.last?.id
+        let isAdded = message.mealSuggestion?.isAdded == true
+        ChatBubble(
+            message: message,
+            isLast: isLast,
+            isDark: isDark,
+            isAdded: isAdded,
+            onAddMeal: { suggestion in
+                if let idx = messages.firstIndex(where: { $0.id == message.id }) {
+                    messages[idx].mealSuggestion?.isAdded = true
+                    saveHistory()
+                }
+                onAddMeal?(suggestion)
+            },
+            onCancelMeal: {
+                if let idx = messages.firstIndex(where: { $0.id == message.id }) {
+                    messages[idx].mealSuggestion = nil
+                    saveHistory()
+                }
+            }
+        )
     }
 
     // MARK: - Input Bar
@@ -215,7 +247,7 @@ struct AskOrieModal: View {
                     )
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
-            .padding(.trailing, isTextFieldFocused ? 8 : 8)
+            .padding(.trailing, 8)
             .padding(.bottom, isTextFieldFocused ? 8 : 7)
         }
         .overlay(alignment: .bottomLeading) {
@@ -268,9 +300,88 @@ struct AskOrieModal: View {
         return keywords.contains { lower.contains($0) }
     }
 
+    /// Returns the food name if the message is a direct nutrition lookup query.
+    private func isReferenceQuery(_ text: String) -> Bool {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let phrases = [
+            "add that", "log that", "add it", "log it",
+            "yes add that", "yeah add that", "yeah log that", "yes log that",
+            "can you add that", "can you log that", "could you add that", "could you log that",
+            "please add that", "please log that", "add that please", "log that please",
+            "add that for me", "log that for me", "add it for me", "log it for me",
+            "add that to my log", "log that to my log",
+        ]
+        return phrases.contains { lower.hasPrefix($0) || lower == $0 }
+    }
+
+    private func extractFoodQuery(_ text: String) -> String? {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Nutrition lookup patterns
+        let nutritionPrefixes = [
+            "how many calories in ",
+            "calories in ",
+            "how much protein in ",
+            "what are the macros for ",
+            "macros for ",
+            "nutrition for ",
+            "nutrition in ",
+            "how many carbs in ",
+            "how much fat in ",
+            "what's in ",
+            "whats in ",
+        ]
+        for prefix in nutritionPrefixes {
+            if lower.hasPrefix(prefix) {
+                var food = String(text.dropFirst(prefix.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if food.hasSuffix("?") { food = String(food.dropLast()) }
+                return food.isEmpty ? nil : food
+            }
+        }
+
+        // "add X to my log" / "add X to the log" patterns
+        let addPrefixes = ["add ", "please add ", "can you add ", "could you add "]
+        for prefix in addPrefixes {
+            if lower.hasPrefix(prefix) {
+                var food = String(text.dropFirst(prefix.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                // Strip trailing "to my log", "to the log", "to my food log", "for me"
+                let stripSuffixes = [" to my food log", " to my log", " to the log", " for me", " please"]
+                for suffix in stripSuffixes {
+                    if food.lowercased().hasSuffix(suffix) {
+                        food = String(food.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+                return food.isEmpty ? nil : food
+            }
+        }
+
+        // "log X" patterns
+        let logPrefixes = ["log ", "please log ", "can you log ", "could you log ", "i want to log ", "track "]
+        for prefix in logPrefixes {
+            if lower.hasPrefix(prefix) {
+                var food = String(text.dropFirst(prefix.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let stripSuffixes = [" for me", " please", " to my log"]
+                for suffix in stripSuffixes {
+                    if food.lowercased().hasSuffix(suffix) {
+                        food = String(food.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+                return food.isEmpty ? nil : food
+            }
+        }
+
+        return nil
+    }
+
     private func sendMessage() {
         let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
+
+        // Capture the last assistant message before this exchange begins
+        let priorAssistantMessage = messages.last(where: { $0.role == .assistant })
 
         let userMsg = ChatMessage(role: .user, content: text)
         messages.append(userMsg)
@@ -278,7 +389,7 @@ struct AskOrieModal: View {
         isLoading = true
         scrollToBottom()
 
-        guard isFoodRelated(text) else {
+        guard isFoodRelated(text) || isReferenceQuery(text) else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 isLoading = false
                 messages.append(ChatMessage(role: .assistant, content: "I can only help with food, nutrition, and calorie-related questions. Try asking me about a meal, your macros, or what to eat today."))
@@ -320,6 +431,69 @@ struct AskOrieModal: View {
                     trimHistory()
                     saveHistory()
                     scrollToBottom()
+                }
+
+                // Attach a meal card if applicable
+                if let foodQuery = extractFoodQuery(text) {
+                    // Direct nutrition/log query — fetch from API
+                    let nutrition = try? await authManager.withAuthRetry { token in
+                        try await APIService.getNutrition(for: foodQuery, accessToken: token)
+                    }
+                    if let nutrition {
+                        await MainActor.run {
+                            if let idx = messages.lastIndex(where: { $0.role == .assistant }) {
+                                messages[idx].mealSuggestion = MealSuggestion(
+                                    foodName: nutrition.foodName,
+                                    calories: nutrition.calories,
+                                    protein: nutrition.protein,
+                                    carbs: nutrition.carbs,
+                                    fats: nutrition.fats,
+                                    servingSize: nutrition.servingSize
+                                )
+                                saveHistory()
+                                scrollToBottom()
+                            }
+                        }
+                    }
+                } else if isReferenceQuery(text), let prior = priorAssistantMessage {
+                    if let existing = prior.mealSuggestion {
+                        // Prior message already had a card — copy it fresh (isAdded reset)
+                        await MainActor.run {
+                            if let idx = messages.lastIndex(where: { $0.role == .assistant }) {
+                                messages[idx].mealSuggestion = MealSuggestion(
+                                    foodName: existing.foodName,
+                                    calories: existing.calories,
+                                    protein: existing.protein,
+                                    carbs: existing.carbs,
+                                    fats: existing.fats,
+                                    servingSize: existing.servingSize
+                                )
+                                saveHistory()
+                                scrollToBottom()
+                            }
+                        }
+                    } else {
+                        // No prior card — pass Orie's last response as context to getNutrition
+                        let nutrition = try? await authManager.withAuthRetry { token in
+                            try await APIService.getNutrition(for: prior.content, accessToken: token)
+                        }
+                        if let nutrition {
+                            await MainActor.run {
+                                if let idx = messages.lastIndex(where: { $0.role == .assistant }) {
+                                    messages[idx].mealSuggestion = MealSuggestion(
+                                        foodName: nutrition.foodName,
+                                        calories: nutrition.calories,
+                                        protein: nutrition.protein,
+                                        carbs: nutrition.carbs,
+                                        fats: nutrition.fats,
+                                        servingSize: nutrition.servingSize
+                                    )
+                                    saveHistory()
+                                    scrollToBottom()
+                                }
+                            }
+                        }
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -386,66 +560,87 @@ private struct ChatBubble: View {
     let message: ChatMessage
     var isLast: Bool = false
     var isDark: Bool = true
+    var isAdded: Bool = false
+    var onAddMeal: ((MealSuggestion) -> Void)? = nil
+    var onCancelMeal: (() -> Void)? = nil
 
     var body: some View {
         if message.role == .user {
-            HStack {
-                Spacer(minLength: 60)
-                Text(message.content)
-                    .font(.system(size: 14, weight: .regular))
-                    .lineSpacing(4)
-                    .foregroundColor(Color.primaryText(isDark))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    )
-            }
+            userBubble
         } else {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(message.content)
-                    .font(.system(size: 14, weight: .regular))
-                    .lineSpacing(6)
-                    .foregroundColor(Color.primaryText(isDark).opacity(0.9))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            assistantBubble
+        }
+    }
 
-                HStack(spacing: 16) {
-                    Button(action: {}) {
-                        Image(systemName: "hand.thumbsup")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
-                    }
-                    .buttonStyle(.plain)
+    private var userBubble: some View {
+        HStack {
+            Spacer(minLength: 60)
+            Text(message.content)
+                .font(.system(size: 14, weight: .regular))
+                .lineSpacing(4)
+                .foregroundColor(Color.primaryText(isDark))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                )
+        }
+    }
 
-                    Button(action: {}) {
-                        Image(systemName: "hand.thumbsdown")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
-                    }
-                    .buttonStyle(.plain)
+    private var assistantBubble: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(message.content)
+                .font(.system(size: 14, weight: .regular))
+                .lineSpacing(6)
+                .foregroundColor(Color.primaryText(isDark).opacity(0.9))
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Button(action: {}) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.primaryText(isDark).opacity(0.35))
-                    }
-                    .buttonStyle(.plain)
+            if let suggestion = message.mealSuggestion {
+                MealSuggestionCard(
+                    suggestion: suggestion,
+                    isDark: isDark,
+                    isAdded: isAdded,
+                    onAdd: { onAddMeal?(suggestion) },
+                    onCancel: { onCancelMeal?() }
+                )
+            }
+
+            HStack(spacing: 16) {
+                Button(action: {}) {
+                    Image(systemName: "hand.thumbsup")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
                 }
-                .padding(.top, 2)
+                .buttonStyle(.plain)
 
-                if isLast {
-                    HStack(spacing: 8) {
-                        Image(systemName: "circle.hexagonpath.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.primaryText(isDark))
-                        Text("Orie is AI and can make mistakes.")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.secondaryText(isDark))
-                        Spacer()
-                    }
-                    .padding(.top, 14)
+                Button(action: {}) {
+                    Image(systemName: "hand.thumbsdown")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
                 }
+                .buttonStyle(.plain)
+
+                Button(action: {}) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 2)
+
+            if isLast {
+                HStack(spacing: 8) {
+                    Image(systemName: "circle.hexagonpath.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Orie is AI and can make mistakes.")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.secondaryText(isDark))
+                    Spacer()
+                }
+                .padding(.top, 14)
             }
         }
     }
@@ -541,5 +736,7 @@ private struct OrieStatPill: View {
         carbsGoal: 200,
         foodEntries: []
     )
+    .environmentObject(AuthManager())
+    .environmentObject(ThemeManager())
     .preferredColorScheme(.dark)
 }

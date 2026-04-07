@@ -758,7 +758,10 @@ struct MainView: View {
                 calorieGoal: vm.dailyCalorieGoal,
                 proteinGoal: vm.dailyProteinGoal,
                 carbsGoal: vm.dailyCarbsGoal,
-                foodEntries: filteredEntries
+                foodEntries: filteredEntries,
+                onAddMeal: { suggestion in
+                    vm.addFoodEntryFromChat(suggestion, date: selectedDate)
+                }
             )
             .presentationBackground(Color.appBackground(isDark))
         }

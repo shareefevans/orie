@@ -7,12 +7,18 @@
 
 import SwiftUI
 
+enum ProfileTab {
+    case profile, settings
+}
+
 struct ProfileSheet: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var localNotificationManager: LocalNotificationManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+
+    var startTab: ProfileTab = .profile
 
     // MARK: - ❇️ User data
     @State private var userName = ""
@@ -33,6 +39,7 @@ struct ProfileSheet: View {
     @State private var gender = ""
 
     // MARK: - ❇️ Settings
+    @State private var selectedTab: ProfileTab = .profile
     @State private var locationEnabled = true
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountAlert = false
@@ -48,347 +55,10 @@ struct ProfileSheet: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 8) {
-                    
-                    // MARK: - ❇️ Header
-                    // MARK: 👉 Header - Settings and Name centered
-                    VStack(alignment: .center, spacing: 2) {
-                        Text("Settings")
-                            .font(.title)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Color.primaryText(isDark))
-
-                        Text(userName.isEmpty ? "User logged Out" : userName)
-                            .font(.footnote)
-                            .foregroundColor(Color.secondaryText(isDark))
-                            .padding(.bottom, 16)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
-
-                    // MARK: 👉 Feedback button
-                    Button(action: {
-                        feedbackText = ""
-                        showFeedbackModal = true
-                    }) {
-                        Text("Feedback")
-                            .font(.system(size: 12))
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.primaryText(isDark))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    }
-                    .glassEffect(.regular.interactive())
-
-                    if isLoading {
-                        ProfileSheetSkeleton(isDark: isDark)
-                    } else {
-                        // MARK: - ❇️ Body Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 8) {
-
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Body")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color.primaryText(isDark))
-
-                                    Text("Set up your body composition below.")
-                                        .font(.footnote)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                }
-                            }
-                            .padding(.bottom, 8)
-
-                            Divider()
-
-                            // MARK: 👉 Macro rows
-                            MacroRow(label: "Age", value: $age, unit : "yrs", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Weight", value: $weight, unit: "kg", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Height", value: $height, unit: "cm", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Body Fat", value: $bodyFat, unit: "%", isDark: isDark, onSave: saveProfile)
-                        }
-                        .padding(24)
-                        .background(Color.cardBackground(isDark))
-                        .cornerRadius(24)
-
-                        // MARK: - ❇️ Macronutrients Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 8) {
-
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Macros")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(Color.primaryText(isDark))
-
-                                    Text("Set your daily calorie and macro goals.")
-                                        .font(.footnote)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                }
-                            }
-                            .padding(.bottom, 8)
-
-                            Divider()
-
-                            // MARK: 👉 Macro rows
-                            MacroRow(label: "Calories", value: $dailyCalories, unit: "c", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Protein", value: $dailyProtein, unit: "g", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Fats", value: $dailyFats, unit: "g", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Sodium", value: $dailySodium, unit: "mg", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Fibre", value: $dailyFibre, unit: "g", isDark: isDark, onSave: saveProfile)
-                            Divider()
-                            MacroRow(label: "Sugar", value: $dailySugar, unit: "g", isDark: isDark, onSave: saveProfile)
-                        }
-                        .padding(24)
-                        .background(Color.cardBackground(isDark))
-                        .cornerRadius(24)
-
-                        // MARK: - ❇️ Subscription Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Subscription")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-
-                                Text("Manage your plan.")
-                                    .font(.footnote)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                            }
-                            .padding(.bottom, 8)
-
-                            Divider()
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Current Plan")
-                                        .font(.footnote)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.primaryText(isDark))
-                                    Text(subscriptionManager.tier == .premium ? "Premium" : "Free")
-                                        .font(.caption)
-                                        .foregroundColor(subscriptionManager.tier == .premium ? .yellow : Color.secondaryText(isDark))
-                                }
-                                Spacer()
-                                if subscriptionManager.tier == .premium {
-                                    Text("AI: \(subscriptionManager.aiUsedToday)/\(subscriptionManager.aiLimit) today")
-                                        .font(.caption2)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                }
-                            }
-
-                            Divider()
-
-                            HStack(spacing: 8) {
-                                // Free option
-                                Button(action: {
-                                    Task {
-                                        let userId = authManager.currentUser?.id ?? ""
-                                        await subscriptionManager.selectFree(authManager: authManager, userId: userId)
-                                    }
-                                }) {
-                                    Text("Free")
-                                        .font(.footnote)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(subscriptionManager.tier == .free ? .white : Color.secondaryText(isDark))
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 40)
-                                        .background(
-                                            subscriptionManager.tier == .free
-                                                ? (isDark ? Color(red: 50/255, green: 50/255, blue: 50/255) : Color(red: 180/255, green: 180/255, blue: 180/255))
-                                                : Color.clear
-                                        )
-                                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .stroke(Color.gray.opacity(0.3), lineWidth: subscriptionManager.tier == .free ? 0 : 1)
-                                        )
-                                }
-                                .disabled(subscriptionManager.isLoading || subscriptionManager.tier == .free)
-
-                                // Premium option
-                                Button(action: {
-                                    Task {
-                                        let userId = authManager.currentUser?.id ?? ""
-                                        await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
-                                    }
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "crown.fill")
-                                            .font(.caption)
-                                            .foregroundColor(subscriptionManager.tier == .premium ? .black : .yellow)
-                                        Text("Premium")
-                                            .font(.footnote)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(subscriptionManager.tier == .premium ? .black : Color.primaryText(isDark))
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 40)
-                                    .background(subscriptionManager.tier == .premium ? Color.yellow : Color.clear)
-                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color.yellow.opacity(0.5), lineWidth: subscriptionManager.tier == .premium ? 0 : 1)
-                                    )
-                                }
-                                .disabled(subscriptionManager.isLoading || subscriptionManager.tier == .premium)
-                            }
-                        }
-                        .padding(24)
-                        .background(Color.cardBackground(isDark))
-                        .cornerRadius(24)
-
-                        // MARK: - ❇️ App Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("App")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-
-                                Text("Manage your app settings.")
-                                    .font(.footnote)
-                                    .foregroundColor(Color.secondaryText(isDark))
-                            }
-                            .padding(.bottom, 8)
-
-                            Divider()
-
-                            // MARK: 👉 Settings toggles
-                            HStack {
-                                Text("Location")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color.primaryText(isDark))
-                                Spacer()
-                                Toggle("", isOn: $locationEnabled)
-                                    .labelsHidden()
-                            }
-
-                            Divider()
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Meal Reminders")
-                                        .font(.footnote)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.primaryText(isDark))
-                                    Text("Get notified at scheduled meal times")
-                                        .font(.caption2)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { localNotificationManager.notificationsEnabled },
-                                    set: { newValue in
-                                        if newValue {
-                                            Task {
-                                                let granted = await localNotificationManager.requestAuthorization()
-                                                if granted {
-                                                    localNotificationManager.notificationsEnabled = true
-                                                } else {
-                                                    showNotificationDeniedAlert = true
-                                                }
-                                            }
-                                        } else {
-                                            localNotificationManager.notificationsEnabled = false
-                                        }
-                                    }
-                                ))
-                                .labelsHidden()
-                            }
-
-                            Divider()
-
-                            HStack {
-                                Text("Dark Mode")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color.primaryText(isDark))
-                                Spacer()
-                                Toggle("", isOn: $themeManager.isDarkMode)
-                                    .labelsHidden()
-                            }
-
-                            Divider()
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Calorie Progress")
-                                        .font(.footnote)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(Color.primaryText(isDark))
-                                    Text("Show all-day tracker in Dynamic Island")
-                                        .font(.caption2)
-                                        .foregroundColor(Color.secondaryText(isDark))
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { calorieProgressActivityEnabled },
-                                    set: { newValue in
-                                        calorieProgressActivityEnabled = newValue
-                                        // End activity if disabled
-                                        if !newValue {
-                                            if #available(iOS 16.1, *) {
-                                                CalorieProgressActivityManager.shared.endCalorieTracking()
-                                            }
-                                        }
-                                    }
-                                ))
-                                .labelsHidden()
-                            }
-
-                            Divider()
-
-                            // MARK: 👉 Log Out
-                            Button(action: {
-                                Task {
-                                    await authManager.logout()
-                                    dismiss()
-                                }
-                            }) {
-                                HStack {
-                                    Text("Log Out")
-                                        .font(.footnote)
-                                        .foregroundColor(Color.primaryText(isDark))
-                                        .fontWeight(.medium)
-                                    Spacer()
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .foregroundColor(Color.iconColor(isDark))
-                                }
-                            }
-
-                            Divider()
-
-                            // MARK: 👉 Delete Account
-                            Button(action: {
-                                showDeleteAccountAlert = true
-                            }) {
-                                HStack {
-                                    Text("Delete Account")
-                                        .font(.footnote)
-                                        .foregroundColor(.red)
-                                        .fontWeight(.medium)
-                                    Spacer()
-                                    Image(systemName: "trash")
-                                        .foregroundColor(.red)
-                                }
-                            }
-                        }
-                        .padding(24)
-                        .background(Color.cardBackground(isDark))
-                        .cornerRadius(24)
-                    }
+                    headerView
+//                    tabPickerView
+                    if selectedTab == .profile { profileTabContent }
+                    if selectedTab == .settings { settingsTabContent }
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)
@@ -400,10 +70,9 @@ struct ProfileSheet: View {
         .preferredColorScheme(isDark ? .dark : .light)
         .presentationDragIndicator(.visible)
         .onAppear {
+            selectedTab = startTab
             loadProfile()
-            Task {
-                await subscriptionManager.loadStatus(authManager: authManager)
-            }
+            Task { await subscriptionManager.loadStatus(authManager: authManager) }
         }
         .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
             Button("Open Settings") {
@@ -472,6 +141,380 @@ struct ProfileSheet: View {
         }
     }
 
+
+    // MARK: - ❇️ Subviews
+
+    @ViewBuilder private var headerView: some View {
+        VStack(alignment: .center, spacing: 2) {
+            Text(userName.isEmpty ? "User logged Out" : userName)
+                .font(.title)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.primaryText(isDark))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
+    }
+
+//    @ViewBuilder private var tabPickerView: some View {
+//        Picker("Tab", selection: $selectedTab) {
+//            Text("Profile").tag(ProfileTab.profile)
+//            Text("Settings").tag(ProfileTab.settings)
+//        }
+//        .pickerStyle(.segmented)
+//        .padding(.bottom, 4)
+//    }
+
+    @ViewBuilder private var profileTabContent: some View {
+        if isLoading {
+            ProfileSheetSkeleton(isDark: isDark, tab: .profile)
+        } else {
+            bodyCard
+            macrosCard
+        }
+        Button(action: { feedbackText = ""; showFeedbackModal = true }) {
+            Text("Feedback")
+                .font(.system(size: 12))
+                .fontWeight(.medium)
+                .foregroundColor(Color.primaryText(isDark))
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+        }
+        .glassEffect(.regular.interactive())
+    }
+
+    @ViewBuilder private var bodyCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "figure.mind.and.body.circle")
+                        .font(.title3)
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Body")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                Text("Set up your body composition below.")
+                    .font(.footnote)
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+            .padding(.bottom, 8)
+            Divider()
+            MacroRow(label: "Age", value: $age, unit: "yrs", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Weight", value: $weight, unit: "kg", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Height", value: $height, unit: "cm", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Body Fat", value: $bodyFat, unit: "%", isDark: isDark, onSave: saveProfile)
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(24)
+    }
+
+    @ViewBuilder private var macrosCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "fork.knife.circle")
+                        .font(.title3)
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Macros")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                Text("Set your daily calorie and macro goals.")
+                    .font(.footnote)
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+            .padding(.bottom, 8)
+            Divider()
+            MacroRow(label: "Calories", value: $dailyCalories, unit: "c", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Protein", value: $dailyProtein, unit: "g", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Carbohydrates", value: $dailyCarbs, unit: "g", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Fats", value: $dailyFats, unit: "g", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Sodium", value: $dailySodium, unit: "mg", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Fibre", value: $dailyFibre, unit: "g", isDark: isDark, onSave: saveProfile)
+            Divider()
+            MacroRow(label: "Sugar", value: $dailySugar, unit: "g", isDark: isDark, onSave: saveProfile)
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(24)
+    }
+
+    @ViewBuilder private var settingsTabContent: some View {
+        if isLoading {
+            ProfileSheetSkeleton(isDark: isDark, tab: .settings)
+        } else {
+            subscriptionCard
+            appCard
+        }
+        Button(action: { feedbackText = ""; showFeedbackModal = true }) {
+            Text("Feedback")
+                .font(.system(size: 12))
+                .fontWeight(.medium)
+                .foregroundColor(Color.primaryText(isDark))
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+        }
+        .glassEffect(.regular.interactive())
+    }
+
+    private var upgradeContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Premium pricing")
+                .font(.footnote)
+                .fontWeight(.medium)
+                .foregroundColor(Color.primaryText(isDark))
+            Text("$2.99 USD / mth")
+                .font(.footnote)
+                .foregroundColor(.yellow)
+            Button(action: {
+                Task {
+                    let userId = authManager.currentUser?.id ?? ""
+                    await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
+                }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "crown.fill")
+                        .font(.caption)
+                        .foregroundColor(.black)
+                    Text("Upgrade to Premium")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                        .foregroundColor(.black)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(Color.accessibleYellow(isDark).opacity(0.55), in: RoundedRectangle(cornerRadius: 20))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+            }
+            .disabled(subscriptionManager.isLoading)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Premium inclusions")
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.primaryText(isDark))
+                ForEach([
+                    ("sparkles", "Ask Orie AI chat assistant"),
+                    ("photo.on.rectangle.angled", "AI food image recognition"),
+                    ("fork.knife", "Smart nutrition lookup"),
+                    ("15.circle", "15 AI queries per day"),
+                ], id: \.0) { icon, label in
+                    HStack(spacing: 10) {
+                        Image(systemName: icon)
+                            .font(.footnote)
+                            .foregroundColor(.yellow)
+                            .frame(width: 16)
+                        Text(label)
+                            .font(.footnote)
+                            .foregroundColor(Color.secondaryText(isDark))
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder private var subscriptionCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "dollarsign.circle")
+                        .font(.title3)
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Subscription")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                if subscriptionManager.tier == .premium {
+                    HStack(spacing: 4) {
+                        Text("You're currently on Orie's")
+                            .font(.footnote)
+                            .foregroundColor(Color.secondaryText(isDark))
+                        Text("Premium Plan")
+                            .font(.footnote)
+                            .foregroundColor(.yellow)
+                    }
+                    if subscriptionManager.aiLimit > 0 {
+                        Text("AI: \(subscriptionManager.aiUsedToday)/\(subscriptionManager.aiLimit) queries today")
+                            .font(.caption2)
+                            .foregroundColor(Color.secondaryText(isDark))
+                    }
+                } else {
+                    Text("You're currently on Orie's Free Plan")
+                        .font(.footnote)
+                        .foregroundColor(Color.secondaryText(isDark))
+                }
+            }
+            .padding(.bottom, 8)
+            Divider()
+            if subscriptionManager.tier == .free {
+                upgradeContent
+            } else {
+                Button(action: {
+                    Task {
+                        let userId = authManager.currentUser?.id ?? ""
+                        await subscriptionManager.selectFree(authManager: authManager, userId: userId)
+                    }
+                }) {
+                    Text("Downgrade to Free")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                }
+                .disabled(subscriptionManager.isLoading)
+            }
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(24)
+    }
+
+    @ViewBuilder private var appCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "app.background.dotted")
+                        .font(.title3)
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("App")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                Text("Manage your app settings.")
+                    .font(.footnote)
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+            .padding(.bottom, 8)
+            Divider()
+            appToggles
+            Divider()
+            accountActions
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(24)
+    }
+
+    @ViewBuilder private var appToggles: some View {
+        HStack {
+            Text("Location")
+                .font(.footnote)
+                .fontWeight(.medium)
+                .foregroundColor(Color.primaryText(isDark))
+            Spacer()
+            Toggle("", isOn: $locationEnabled).labelsHidden()
+        }
+        Divider()
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Meal Reminders")
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Get notified at scheduled meal times")
+                    .font(.caption2)
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+            Spacer()
+            Toggle("", isOn: notificationsBinding).labelsHidden()
+        }
+        Divider()
+        HStack {
+            Text("Dark Mode")
+                .font(.footnote)
+                .fontWeight(.medium)
+                .foregroundColor(Color.primaryText(isDark))
+            Spacer()
+            Toggle("", isOn: $themeManager.isDarkMode).labelsHidden()
+        }
+        Divider()
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Calorie Progress")
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Show all-day tracker in Dynamic Island")
+                    .font(.caption2)
+                    .foregroundColor(Color.secondaryText(isDark))
+            }
+            Spacer()
+            Toggle("", isOn: calorieProgressBinding).labelsHidden()
+        }
+    }
+
+    private var notificationsBinding: Binding<Bool> {
+        Binding(
+            get: { localNotificationManager.notificationsEnabled },
+            set: { newValue in
+                if newValue {
+                    Task {
+                        let granted = await localNotificationManager.requestAuthorization()
+                        if granted { localNotificationManager.notificationsEnabled = true }
+                        else { showNotificationDeniedAlert = true }
+                    }
+                } else {
+                    localNotificationManager.notificationsEnabled = false
+                }
+            }
+        )
+    }
+
+    private var calorieProgressBinding: Binding<Bool> {
+        Binding(
+            get: { calorieProgressActivityEnabled },
+            set: { newValue in
+                calorieProgressActivityEnabled = newValue
+                if !newValue {
+                    if #available(iOS 16.1, *) {
+                        CalorieProgressActivityManager.shared.endCalorieTracking()
+                    }
+                }
+            }
+        )
+    }
+
+    @ViewBuilder private var accountActions: some View {
+        Button(action: { Task { await authManager.logout(); dismiss() } }) {
+            HStack {
+                Text("Log Out")
+                    .font(.footnote)
+                    .foregroundColor(Color.primaryText(isDark))
+                    .fontWeight(.medium)
+                Spacer()
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .foregroundColor(Color.iconColor(isDark))
+            }
+        }
+        Divider()
+        Button(action: { showDeleteAccountAlert = true }) {
+            HStack {
+                Text("Delete Account")
+                    .font(.footnote)
+                    .foregroundColor(.red)
+                    .fontWeight(.medium)
+                Spacer()
+                Image(systemName: "trash").foregroundColor(.red)
+            }
+        }
+    }
 
     // MARK: - ❇️ Functions
 
@@ -704,92 +747,118 @@ struct MacroPickerSheet: View {
 // MARK: - ❇️ Profile Sheet Skeleton
 struct ProfileSheetSkeleton: View {
     let isDark: Bool
+    var tab: ProfileTab = .profile
     @State private var isAnimating = false
 
     var body: some View {
         VStack(spacing: 8) {
-            // Body card skeleton
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 60, height: 16)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 200, height: 12)
+            if tab == .profile {
+                // Body card skeleton
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 60, height: 16)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 200, height: 12)
+                    }
+                    .padding(.bottom, 8)
+
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
                 }
-                .padding(.bottom, 8)
+                .padding(24)
+                .background(Color.cardBackground(isDark))
+                .cornerRadius(24)
 
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-            }
-            .padding(24)
-            .background(Color.cardBackground(isDark))
-            .cornerRadius(24)
+                // Macros card skeleton
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 80, height: 16)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 220, height: 12)
+                    }
+                    .padding(.bottom, 8)
 
-            // Macros card skeleton
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 80, height: 16)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 220, height: 12)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
                 }
-                .padding(.bottom, 8)
-
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
+                .padding(24)
+                .background(Color.cardBackground(isDark))
+                .cornerRadius(24)
             }
-            .padding(24)
-            .background(Color.cardBackground(isDark))
-            .cornerRadius(24)
 
-            // App card skeleton
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 50, height: 16)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 180, height: 12)
+            if tab == .settings {
+                // Subscription card skeleton
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 110, height: 16)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 160, height: 12)
+                    }
+                    .padding(.bottom, 8)
+
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
                 }
-                .padding(.bottom, 8)
+                .padding(24)
+                .background(Color.cardBackground(isDark))
+                .cornerRadius(24)
 
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
-                Divider()
-                SkeletonRow(isDark: isDark)
+                // App card skeleton
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 50, height: 16)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 180, height: 12)
+                    }
+                    .padding(.bottom, 8)
+
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                    Divider()
+                    SkeletonRow(isDark: isDark)
+                }
+                .padding(24)
+                .background(Color.cardBackground(isDark))
+                .cornerRadius(24)
             }
-            .padding(24)
-            .background(Color.cardBackground(isDark))
-            .cornerRadius(24)
         }
         .opacity(isAnimating ? 0.5 : 1.0)
         .onAppear {

@@ -28,6 +28,7 @@ struct MainView: View {
     @State private var currentInput = ""
     @State private var showAwards = false
     @State private var showProfile = false
+    @State private var showSettings = false
     @State private var showNotifications = false
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var selectedTab: String = "consumed"
@@ -46,6 +47,7 @@ struct MainView: View {
     @State private var isRecordingFromField = false
     @State private var triggerCameraFromNav = false
     @State private var showOrieChat = false
+    @State private var showPremiumRequired = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -591,6 +593,7 @@ struct MainView: View {
             TopNavigationBar(
                 showAwards: $showAwards,
                 showProfile: $showProfile,
+                showSettings: $showSettings,
                 showNotifications: $showNotifications,
                 isDateSelectionMode: $isDateSelectionMode,
                 selectedDate: $selectedDate,
@@ -699,7 +702,11 @@ struct MainView: View {
                     },
                     onAskOrie: {
                         dismissAllInputs()
-                        showOrieChat = true
+                        if subscriptionManager.tier == .premium {
+                            showOrieChat = true
+                        } else {
+                            showPremiumRequired = true
+                        }
                     },
                     onTriggerMic: {
                         if isRecordingFromField {
@@ -735,7 +742,17 @@ struct MainView: View {
         .sheet(isPresented: $showProfile, onDismiss: {
             vm.loadUserProfile()
         }) {
-            ProfileSheet()
+            ProfileSheet(startTab: .profile)
+                .environmentObject(authManager)
+                .environmentObject(themeManager)
+                .environmentObject(localNotificationManager)
+                .environmentObject(subscriptionManager)
+                .presentationBackground(Color.appBackground(isDark))
+        }
+        .sheet(isPresented: $showSettings, onDismiss: {
+            vm.loadUserProfile()
+        }) {
+            ProfileSheet(startTab: .settings)
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
                 .environmentObject(localNotificationManager)
@@ -790,6 +807,13 @@ struct MainView: View {
         }
         .onChange(of: showAwards) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: showProfile) { _, shown in if shown { dismissAllInputs() } }
+        .onChange(of: showSettings) { _, shown in if shown { dismissAllInputs() } }
+        .alert("Premium Required", isPresented: $showPremiumRequired) {
+            Button("Upgrade") { showSettings = true }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Ask Orie is a Premium feature. Upgrade to unlock AI chat and more.")
+        }
         .onChange(of: showNotifications) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: networkMonitor.isConnected) { _, isConnected in
             guard isConnected else { return }

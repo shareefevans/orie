@@ -10,6 +10,7 @@ import SwiftUI
 struct TopNavigationBar: View {
     @Binding var showAwards: Bool
     @Binding var showProfile: Bool
+    @Binding var showSettings: Bool
     @Binding var showNotifications: Bool
     @Binding var isDateSelectionMode: Bool
     @Binding var selectedDate: Date
@@ -169,6 +170,21 @@ struct TopNavigationBar: View {
             }
             .buttonStyle(.plain)
 
+            Button(action: { showSettings = true; showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Settings")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
             Button(action: { showNotifications = true; showSettingsDropdown = false }) {
                 HStack(spacing: 12) {
                     Image(systemName: "bell.fill")
@@ -274,6 +290,7 @@ struct TopNavigationBar: View {
         TopNavigationBar(
             showAwards: .constant(false),
             showProfile: .constant(false),
+            showSettings: .constant(false),
             showNotifications: .constant(false),
             isDateSelectionMode: .constant(false),
             selectedDate: .constant(Date()),

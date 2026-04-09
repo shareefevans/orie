@@ -160,7 +160,46 @@ struct NutritionEditSheet: View {
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, entry.sources?.isEmpty == false ? 16 : 24)
+
+                    // MARK: - Sources
+                    if let sources = entry.sources, !sources.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(sources) { source in
+                                    Button(action: {
+                                        if let url = URL(string: source.url) {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            AsyncImage(url: URL(string: source.icon)) { image in
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                            } placeholder: {
+                                                Image(systemName: "globe")
+                                                    .foregroundColor(Color.secondaryText(isDark))
+                                            }
+                                            .frame(width: 16, height: 16)
+
+                                            Text(source.name)
+                                                .font(.footnote)
+                                                .foregroundColor(Color.primaryText(isDark))
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .frame(height: 50)
+                                        .background(Color.cardBackground(isDark))
+                                        .clipShape(RoundedRectangle(cornerRadius: 100))
+                                        .glassEffect(.regular.interactive())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .scrollClipDisabled(true)
                         .padding(.bottom, 24)
+                    }
 
                     // MARK: - Confirm Totals (macro rows, hidden in Get Specific mode)
                     if !showGetSpecific {

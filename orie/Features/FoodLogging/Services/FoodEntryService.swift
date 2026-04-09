@@ -55,6 +55,8 @@ class FoodEntryService {
         let sodium: Double?
         let sugar: Double?
         let servingSize: String?
+        let imageUrl: String?
+        let sources: [NutritionSource]?
         let entryDate: String
         let timestamp: String
         let isLoading: Bool?
@@ -71,6 +73,8 @@ class FoodEntryService {
             case sodium
             case sugar
             case servingSize = "serving_size"
+            case imageUrl = "image_url"
+            case sources
             case entryDate = "entry_date"
             case timestamp
             case isLoading = "is_loading"
@@ -135,6 +139,8 @@ class FoodEntryService {
         let entryDateString = String(iso8601.string(from: entry.entryDate).prefix(10))
         let timestampString = iso8601.string(from: entry.timestamp)
         
+        let sourcesArray: [[String: String]]? = entry.sources?.map { ["name": $0.name, "url": $0.url, "icon": $0.icon] }
+
         let body: [String: Any] = [
             "food_name": entry.foodName,
             "calories": entry.calories ?? NSNull(),
@@ -145,10 +151,12 @@ class FoodEntryService {
             "sodium": entry.sodium ?? NSNull(),
             "sugar": entry.sugar ?? NSNull(),
             "serving_size": entry.servingSize ?? NSNull(),
+            "image_url": entry.imageUrl ?? NSNull(),
+            "sources": sourcesArray ?? NSNull(),
             "entry_date": entryDateString,
             "timestamp": timestampString
         ]
-        
+
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -219,6 +227,8 @@ class FoodEntryService {
         let iso8601 = ISO8601DateFormatter()
         let timestampString = iso8601.string(from: entry.timestamp)
 
+        let sourcesArray: [[String: String]]? = entry.sources?.map { ["name": $0.name, "url": $0.url, "icon": $0.icon] }
+
         let body: [String: Any] = [
             "food_name": entry.foodName,
             "calories": entry.calories ?? NSNull(),
@@ -229,6 +239,8 @@ class FoodEntryService {
             "sodium": entry.sodium ?? NSNull(),
             "sugar": entry.sugar ?? NSNull(),
             "serving_size": entry.servingSize ?? NSNull(),
+            "image_url": entry.imageUrl ?? NSNull(),
+            "sources": sourcesArray ?? NSNull(),
             "timestamp": timestampString
         ]
 

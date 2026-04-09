@@ -505,6 +505,8 @@ final class FoodLoggingViewModel: ObservableObject {
                     entry.sodium = dbEntry.sodium
                     entry.sugar = dbEntry.sugar
                     entry.servingSize = dbEntry.servingSize
+                    entry.imageUrl = dbEntry.imageUrl
+                    entry.sources = dbEntry.sources
                     entry.isLoading = false
                     if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
                         entry.timestamp = timestamp
@@ -549,6 +551,8 @@ final class FoodLoggingViewModel: ObservableObject {
                         entry.sodium = dbEntry.sodium
                         entry.sugar = dbEntry.sugar
                         entry.servingSize = dbEntry.servingSize
+                        entry.imageUrl = dbEntry.imageUrl
+                        entry.sources = dbEntry.sources
                         entry.isLoading = false
                         if let timestamp = ISO8601DateFormatter().date(from: dbEntry.timestamp) {
                             entry.timestamp = timestamp

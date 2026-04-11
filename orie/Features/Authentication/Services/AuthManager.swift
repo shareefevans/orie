@@ -15,6 +15,7 @@ class AuthManager: ObservableObject {
     @Published var isLoading = true
     @Published var currentUser: AuthService.User?
     @Published var errorMessage: String?
+    @Published var profileSetupCompleted = false
 
     private let accessTokenKey = "accessToken"
     private let refreshTokenKey = "refreshToken"
@@ -64,6 +65,7 @@ class AuthManager: ObservableObject {
                 if let user = response.user {
                     saveUser(user)
                 }
+                checkProfileSetupCompleted()
                 isAuthenticated = true
             } else {
                 // Email confirmation might be required
@@ -90,6 +92,7 @@ class AuthManager: ObservableObject {
                 if let user = response.user {
                     saveUser(user)
                 }
+                checkProfileSetupCompleted()
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -126,6 +129,7 @@ class AuthManager: ObservableObject {
                 if let user = response.user {
                     saveUser(user)
                 }
+                checkProfileSetupCompleted()
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -169,9 +173,11 @@ class AuthManager: ObservableObject {
             let user = try await AuthService.getCurrentUser(accessToken: accessToken)
             currentUser = user
             saveUser(user)
+            checkProfileSetupCompleted()
             isAuthenticated = true
         } catch {
             // Tokens are saved, mark as authenticated even if user fetch fails
+            checkProfileSetupCompleted()
             isAuthenticated = true
         }
     }
@@ -360,6 +366,19 @@ class AuthManager: ObservableObject {
         }
     }
 
+    // MARK: - Profile Setup
+
+    func markProfileSetupCompleted() {
+        guard let userId = currentUser?.id else { return }
+        UserDefaults.standard.set(true, forKey: "profileSetup_\(userId)")
+        profileSetupCompleted = true
+    }
+
+    private func checkProfileSetupCompleted() {
+        guard let userId = currentUser?.id else { profileSetupCompleted = false; return }
+        profileSetupCompleted = UserDefaults.standard.bool(forKey: "profileSetup_\(userId)")
+    }
+
     // MARK: - Refresh Session
 
     func refreshSession() async {
@@ -377,6 +396,7 @@ class AuthManager: ObservableObject {
                 if let user = response.user {
                     saveUser(user)
                 }
+                checkProfileSetupCompleted()
                 isAuthenticated = true
             } else {
                 // Server responded but returned no session — refresh token is invalid
@@ -393,6 +413,7 @@ class AuthManager: ObservableObject {
             if getAccessToken() != nil {
                 // Restore user from local storage when offline
                 currentUser = loadSavedUser()
+                checkProfileSetupCompleted()
                 isAuthenticated = true
             }
         }

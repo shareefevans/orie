@@ -83,6 +83,10 @@ struct orieApp: App {
                             .environmentObject(authManager)
                             .environmentObject(themeManager)
                             .environmentObject(subscriptionManager)
+                    } else if !authManager.profileSetupCompleted {
+                        ProfileSetupView()
+                            .environmentObject(authManager)
+                            .environmentObject(themeManager)
                     } else {
                         MainView()
                             .environmentObject(authManager)

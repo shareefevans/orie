@@ -30,17 +30,35 @@ struct LoginView: View {
             Color.appBackground(isDark)
                 .ignoresSafeArea()
 
+            // MARK: - ❇️ Orie button top-left
+            VStack {
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.hexagonpath.fill")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("orie")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(Color.primaryText(isDark))
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    .glassEffect(.regular.interactive(), in: Capsule())
+                    .padding(.leading, 16)
+
+                    Spacer()
+                }
+                .padding(.top, 8)
+                Spacer()
+            }
+
             ScrollView {
                 VStack(spacing: 24) {
-                    Spacer()
-                        .frame(height: 20)
-
-                    // MARK: - ❇️ Logo/Title
-                    Image("AppLogoText")
+                    // MARK: - ❇️ Squiggle decoration
+                    Image("squiggle_dark")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 150)
-                        .padding(.bottom, -36)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, -150)
 
                     // MARK: - ❇️ Form Card
                     VStack(spacing: 16) {
@@ -284,6 +302,7 @@ struct LoginView: View {
         }
     }
 }
+
 
 #Preview {
     LoginView(showResetPassword: .constant(false), resetPasswordToken: .constant(""))

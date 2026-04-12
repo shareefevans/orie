@@ -97,7 +97,7 @@ struct ProfileSetupView: View {
 
     // Shared
     @State private var isMetric = true
-    @State private var gender = "Other"
+    @State private var gender = "Select"
 
     // Manual
     @State private var manualHeight = 0
@@ -114,13 +114,16 @@ struct ProfileSetupView: View {
     @State private var age = 0
     @State private var height = 0
     @State private var weight = 0
-    @State private var exerciseLevel: ExerciseLevel = .moderatelyActive
-    @State private var goal: SetupGoal = .maintain
+    @State private var exerciseLevel: ExerciseLevel? = nil
+    @State private var goal: SetupGoal? = nil
 
     // Presentation
     @State private var isCalculating = false
     @State private var generatedMacros: GeneratedMacros? = nil
     @State private var isSaving = false
+    @State private var calculatingTask: Task<Void, Never>? = nil
+    @State private var showValidationErrors = false
+    @State private var showValidationAlert = false
 
     @State private var activePicker: SetupWheelPicker? = nil
     @State private var activeInput: InputField? = nil
@@ -164,22 +167,44 @@ struct ProfileSetupView: View {
             ScrollView {
                 VStack(spacing: 8) {
                     // Transparent spacer so card starts below squiggle
-                    Color.clear.frame(height: 172)
+                    Color.clear.frame(height: 125)
 
                     if let macros = generatedMacros {
+                        // MARK: - ❇️ Results heading (16px above card)
+                        VStack(spacing: 6) {
+                            Text("Review Your Breakdown")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(Color.primaryText(isDark))
+                                .multilineTextAlignment(.center)
+                            Text("Please take a moment to review your breakdown. If you'd like to make any changes you can do so now, or alternatively from your profile page within settings.")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color.secondaryText(isDark))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 16)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 16)
+
                         // MARK: - ❇️ Results card (replaces selection card)
                         ResultsCard(
                             initialMacros: macros,
                             isDark: isDark,
                             isSaving: $isSaving,
-                            onBack: { generatedMacros = nil },
+                            onBack: {
+                                generatedMacros = nil
+                                useOrieHelp = false
+                            },
                             onComplete: { finalMacros in Task { await saveOrie(macros: finalMacros) } }
                         )
                     } else {
                         // MARK: - ❇️ Toggle (above card)
                         NativeSegmentedControl(
                             options: ["Manual", "Assisted"],
-                            selectedIndex: Binding(get: { useOrieHelp ? 1 : 0 }, set: { useOrieHelp = $0 == 1 }),
+                            selectedIndex: Binding(
+                                get: { useOrieHelp ? 1 : 0 },
+                                set: { useOrieHelp = $0 == 1; showValidationErrors = false }
+                            ),
                             isDark: isDark
                         )
                         .frame(height: 50)
@@ -196,15 +221,6 @@ struct ProfileSetupView: View {
                             }
 
                             HStack(spacing: 12) {
-                                Button(action: { authManager.markProfileSetupCompleted() }) {
-                                    Text("Skip")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(isDark ? .white : .black)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 50)
-                                }
-                                .glassEffect(in: Capsule())
-
                                 Button(action: handleDone) {
                                     Group {
                                         if isSaving {
@@ -221,8 +237,7 @@ struct ProfileSetupView: View {
                                     .background(Color.accessibleYellow(isDark).opacity(0.55), in: Capsule())
                                 }
                                 .glassEffect(in: Capsule())
-                                .disabled(isSaving || (useOrieHelp && !orieFieldsComplete))
-                                .opacity(useOrieHelp && !orieFieldsComplete ? 0.5 : 1)
+                                .disabled(isSaving)
                             }
                             .padding(.top, 8)
                         }
@@ -235,6 +250,7 @@ struct ProfileSetupView: View {
                     Spacer().frame(height: 40)
                 }
             }
+            .blur(radius: isCalculating ? 3 : 0)
 
             // MARK: - ❇️ Header buttons (front-most)
             VStack {
@@ -250,7 +266,7 @@ struct ProfileSetupView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.hexagonpath.fill")
                             .font(.system(size: 14, weight: .medium))
-                        Text("Create Account")
+                        Text(generatedMacros != nil ? "Calorie Results" : "Create Account")
                             .font(.system(size: 14, weight: .semibold))
                     }
                     .foregroundColor(Color.primaryText(isDark))
@@ -267,20 +283,39 @@ struct ProfileSetupView: View {
 
             // MARK: - ❇️ Calculating overlay
             if isCalculating {
-                Color.black.opacity(0.4)
+                Color.black.opacity(0.5)
                     .ignoresSafeArea()
 
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: Color.primaryText(isDark)))
-                    Text("Calculating Results")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color.primaryText(isDark))
+                VStack(spacing: 16) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "circle.hexagonpath.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Color.primaryText(isDark))
+                        Text("Orie's Working...")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(Color.primaryText(isDark))
+                    }
+
+                    Text("Please wait a moment whilst\nwe configure your calories")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+
+                    Button(action: cancelCalculation) {
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(isDark ? .white : .black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                    }
+                    .glassEffect(in: Capsule())
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 24)
                 .padding(.vertical, 24)
                 .background(Color.cardBackground(isDark))
-                .cornerRadius(20)
+                .cornerRadius(32)
+                .padding(.horizontal, 48)
             }
         }
         .sheet(item: $activePicker) { picker in
@@ -289,6 +324,11 @@ struct ProfileSetupView: View {
         .sheet(item: $activeInput) { field in
             inputSheet(for: field)
         }
+        .alert("Required Information Missing", isPresented: $showValidationAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please enter the required information before continuing.")
+        }
     }
 
     // MARK: - Manual Rows
@@ -296,25 +336,25 @@ struct ProfileSetupView: View {
     @ViewBuilder private var manualRows: some View {
         SetupPickerRow(label: "System", value: isMetric ? "Metric" : "Imperial", isDark: isDark) { activePicker = .system }
         setupDivider
-        SetupPickerRow(label: "Gender", value: gender, isDark: isDark) { activePicker = .gender }
+        SetupPickerRow(label: "Gender", value: gender, isDark: isDark, isInvalid: showValidationErrors && gender == "Select") { activePicker = .gender }
         setupDivider
-        SetupValueRow(label: "Height", value: manualHeight > 0 ? "\(manualHeight) \(isMetric ? "CM" : "FT")" : "Enter \(isMetric ? "CM" : "FT")", isDark: isDark) { activeInput = .manualHeight }
+        SetupValueRow(label: "Height", value: manualHeight > 0 ? "\(manualHeight) \(isMetric ? "CM" : "FT")" : "Enter \(isMetric ? "CM" : "FT")", isDark: isDark, isInvalid: showValidationErrors && manualHeight == 0) { activeInput = .manualHeight }
         setupDivider
-        SetupValueRow(label: "Weight", value: manualWeight > 0 ? "\(manualWeight) \(isMetric ? "KG" : "LBS")" : "Enter \(isMetric ? "KG" : "LBS")", isDark: isDark) { activeInput = .manualWeight }
+        SetupValueRow(label: "Weight", value: manualWeight > 0 ? "\(manualWeight) \(isMetric ? "KG" : "LBS")" : "Enter \(isMetric ? "KG" : "LBS")", isDark: isDark, isInvalid: showValidationErrors && manualWeight == 0) { activeInput = .manualWeight }
         setupDivider
-        SetupValueRow(label: "Calories",      value: manualCalories > 0 ? "\(manualCalories)"                          : "Enter",    isDark: isDark) { activeInput = .calories }
+        SetupValueRow(label: "Calories",      value: manualCalories > 0 ? "\(manualCalories)"     : "Enter", isDark: isDark, isInvalid: showValidationErrors && manualCalories == 0) { activeInput = .calories }
         setupDivider
-        SetupValueRow(label: "Protein",       value: manualProtein  > 0 ? "\(manualProtein) g"                         : "Enter",    isDark: isDark) { activeInput = .protein }
+        SetupValueRow(label: "Protein",       value: manualProtein  > 0 ? "\(manualProtein) g"    : "Enter", isDark: isDark, isInvalid: showValidationErrors && manualProtein == 0)  { activeInput = .protein }
         setupDivider
-        SetupValueRow(label: "Carbohydrates", value: manualCarbs    > 0 ? "\(manualCarbs) g"                           : "Enter",    isDark: isDark) { activeInput = .carbs }
+        SetupValueRow(label: "Carbohydrates", value: manualCarbs    > 0 ? "\(manualCarbs) g"      : "Enter", isDark: isDark, isInvalid: showValidationErrors && manualCarbs == 0)    { activeInput = .carbs }
         setupDivider
-        SetupValueRow(label: "Fats",          value: manualFats     > 0 ? "\(manualFats) g"                            : "Enter",    isDark: isDark) { activeInput = .fats }
+        SetupValueRow(label: "Fats",          value: manualFats     > 0 ? "\(manualFats) g"       : "Enter", isDark: isDark, isInvalid: showValidationErrors && manualFats == 0)     { activeInput = .fats }
         setupDivider
-        SetupValueRow(label: "Sodium",        value: manualSodium   > 0 ? "\(manualSodium) mg"                         : "Enter",    isDark: isDark) { activeInput = .sodium }
+        SetupValueRow(label: "Sodium",        value: manualSodium   > 0 ? "\(manualSodium) mg"    : "Enter", isDark: isDark) { activeInput = .sodium }
         setupDivider
-        SetupValueRow(label: "Sugars",        value: manualSugar    > 0 ? "\(manualSugar) g"                           : "Enter",    isDark: isDark) { activeInput = .sugar }
+        SetupValueRow(label: "Sugars",        value: manualSugar    > 0 ? "\(manualSugar) g"      : "Enter", isDark: isDark) { activeInput = .sugar }
         setupDivider
-        SetupValueRow(label: "Fibre",         value: manualFibre    > 0 ? "\(manualFibre) g"                           : "Enter",    isDark: isDark) { activeInput = .fibre }
+        SetupValueRow(label: "Fibre",         value: manualFibre    > 0 ? "\(manualFibre) g"      : "Enter", isDark: isDark) { activeInput = .fibre }
     }
 
     // MARK: - Orie Rows
@@ -322,17 +362,17 @@ struct ProfileSetupView: View {
     @ViewBuilder private var orieRows: some View {
         SetupPickerRow(label: "System",         value: isMetric ? "Metric" : "Imperial", isDark: isDark) { activePicker = .system }
         setupDivider
-        SetupPickerRow(label: "Gender",         value: gender, isDark: isDark) { activePicker = .gender }
+        SetupPickerRow(label: "Gender",         value: gender, isDark: isDark, isInvalid: showValidationErrors && gender == "Select") { activePicker = .gender }
         setupDivider
-        SetupValueRow( label: "Age",            value: age    > 0 ? "\(age)"                                           : "Enter",                           isDark: isDark) { activeInput = .age }
+        SetupValueRow(label: "Age",    value: age    > 0 ? "\(age)"                                                   : "Enter",                             isDark: isDark, isInvalid: showValidationErrors && age == 0)    { activeInput = .age }
         setupDivider
-        SetupValueRow( label: "Height", value: height > 0 ? "\(height) \(isMetric ? "CM" : "FT")" : "Enter \(isMetric ? "CM" : "FT")", isDark: isDark) { activeInput = .height }
+        SetupValueRow(label: "Height", value: height > 0 ? "\(height) \(isMetric ? "CM" : "FT")"  : "Enter \(isMetric ? "CM" : "FT")",  isDark: isDark, isInvalid: showValidationErrors && height == 0) { activeInput = .height }
         setupDivider
-        SetupValueRow( label: "Weight", value: weight > 0 ? "\(weight) \(isMetric ? "KG" : "LBS")" : "Enter \(isMetric ? "KG" : "LBS")", isDark: isDark) { activeInput = .weight }
+        SetupValueRow(label: "Weight", value: weight > 0 ? "\(weight) \(isMetric ? "KG" : "LBS")" : "Enter \(isMetric ? "KG" : "LBS")", isDark: isDark, isInvalid: showValidationErrors && weight == 0) { activeInput = .weight }
         setupDivider
-        SetupPickerRow(label: "Exercise Level", value: exerciseLevel.rawValue, isDark: isDark) { activePicker = .exerciseLevel }
+        SetupPickerRow(label: "Exercise Level", value: exerciseLevel?.rawValue ?? "Select", isDark: isDark, isInvalid: showValidationErrors && exerciseLevel == nil) { activePicker = .exerciseLevel }
         setupDivider
-        SetupPickerRow(label: "Goal",           value: goal.rawValue,          isDark: isDark) { activePicker = .goal }
+        SetupPickerRow(label: "Goal",           value: goal?.rawValue ?? "Select",          isDark: isDark, isInvalid: showValidationErrors && goal == nil)          { activePicker = .goal }
     }
 
     private var setupDivider: some View {
@@ -377,15 +417,15 @@ struct ProfileSetupView: View {
 
     private var exerciseLevelBinding: Binding<String> {
         Binding(
-            get: { exerciseLevel.rawValue },
-            set: { val in exerciseLevel = ExerciseLevel.allCases.first { $0.rawValue == val } ?? .moderatelyActive }
+            get: { exerciseLevel?.rawValue ?? "Select" },
+            set: { val in exerciseLevel = val == "Select" ? nil : ExerciseLevel.allCases.first { $0.rawValue == val } }
         )
     }
 
     private var goalBinding: Binding<String> {
         Binding(
-            get: { goal.rawValue },
-            set: { val in goal = SetupGoal.allCases.first { $0.rawValue == val } ?? .maintain }
+            get: { goal?.rawValue ?? "Select" },
+            set: { val in goal = val == "Select" ? nil : SetupGoal.allCases.first { $0.rawValue == val } }
         )
     }
 
@@ -395,38 +435,64 @@ struct ProfileSetupView: View {
         case .system:
             WheelPickerSheet(options: ["Metric", "Imperial"], selection: systemBinding) { activePicker = nil }
         case .gender:
-            WheelPickerSheet(options: ["Male", "Female", "Other"], selection: $gender) { activePicker = nil }
+            WheelPickerSheet(options: ["Select", "Male", "Female", "Other"], selection: $gender) { activePicker = nil }
         case .exerciseLevel:
-            WheelPickerSheet(options: ExerciseLevel.allCases.map(\.rawValue), selection: exerciseLevelBinding) { activePicker = nil }
+            WheelPickerSheet(options: ["Select"] + ExerciseLevel.allCases.map(\.rawValue), selection: exerciseLevelBinding) { activePicker = nil }
         case .goal:
-            WheelPickerSheet(options: SetupGoal.allCases.map(\.rawValue), selection: goalBinding) { activePicker = nil }
+            WheelPickerSheet(options: ["Select"] + SetupGoal.allCases.map(\.rawValue), selection: goalBinding) { activePicker = nil }
         }
     }
 
     // MARK: - Actions
 
     private var orieFieldsComplete: Bool {
-        age > 0 && height > 0 && weight > 0
+        gender != "Select" && age > 0 && height > 0 && weight > 0 &&
+        exerciseLevel != nil && goal != nil
+    }
+
+    private var manualFieldsComplete: Bool {
+        gender != "Select" && manualHeight > 0 && manualWeight > 0 &&
+        manualCalories > 0 && manualProtein > 0 &&
+        manualCarbs > 0 && manualFats > 0
     }
 
     private func handleDone() {
         if useOrieHelp {
-            guard orieFieldsComplete else { return }
+            guard orieFieldsComplete else {
+                showValidationErrors = true
+                showValidationAlert = true
+                return
+            }
+            showValidationErrors = false
             isCalculating = true
             generatedMacros = nil
-            Task {
+            calculatingTask = Task {
                 try? await Task.sleep(nanoseconds: 900_000_000)
+                guard !Task.isCancelled else { return }
                 let hCM = isMetric ? Double(height) : Double(height) * 30.48
                 let wKG = isMetric ? Double(weight) : Double(weight) * 0.453592
                 generatedMacros = TDEECalculator.calculate(
                     gender: gender, age: age, heightCM: hCM, weightKG: wKG,
-                    exerciseLevel: exerciseLevel, goal: goal
+                    exerciseLevel: exerciseLevel ?? .moderatelyActive,
+                    goal: goal ?? .maintain
                 )
                 isCalculating = false
             }
         } else {
+            guard manualFieldsComplete else {
+                showValidationErrors = true
+                showValidationAlert = true
+                return
+            }
+            showValidationErrors = false
             Task { await saveManual() }
         }
+    }
+
+    private func cancelCalculation() {
+        calculatingTask?.cancel()
+        calculatingTask = nil
+        isCalculating = false
     }
 
     private func saveManual() async {
@@ -483,7 +549,7 @@ struct ProfileSetupView: View {
 
 // MARK: - Results Card
 
-private struct ResultsCard: View {
+struct ResultsCard: View {
     let isDark: Bool
     @Binding var isSaving: Bool
     var onBack: () -> Void
@@ -525,7 +591,7 @@ private struct ResultsCard: View {
 
             HStack(spacing: 12) {
                 Button(action: onBack) {
-                    Text("Go Back")
+                    Text("Re-Configure")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(isDark ? .white : .black)
                         .frame(maxWidth: .infinity)
@@ -588,11 +654,17 @@ struct SetupPickerRow: View {
     let label: String
     let value: String
     let isDark: Bool
+    var isInvalid: Bool = false
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack {
+                if isInvalid {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.accessibleYellow(isDark))
+                }
                 Text(label)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color.primaryText(isDark))
@@ -616,11 +688,17 @@ struct SetupValueRow: View {
     let label: String
     let value: String
     let isDark: Bool
+    var isInvalid: Bool = false
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack {
+                if isInvalid {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.accessibleYellow(isDark))
+                }
                 Text(label)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(Color.primaryText(isDark))
@@ -711,8 +789,115 @@ struct WheelPickerSheet: View {
     }
 }
 
-#Preview {
+// MARK: - Previews
+
+#Preview("Initial – Manual") {
     ProfileSetupView()
         .environmentObject(AuthManager())
         .environmentObject(ThemeManager())
+}
+
+#Preview("Initial – Assisted") {
+    // Wraps the view and flips to the assisted tab on appear
+    struct AssistedWrapper: View {
+        @State private var dummy = false
+        var body: some View {
+            ProfileSetupView()
+                .environmentObject(AuthManager())
+                .environmentObject(ThemeManager())
+                .onAppear {
+                    // SwiftUI will render with default state; tap "Assisted" in the canvas to switch
+                }
+        }
+    }
+    return AssistedWrapper()
+}
+
+#Preview("Loading Modal") {
+    // Shows the calculating overlay over the assisted form
+    struct LoadingWrapper: View {
+        var body: some View {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                // Simulated blurred background
+                VStack { Spacer() }
+                    .blur(radius: 3)
+
+                Color.black.opacity(0.5).ignoresSafeArea()
+
+                VStack(spacing: 16) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "circle.hexagonpath.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                        Text("Orie's Working...")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    Text("Please wait a moment whilst\nwe configure your calories")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 4)
+                        .lineSpacing(4)
+                    
+                    Text("Cancel")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .glassEffect(in: Capsule())
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 24)
+                .background(Color(red: 28/255, green: 28/255, blue: 28/255))
+                .cornerRadius(32)
+                .padding(.horizontal, 48)
+            }
+        }
+    }
+    return LoadingWrapper()
+}
+
+#Preview("Results Card") {
+    let mockMacros = GeneratedMacros(
+        calories: 2200,
+        protein: 200,
+        carbs: 180,
+        fats: 90,
+        sodium: 3000,
+        fibre: 50,
+        sugar: 60
+    )
+    ZStack {
+        Color.black.ignoresSafeArea()
+        ScrollView {
+            VStack(spacing: 8) {
+                Color.clear.frame(height: 60)
+
+                VStack(spacing: 6) {
+                    Text("Review Your Breakdown")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                    Text("Please take a moment to review your breakdown. If you'd like to make any changes you can do so now, or alternatively from your profile page within settings.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                        .lineSpacing(4)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+
+                ResultsCard(
+                    initialMacros: mockMacros,
+                    isDark: true,
+                    isSaving: .constant(false),
+                    onBack: {},
+                    onComplete: { _ in }
+                )
+            }
+        }
+    }
 }

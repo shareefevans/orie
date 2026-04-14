@@ -90,7 +90,18 @@ class FoodEntryService {
     }
     
     // MARK: - API Methods
-    
+
+    static func hasAnyEntries(accessToken: String) async throws -> Bool {
+        guard let url = URL(string: "\(baseURL)/api/food-entries/any") else {
+            throw URLError(.badURL)
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let response = try JSONDecoder().decode([String: Bool].self, from: data)
+        return response["hasEntries"] ?? false
+    }
+
     static func getFoodEntries(accessToken: String, date: Date?) async throws -> [FoodEntryDB] {
         var urlString = "\(baseURL)/api/food-entries"
         

@@ -355,6 +355,9 @@ struct ProfileSheet: View {
                     Text("You're currently on Orie's Free Plan")
                         .font(.footnote)
                         .foregroundColor(Color.secondaryText(isDark))
+                    Text("AI: \(subscriptionManager.aiUsedToday)/\(subscriptionManager.aiLimit) queries today")
+                        .font(.caption2)
+                        .foregroundColor(Color.secondaryText(isDark))
                 }
             }
             .padding(.bottom, 8)

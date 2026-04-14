@@ -39,6 +39,8 @@ struct MainView: View {
     @State private var healthTabId: UUID = UUID()
     @AppStorage("isIntakeCardExpanded") private var isIntakeCardExpanded: Bool = false
     @AppStorage("isOrieAssistEnabled") private var isOrieAssistEnabled: Bool = true
+    @AppStorage("hasShownFirstMealCelebration") private var hasShownFirstMealCelebration: Bool = false
+    @State private var isShowingFoodInput: Bool = false
     @State private var autocompleteSuggestion: String? = nil
     @State private var keyboardHeight: CGFloat = 0
     @State private var shouldScrollToInput = false
@@ -48,6 +50,10 @@ struct MainView: View {
     @State private var triggerCameraFromNav = false
     @State private var showOrieChat = false
     @State private var showPremiumRequired = false
+    @State private var showFirstMealCelebration = false
+    @State private var awaitingFirstEntryCalculation = false
+    @State private var showIntakeCardNudge = false
+    @State private var pulseIntakeCard = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -275,6 +281,54 @@ struct MainView: View {
     }
 
     @ViewBuilder
+    private var firstEntryCard: some View {
+        VStack(spacing: 20) {
+            Text("Log Your First Entry")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(Color.primaryText(isDark))
+                .multilineTextAlignment(.center)
+
+            (
+                Text("Track your intake here. You can ")
+                + Text(Image(systemName: "plus")).baselineOffset(-1)
+                + Text(" type, ")
+                + Text(Image(systemName: "mic.fill")).baselineOffset(-1)
+                + Text(" talk, and ")
+                + Text(Image(systemName: "camera.fill")).baselineOffset(-1)
+                + Text(" photograph your meal. Once done, enter or tap the ")
+                + Text(Image(systemName: "arrow.turn.down.left")).baselineOffset(-1)
+                + Text(" 'tab' in the bottom right of your keyboard to log, ")
+                + Text("Orie will handle the breakdown.")
+                    .foregroundColor(Color.accessibleYellow(isDark))
+            )
+            .font(.system(size: 14))
+            .foregroundColor(Color.secondaryText(isDark))
+            .multilineTextAlignment(.center)
+            .lineSpacing(4)
+
+            Button(action: {
+                isShowingFoodInput = true
+                isInputFocused = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("Tap to Enter Food...")
+                        .font(.system(size: 15, weight: .medium))
+                }
+                .foregroundColor(Color.primaryText(isDark))
+                .padding(.horizontal, 28)
+                .padding(.vertical, 14)
+            }
+            .glassEffect(.regular.tint(Color.yellow.opacity(0.18)).interactive(), in: Capsule())
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 100)
+        .padding(.bottom, 40)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
     private func consumedTabContent(proxy: ScrollViewProxy) -> some View {
         if selectedTab == "consumed" {
             VStack(spacing: 8) {
@@ -417,11 +471,27 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(isIntakeCardExpanded ? 32 : 32)
+                    .overlay {
+                        IntakeCardPulseOverlay(active: pulseIntakeCard, isDark: isDark)
+                    }
                     .contentShape(Rectangle())
-                    .onTapGesture { isIntakeCardExpanded.toggle() }
+                    .onTapGesture {
+                        isIntakeCardExpanded.toggle()
+                        if showIntakeCardNudge {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showIntakeCardNudge = false
+                            }
+                            pulseIntakeCard = false
+                        }
+                    }
 
                     // Food entries + input
                     VStack(spacing: 0) {
+                        if vm.hasAnyEntries == false && !isShowingFoodInput {
+                            firstEntryCard
+                        }
+
+                        if (vm.hasAnyEntries ?? false) || isShowingFoodInput {
                         ForEach(entriesByPeriod, id: \.period) { group in
                             if isOrieAssistEnabled {
                                 mealPeriodHeader(
@@ -479,32 +549,12 @@ struct MainView: View {
                             triggerCamera: $triggerCameraFromNav,
                             onRecordingChanged: { isRecordingFromField = $0 }
                         )
+                        } // end if hasEverLoggedFood || isShowingFoodInput
                     }
-                    
+
                     .padding(.horizontal, 24)
                     .frame(maxWidth: .infinity)
 
-                    if filteredEntries.isEmpty && isDark {
-                        VStack(spacing: -24) {
-                            Image("lazy_man")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 200, height: 200)
-
-                            VStack(spacing: 4) {
-                                Text("Hey lazy...Watchu doing?")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color.secondaryText(isDark))
-
-                                Text("Sleeping on your macros?")
-                                    .font(.system(size: 16))
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color.primaryText(isDark))
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 32)
-                    }
                 }
             }
             .padding(.top, 24)
@@ -576,10 +626,40 @@ struct MainView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .scrollIndicators(.hidden)
-                .onChange(of: vm.foodEntries.count) { _, _ in
+                .onChange(of: vm.foodEntries.count) { oldCount, newCount in
+                    if oldCount == 0 && newCount > 0 && !hasShownFirstMealCelebration {
+                        awaitingFirstEntryCalculation = true
+                    }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation { proxy.scrollTo("inputField", anchor: .top) }
                     }
+                }
+                .onChange(of: isInputFocused) { _, isFocused in
+                    if !isFocused && vm.hasAnyEntries == false {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isShowingFoodInput = false
+                        }
+                    }
+                }
+                .onChange(of: vm.hasAnyEntries) { _, newValue in
+                    if newValue == false {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isShowingFoodInput = false
+                            isInputFocused = false
+                        }
+                        hasShownFirstMealCelebration = false
+                        showIntakeCardNudge = false
+                        pulseIntakeCard = false
+                    }
+                }
+                .onChange(of: vm.foodEntries) { _, entries in
+                    guard awaitingFirstEntryCalculation,
+                          let first = entries.first,
+                          !first.isLoading,
+                          first.calories != nil else { return }
+                    awaitingFirstEntryCalculation = false
+                    hasShownFirstMealCelebration = true
+                    showFirstMealCelebration = true
                 }
                 .onChange(of: shouldScrollToInput) { _, newValue in
                     if newValue {
@@ -677,6 +757,33 @@ struct MainView: View {
                 .zIndex(10)
             }
 
+            // MARK: - ❇️ Intake Card Nudge
+            if showIntakeCardNudge {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "hand.tap.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color.primaryText(isDark))
+                        Text("Tap the daily intake card to see your macros")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(Color.primaryText(isDark))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    #if os(iOS)
+                    .glassEffect(.regular.tint(Color.yellow.opacity(0.15)), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    #else
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    #endif
+                    .padding(.bottom, 100)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeOut(duration: 0.3), value: showIntakeCardNudge)
+                .zIndex(13)
+                .ignoresSafeArea(.keyboard)
+            }
+
             // MARK: - ❇️ Award Banner
             if let award = vm.awardBannerAchievement {
                 VStack {
@@ -735,6 +842,20 @@ struct MainView: View {
         }
 
         // MARK: - ❇️ Sheet Modifiers
+        .sheet(isPresented: $showFirstMealCelebration, onDismiss: {
+            showIntakeCardNudge = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                pulseIntakeCard = true
+            }
+        }) {
+            FirstMealCelebrationView {
+                showFirstMealCelebration = false
+                isInputFocused = false
+            }
+            .presentationBackground(Color(red: 0x18/255, green: 0x18/255, blue: 0x18/255))
+            .presentationDetents([.fraction(0.75)])
+            .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showAwards) {
             AwardSheet()
                 .presentationBackground(Color.appBackground(isDark))
@@ -787,6 +908,7 @@ struct MainView: View {
         .onAppear {
             vm.configure(authManager: authManager, localNotificationManager: localNotificationManager, networkMonitor: networkMonitor)
             vm.load(for: selectedDate)
+            vm.checkHasAnyEntries()
         }
         .onChange(of: selectedDate) { _, _ in
             vm.loadFoodEntries(for: selectedDate)
@@ -845,6 +967,7 @@ struct MainView: View {
             if newPhase == .active {
                 vm.loadFoodEntries(for: selectedDate)
                 vm.loadWeeklyFoodEntries()
+                vm.checkHasAnyEntries()
                 let today = DateFormatter.yyyyMMdd.string(from: Date())
                 if today != vm.lastWeeklyProgressRefreshDate {
                     vm.lastWeeklyProgressRefreshDate = today
@@ -854,6 +977,32 @@ struct MainView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - ❇️ Intake Card Pulse Overlay
+
+private struct IntakeCardPulseOverlay: View {
+    let active: Bool
+    let isDark: Bool
+
+    @State private var animating = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 32, style: .continuous)
+            .stroke(Color.accessibleYellow(isDark), lineWidth: 1.5)
+            .opacity(animating ? 0.7 : 0)
+            .onChange(of: active) { _, newValue in
+                if newValue {
+                    withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                        animating = true
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        animating = false
+                    }
+                }
+            }
     }
 }
 

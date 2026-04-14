@@ -150,7 +150,7 @@ struct PlanSelectionView: View {
                         FeatureRow(icon: "checkmark.circle.fill", text: "Manual food entry (unlimited)", color: .green, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Full dashboard & tracking", color: .green, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Food history & achievements", color: .green, isDark: isDark)
-                        FeatureRow(icon: "xmark.circle.fill", text: "No AI nutrition lookup", color: .gray, isDark: isDark)
+                        FeatureRow(icon: "checkmark.circle.fill", text: "AI nutrition lookup (3/day)", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "xmark.circle.fill", text: "No image scanning", color: .gray, isDark: isDark)
 
                         // CTA inside card

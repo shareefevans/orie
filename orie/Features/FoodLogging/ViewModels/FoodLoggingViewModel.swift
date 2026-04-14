@@ -34,6 +34,7 @@ final class FoodLoggingViewModel: ObservableObject {
     @Published var weeklyNote: String = "Tap to see your weekly overview and daily averages."
     @Published var weeklyTip: String? = nil
     @Published var showUpgradePrompt: Bool = false
+    @Published var hasAnyEntries: Bool? = nil
 
     @AppStorage("lastWeeklyProgressRefreshDate") var lastWeeklyProgressRefreshDate: String = ""
 
@@ -238,6 +239,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 foodEntries[index].dbId = dbEntry.id
                 localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                 loadWeeklyFoodEntries()
+                hasAnyEntries = true
 
                 // Update calorie progress activity
                 updateCalorieProgressActivity()
@@ -313,8 +315,7 @@ final class FoodLoggingViewModel: ObservableObject {
                     foodEntries[index].dbId = dbEntry.id
                     localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                     loadWeeklyFoodEntries()
-
-                    // Update calorie progress activity
+                    hasAnyEntries = true
                     updateCalorieProgressActivity()
                 }
             } catch APIError.sessionExpired {
@@ -352,6 +353,7 @@ final class FoodLoggingViewModel: ObservableObject {
                     foodEntries[index].dbId = dbEntry.id
                     localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                     loadWeeklyFoodEntries()
+                    hasAnyEntries = true
                     updateCalorieProgressActivity()
                 }
             } catch APIError.sessionExpired {
@@ -435,6 +437,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
                 loadFoodEntries(for: entry.entryDate)
                 loadWeeklyFoodEntries()
+                checkHasAnyEntries()
 
                 // Update calorie progress activity after deletion
                 updateCalorieProgressActivity()
@@ -485,6 +488,20 @@ final class FoodLoggingViewModel: ObservableObject {
     }
 
     // MARK: - ❇️ Data Loading
+
+    func checkHasAnyEntries() {
+        Task {
+            guard let authManager else { return }
+            do {
+                let result = try await authManager.withAuthRetry { accessToken in
+                    try await FoodEntryService.hasAnyEntries(accessToken: accessToken)
+                }
+                await MainActor.run { hasAnyEntries = result }
+            } catch {
+                await MainActor.run { hasAnyEntries = false }
+            }
+        }
+    }
 
     func loadFoodEntries(for date: Date) {
         isEntriesLoading = true

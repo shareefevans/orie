@@ -17,9 +17,9 @@ struct BottomNavigationBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // MARK: - Left nav button (pencil / food entry)
+            // MARK: - Left nav button (plus / food entry)
             Button(action: { onFocusInput?() }) {
-                Image(systemName: "pencil.tip")
+                Image(systemName: "plus")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.primaryText(isDark))
                     .frame(width: 50, height: 50)

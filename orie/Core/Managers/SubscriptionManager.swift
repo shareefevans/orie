@@ -73,7 +73,7 @@ final class SubscriptionManager: ObservableObject {
             }
             tier = .free
             aiUsedToday = 0
-            aiLimit = 0
+            aiLimit = 3
             markPlanSelected(userId: userId)
         } catch {
             print("Failed to select free tier: \(error)")

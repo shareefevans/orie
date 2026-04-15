@@ -58,6 +58,7 @@ class APIService {
 
     struct SubscriptionStatus: Codable {
         let tier: String
+        let hasPlan: Bool
         let status: String
         let expiresAt: String?
         let aiUsedToday: Int
@@ -127,6 +128,23 @@ class APIService {
         default:
             throw URLError(.badServerResponse)
         }
+    }
+
+    // MARK: - Profile Endpoints
+
+    static func getProfileIsComplete(accessToken: String) async throws -> Bool {
+        guard let url = URL(string: "\(baseURL)/api/profile") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
+        guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
+        struct Wrapper: Decodable {
+            struct Profile: Decodable { let isComplete: Bool }
+            let profile: Profile
+        }
+        return try JSONDecoder().decode(Wrapper.self, from: data).profile.isComplete
     }
 
     // MARK: - Subscription Endpoints

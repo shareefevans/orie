@@ -849,6 +849,7 @@ struct MainView: View {
             }
         }) {
             FirstMealCelebrationView {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 showFirstMealCelebration = false
                 isInputFocused = false
             }

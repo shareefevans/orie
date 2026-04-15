@@ -93,6 +93,7 @@ class AuthManager: ObservableObject {
                     saveUser(user)
                 }
                 checkProfileSetupCompleted()
+                await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -130,6 +131,7 @@ class AuthManager: ObservableObject {
                     saveUser(user)
                 }
                 checkProfileSetupCompleted()
+                await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
             }
         } catch let error as AuthError {
@@ -174,10 +176,12 @@ class AuthManager: ObservableObject {
             currentUser = user
             saveUser(user)
             checkProfileSetupCompleted()
+            await restoreOnboardingStateIfNeeded()
             isAuthenticated = true
         } catch {
             // Tokens are saved, mark as authenticated even if user fetch fails
             checkProfileSetupCompleted()
+            await restoreOnboardingStateIfNeeded()
             isAuthenticated = true
         }
     }
@@ -366,6 +370,30 @@ class AuthManager: ObservableObject {
         }
     }
 
+    // MARK: - Returning User Restoration
+
+    /// Silently restores onboarding flags from the backend for users who reinstalled the app.
+    /// Only makes network calls when a flag is actually missing — no-ops on normal launches.
+    func restoreOnboardingStateIfNeeded() async {
+        guard let userId = currentUser?.id else { return }
+
+        if !UserDefaults.standard.bool(forKey: "planSelected_\(userId)") {
+            if let status = try? await withAuthRetry({ token in
+                try await APIService.getSubscriptionStatus(accessToken: token)
+            }), status.hasPlan {
+                UserDefaults.standard.set(true, forKey: "planSelected_\(userId)")
+            }
+        }
+
+        if !profileSetupCompleted {
+            if let isComplete = try? await withAuthRetry({ token in
+                try await APIService.getProfileIsComplete(accessToken: token)
+            }), isComplete {
+                markProfileSetupCompleted()
+            }
+        }
+    }
+
     // MARK: - Profile Setup
 
     func markProfileSetupCompleted() {
@@ -397,6 +425,7 @@ class AuthManager: ObservableObject {
                     saveUser(user)
                 }
                 checkProfileSetupCompleted()
+                await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
             } else {
                 // Server responded but returned no session — refresh token is invalid

@@ -527,9 +527,16 @@ struct MainView: View {
                             text: $currentInput,
                             isDark: isDark,
                             onSubmit: { foodName in
+                                let isFirstEverEntry = !hasShownFirstMealCelebration && vm.foodEntries.isEmpty
                                 vm.addFoodEntry(foodName: foodName, date: selectedDate, isOffline: !networkMonitor.isConnected)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    withAnimation { proxy.scrollTo("inputField", anchor: .top) }
+                                if isFirstEverEntry {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                        isInputFocused = false
+                                    }
+                                } else {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        withAnimation { proxy.scrollTo("inputField", anchor: .top) }
+                                    }
                                 }
                             },
                             onImageAnalyzed: { result in
@@ -635,7 +642,7 @@ struct MainView: View {
                     }
                 }
                 .onChange(of: isInputFocused) { _, isFocused in
-                    if !isFocused && vm.hasAnyEntries == false {
+                    if !isFocused && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isShowingFoodInput = false
                         }

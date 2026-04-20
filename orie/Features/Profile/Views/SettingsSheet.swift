@@ -11,10 +11,6 @@ struct SettingsSheet: View {
     @EnvironmentObject var localNotificationManager: LocalNotificationManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
 
-    @State private var showFeedbackModal = false
-    @State private var feedbackText = ""
-    @State private var showFeedbackSentAlert = false
-
     private var isDark: Bool { themeManager.isDarkMode }
 
     var body: some View {
@@ -36,8 +32,7 @@ struct SettingsSheet: View {
 
                     SettingsTabContent(
                         isLoading: false,
-                        isDark: isDark,
-                        onFeedback: { feedbackText = ""; showFeedbackModal = true }
+                        isDark: isDark
                     )
                 }
                 .padding(.horizontal)
@@ -51,65 +46,6 @@ struct SettingsSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear {
             Task { await subscriptionManager.loadStatus(authManager: authManager) }
-        }
-        .alert("Feedback Sent", isPresented: $showFeedbackSentAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Thank you for your feedback!")
-        }
-        .sheet(isPresented: $showFeedbackModal) {
-            NavigationView {
-                Form {
-                    Section {
-                        ZStack(alignment: .topLeading) {
-                            if feedbackText.isEmpty {
-                                Text("Your feedback")
-                                    .foregroundColor(.gray)
-                                    .padding(.top, 8)
-                                    .padding(.leading, 4)
-                            }
-                            TextEditor(text: $feedbackText)
-                                .frame(minHeight: 120)
-                        }
-                    }
-                }
-                .navigationTitle("Send Feedback")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { showFeedbackModal = false }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Send") { sendFeedback() }
-                            .disabled(feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-    }
-
-    private func sendFeedback() {
-        guard !feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        let name = authManager.currentUser?.email ?? "Unknown User"
-        let email = authManager.currentUser?.email ?? "No email"
-        let message = feedbackText
-        showFeedbackModal = false
-        showFeedbackSentAlert = true
-        Task {
-            do {
-                try await authManager.withAuthRetry { accessToken in
-                    try await APIService.sendFeedback(
-                        accessToken: accessToken,
-                        name: name,
-                        email: email,
-                        message: message
-                    )
-                }
-            } catch {
-                print("Failed to send feedback: \(error)")
-            }
         }
     }
 }

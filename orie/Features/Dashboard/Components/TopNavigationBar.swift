@@ -21,7 +21,13 @@ struct TopNavigationBar: View {
     var streakCount: Int = StreakManager.shared.currentStreak
     var hasUnreadNotifications: Bool = false
 
+    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var themeManager: ThemeManager
+
     @State private var showSettingsDropdown = false
+    @State private var showFeedbackModal = false
+    @State private var feedbackText = ""
+    @State private var showFeedbackSentAlert = false
     @Namespace private var animation
 
     var body: some View {
@@ -151,6 +157,66 @@ struct TopNavigationBar: View {
                     .transaction { $0.animation = nil }
             }
         }
+        .alert("Feedback Sent", isPresented: $showFeedbackSentAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Thank you for your feedback!")
+        }
+        .sheet(isPresented: $showFeedbackModal) {
+            NavigationView {
+                Form {
+                    Section {
+                        ZStack(alignment: .topLeading) {
+                            if feedbackText.isEmpty {
+                                Text("Your feedback")
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 4)
+                            }
+                            TextEditor(text: $feedbackText)
+                                .frame(minHeight: 120)
+                        }
+                    }
+                }
+                .navigationTitle("Send Feedback")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showFeedbackModal = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Send") { sendFeedback() }
+                            .disabled(feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
+        }
+    }
+
+    private func sendFeedback() {
+        guard !feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let name = authManager.currentUser?.email ?? "Unknown User"
+        let email = authManager.currentUser?.email ?? "No email"
+        let message = feedbackText
+        showFeedbackModal = false
+        showFeedbackSentAlert = true
+        Task {
+            do {
+                try await authManager.withAuthRetry { accessToken in
+                    try await APIService.sendFeedback(
+                        accessToken: accessToken,
+                        name: name,
+                        email: email,
+                        message: message
+                    )
+                }
+            } catch {
+                print("Failed to send feedback: \(error)")
+            }
+        }
     }
 
     private var settingsDropdownContent: some View {
@@ -222,6 +288,36 @@ struct TopNavigationBar: View {
                         .foregroundColor(Color.iconColor(isDark))
                         .frame(width: 20)
                     Text("Assistance")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { showSettingsDropdown = false; feedbackText = ""; showFeedbackModal = true }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "bubble.left.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Feedback")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { showSettingsDropdown = false }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "envelope.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.iconColor(isDark))
+                        .frame(width: 20)
+                    Text("Contact")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Color.primaryText(isDark))
                     Spacer()

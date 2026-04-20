@@ -20,7 +20,6 @@ struct ProfileTabContent: View {
     @Binding var dailyFibre: Int
     @Binding var dailySugar: Int
     var onSave: () -> Void
-    var onFeedback: () -> Void
 
     @AppStorage("isMetricSystem") private var isMetric = true
     @State private var showSystemPicker = false
@@ -32,7 +31,6 @@ struct ProfileTabContent: View {
             bodyCard
             macrosCard
         }
-        feedbackButton
     }
 
     // MARK: - Body Card
@@ -120,17 +118,6 @@ struct ProfileTabContent: View {
             .frame(height: 1)
     }
 
-    private var feedbackButton: some View {
-        Button(action: onFeedback) {
-            Text("Feedback")
-                .font(.system(size: 12))
-                .fontWeight(.medium)
-                .foregroundColor(Color.primaryText(isDark))
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-        }
-        .glassEffect(.regular.interactive())
-    }
 }
 
 #Preview {
@@ -148,8 +135,7 @@ struct ProfileTabContent: View {
         dailySodium: .constant(2000),
         dailyFibre: .constant(30),
         dailySugar: .constant(50),
-        onSave: {},
-        onFeedback: {}
+        onSave: {}
     )
     .padding()
     .background(Color.black)

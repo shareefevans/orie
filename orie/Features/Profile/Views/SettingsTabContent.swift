@@ -14,7 +14,6 @@ struct SettingsTabContent: View {
 
     let isLoading: Bool
     let isDark: Bool
-    var onFeedback: () -> Void
 
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountAlert = false
@@ -26,9 +25,10 @@ struct SettingsTabContent: View {
                 ProfileSheetSkeleton(isDark: isDark, tab: .settings)
             } else {
                 subscriptionCard
+                aiEntriesCard
                 appCard
+                deleteAccountButton
             }
-            feedbackButton
         }
         .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
             Button("Open Settings") {
@@ -51,6 +51,7 @@ struct SettingsTabContent: View {
         }
     }
 
+    
     // MARK: - Subscription Card
     private var subscriptionCard: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -61,21 +62,24 @@ struct SettingsTabContent: View {
                     Text("Current Plan")
                         .font(.system(size: 13))
                         .foregroundColor(.gray)
-                    Text(subscriptionManager.tier == .premium ? "Premium Plan" : "Free Plan")
-                        .font(.title)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.primaryText(isDark))
+                    HStack(spacing: 8) {
+                        Text(subscriptionManager.tier == .premium ? "Premium Plan" : "Free Plan")
+                            .font(.system(size: 18, weight: .semibold))
+                            .fontWeight(.semibold)
+                            .foregroundColor(Color.primaryText(isDark))
+                        if subscriptionManager.tier == .premium {
+                            Text("Popular")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.yellow.opacity(0.55), in: Capsule())
+                                .glassEffect(in: Capsule())
+                        }
+                    }
                 }
                 Spacer()
-                if subscriptionManager.tier == .premium {
-                    Text("Popular")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 7)
-                        .background(Color.yellow.opacity(0.55), in: Capsule())
-                        .glassEffect(in: Capsule())
-                }
             }
 
             Rectangle()
@@ -89,21 +93,24 @@ struct SettingsTabContent: View {
                 freeFeaturesList
             }
 
-            // AI usage
-            if subscriptionManager.aiLimit > 0 {
-                Text("AI: \(subscriptionManager.aiUsedToday)/\(subscriptionManager.aiLimit) queries used today")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
+            Rectangle()
+                .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                .frame(height: 1)
 
-            // Disclaimer
-            Text("This is a monthly, recurring payment that can be canceled at any time")
-                .font(.system(size: 12))
-                .italic()
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
+            if subscriptionManager.tier == .premium {
+                Text("This is a monthly, recurring payment that can be canceled at any time")
+                    .font(.system(size: 13))
+                    .italic()
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 32)
+
+                Rectangle()
+                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .frame(height: 1)
+                    .padding(.vertical, 4)
+            }
 
             // CTA
             if subscriptionManager.tier == .premium {
@@ -114,7 +121,7 @@ struct SettingsTabContent: View {
                     }
                 }) {
                     Text("Downgrade Plan")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(isDark ? .white : .black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
@@ -123,6 +130,60 @@ struct SettingsTabContent: View {
                 .disabled(subscriptionManager.isLoading)
             } else {
                 upgradeContent
+            }
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(32)
+    }
+
+    // MARK: - AI Entries Card
+    private var aiEntriesCard: some View {
+        let limit = subscriptionManager.aiLimit > 0 ? subscriptionManager.aiLimit : (subscriptionManager.tier == .premium ? 15 : 3)
+        let used = subscriptionManager.aiUsedToday
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Ai Entries")
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 8) {
+                Text("Remaining Entries")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color.primaryText(isDark))
+
+                Text("\(max(0, limit - used)) / \(limit) Ai Entries")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .glassEffect(in: Capsule())
+            }
+
+            HStack(spacing: 10) {
+                ForEach(0..<limit, id: \.self) { index in
+                    if index < used {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.yellow)
+                    } else {
+                        Image(systemName: "circle")
+                            .font(.system(size: 16))
+                            .foregroundColor(Color.gray.opacity(0.4))
+                    }
+                }
+            }
+
+            if subscriptionManager.tier != .premium {
+                Rectangle()
+                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .frame(height: 1)
+                    .padding(.top, 8)
+                Text("Upgrade to Premium to increase your total Ai entries to 15 per day")
+                    .font(.system(size: 13))
+                    .italic()
+                    .foregroundColor(Color.secondaryText(isDark))
+                    .padding(.top, 8)
             }
         }
         .padding(24)
@@ -140,15 +201,17 @@ struct SettingsTabContent: View {
             "Weekly tracking & overview dashboard",
             "Predictive entries",
         ]
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 16) {
             ForEach(features, id: \.self) { feature in
-                HStack(spacing: 14) {
+                HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(.system(size: 14))
                         .foregroundColor(.yellow)
+                        .frame(width: 20)
                     Text(feature)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 14))
                         .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
                 }
             }
         }
@@ -157,19 +220,22 @@ struct SettingsTabContent: View {
     private var freeFeaturesList: some View {
         let features = [
             "3 Ai entries per day",
+            "Voice to text",
             "Unlimited manual entries",
-            "Full dashboard & tracking",
+            "Weekly tracking & overview dashboard",
             "Predictive entries",
         ]
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 16) {
             ForEach(features, id: \.self) { feature in
-                HStack(spacing: 14) {
+                HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(Color.secondaryText(isDark))
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                        .frame(width: 20)
                     Text(feature)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 14))
                         .foregroundColor(Color.primaryText(isDark))
+                    Spacer()
                 }
             }
         }
@@ -184,11 +250,8 @@ struct SettingsTabContent: View {
             }
         }) {
             HStack(spacing: 8) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(.black)
-                Text("Upgrade to Premium · $2.99/mo")
-                    .font(.system(size: 15, weight: .semibold))
+                Text("Upgrade to Premium")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.black)
             }
             .frame(maxWidth: .infinity)
@@ -227,25 +290,19 @@ struct SettingsTabContent: View {
 
     // MARK: - App Card
     private var appCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "app.background.dotted")
-                        .font(.title3)
-                        .foregroundColor(Color.primaryText(isDark))
-                    Text("App")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.primaryText(isDark))
-                }
-                Text("Manage your app settings.")
+                Text("Personalise Orie")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Configure Orie to suit your needs")
                     .font(.footnote)
                     .foregroundColor(Color.secondaryText(isDark))
             }
-            .padding(.bottom, 8)
-            Divider()
+            .padding(.bottom, 16)
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             appToggles
-            Divider()
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             accountActions
         }
         .padding(24)
@@ -255,8 +312,11 @@ struct SettingsTabContent: View {
 
     // MARK: - App Toggles
     private var appToggles: some View {
-        VStack(spacing: 0) {
-            HStack {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "location")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
                 Text("Location")
                     .font(.footnote)
                     .fontWeight(.medium)
@@ -264,85 +324,86 @@ struct SettingsTabContent: View {
                 Spacer()
                 Toggle("", isOn: .constant(true)).labelsHidden()
             }
-            Divider()
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Meal Reminders")
-                        .font(.footnote)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.primaryText(isDark))
-                    Text("Get notified at scheduled meal times")
-                        .font(.caption2)
-                        .foregroundColor(Color.secondaryText(isDark))
-                }
-                Spacer()
-                Toggle("", isOn: notificationsBinding).labelsHidden()
-            }
-            Divider()
-            HStack {
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
+            HStack(spacing: 8) {
+                Image(systemName: "sun.lefthalf.filled")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
                 Text("Dark Mode")
                     .font(.footnote)
                     .fontWeight(.medium)
                     .foregroundColor(Color.primaryText(isDark))
                 Spacer()
-                Toggle("", isOn: $themeManager.isDarkMode).labelsHidden()
+                Toggle("", isOn: $themeManager.isDarkMode).labelsHidden().disabled(true)
             }
-            Divider()
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Calorie Progress")
-                        .font(.footnote)
-                        .fontWeight(.medium)
-                        .foregroundColor(Color.primaryText(isDark))
-                    Text("Show all-day tracker in Dynamic Island")
-                        .font(.caption2)
-                        .foregroundColor(Color.secondaryText(isDark))
-                }
+            .padding(.vertical, 8)
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
+            HStack(spacing: 8) {
+                Image(systemName: "bell")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Meal Reminders")
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.primaryText(isDark))
+                Spacer()
+                Toggle("", isOn: notificationsBinding).labelsHidden()
+            }
+            .padding(.vertical, 8)
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
+            HStack(spacing: 8) {
+                Image(systemName: "dot.radiowaves.left.and.right")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Dynamic Island")
+                    .font(.footnote)
+                    .fontWeight(.medium)
+                    .foregroundColor(Color.primaryText(isDark))
                 Spacer()
                 Toggle("", isOn: calorieProgressBinding).labelsHidden()
             }
+            .padding(.vertical, 8)
+            .padding(.bottom, 8)
         }
     }
 
     // MARK: - Account Actions
     private var accountActions: some View {
-        VStack(spacing: 0) {
-            Button(action: { Task { await authManager.logout(); dismiss() } }) {
-                HStack {
-                    Text("Log Out")
-                        .font(.footnote)
-                        .foregroundColor(Color.primaryText(isDark))
-                        .fontWeight(.medium)
-                    Spacer()
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .foregroundColor(Color.iconColor(isDark))
-                }
-            }
-            Divider()
-            Button(action: { showDeleteAccountAlert = true }) {
-                HStack {
-                    Text("Delete Account")
-                        .font(.footnote)
-                        .foregroundColor(.red)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Image(systemName: "trash").foregroundColor(.red)
-                }
+        Button(action: { Task { await authManager.logout(); dismiss() } }) {
+            HStack(spacing: 8) {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("Log Out")
+                    .font(.footnote)
+                    .foregroundColor(Color.primaryText(isDark))
+                    .fontWeight(.medium)
+                Spacer()
             }
         }
+        .padding(.top, 24)
+        .padding(.bottom, 8)
     }
 
-    // MARK: - Feedback Button
-    private var feedbackButton: some View {
-        Button(action: onFeedback) {
-            Text("Feedback")
-                .font(.system(size: 12))
-                .fontWeight(.medium)
-                .foregroundColor(Color.primaryText(isDark))
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
+    // MARK: - Delete Account Button
+    private var deleteAccountButton: some View {
+        Button(action: { showDeleteAccountAlert = true }) {
+            HStack(spacing: 10) {
+                Image(systemName: "trash")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                Text("Delete Account")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(Color.red.opacity(0.25), in: Capsule())
         }
-        .glassEffect(.regular.interactive())
+        .glassEffect(in: .capsule)
+        .padding(.top, 8)
     }
 
     // MARK: - Bindings
@@ -378,12 +439,34 @@ struct SettingsTabContent: View {
     }
 }
 
-#Preview {
-    SettingsTabContent(isLoading: false, isDark: true, onFeedback: {})
-        .environmentObject(AuthManager())
-        .environmentObject(ThemeManager())
-        .environmentObject(LocalNotificationManager.shared)
-        .environmentObject(SubscriptionManager())
+#Preview("Free Plan") {
+    ScrollView {
+        VStack(spacing: 16) {
+            SettingsTabContent(isLoading: false, isDark: true)
+        }
         .padding()
-        .background(Color.black)
+    }
+    .background(Color.black)
+    .environmentObject(AuthManager())
+    .environmentObject(ThemeManager())
+    .environmentObject(LocalNotificationManager.shared)
+    .environmentObject(SubscriptionManager())
+}
+
+#Preview("Premium Plan") {
+    let sub = SubscriptionManager()
+    sub.tier = .premium
+    sub.aiLimit = 15
+    sub.aiUsedToday = 4
+    return ScrollView {
+        VStack(spacing: 16) {
+            SettingsTabContent(isLoading: false, isDark: true)
+        }
+        .padding()
+    }
+    .background(Color.black)
+    .environmentObject(AuthManager())
+    .environmentObject(ThemeManager())
+    .environmentObject(LocalNotificationManager.shared)
+    .environmentObject(sub)
 }

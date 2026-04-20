@@ -110,7 +110,6 @@ struct PlanSelectionView: View {
                         FeatureRow(icon: "checkmark.circle.fill", text: "Unlimited manual entries", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Weekly Tracking & Overview Dashboard", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Predictive Entries", color: .yellow, isDark: isDark)
-                        FeatureRow(icon: "checkmark.circle.fill", text: "Cached entries never count toward limit", color: .yellow, isDark: isDark)
 
                         Rectangle()
                             .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
@@ -194,8 +193,6 @@ struct PlanSelectionView: View {
                         FeatureRow(icon: "checkmark.circle.fill", text: "AI nutrition lookup (3/day)", color: .gray, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Full dashboard & tracking", color: .gray, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Predictive Entries", color: .gray, isDark: isDark)
-                        FeatureRow(icon: "xmark.circle.fill", text: "No Orie chatbot", color: .red, isDark: isDark)
-                        FeatureRow(icon: "xmark.circle.fill", text: "No image scanning", color: .red, isDark: isDark)
 
                         Rectangle()
                             .fill(Color(red: 24/255, green: 24/255, blue: 24/255))

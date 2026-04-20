@@ -654,12 +654,19 @@ struct SetupPickerRow: View {
     let label: String
     let value: String
     let isDark: Bool
+    var icon: String? = nil
     var isInvalid: Bool = false
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .frame(width: 20)
+                }
                 if isInvalid {
                     Image(systemName: "exclamationmark.circle.fill")
                         .font(.system(size: 14))

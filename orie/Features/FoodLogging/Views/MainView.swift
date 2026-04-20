@@ -572,279 +572,277 @@ struct MainView: View {
         }
     }
 
+    // MARK: - ❇️ Extracted Body Subviews
+
+    private func mainListContent(proxy: ScrollViewProxy) -> some View {
+        List {
+            Color.clear
+                .frame(height: 68)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+            tabSelectorContent
+
+            if selectedTab == "health" {
+                HealthTabView(
+                    consumedCalories: consumedCalories,
+                    dailyCalorieGoal: vm.dailyCalorieGoal,
+                    burnedCalories: 0,
+                    consumedProtein: consumedProtein,
+                    dailyProteinGoal: vm.dailyProteinGoal,
+                    consumedCarbs: consumedCarbs,
+                    dailyCarbsGoal: vm.dailyCarbsGoal,
+                    consumedFats: consumedFats,
+                    dailyFatsGoal: vm.dailyFatsGoal,
+                    consumedFibre: consumedFibre,
+                    dailyFibreGoal: vm.dailyFibreGoal,
+                    consumedSodium: consumedSodium,
+                    dailySodiumGoal: vm.dailySodiumGoal,
+                    consumedSugar: consumedSugar,
+                    dailySugarGoal: vm.dailySugarGoal,
+                    meals: mealBubbles,
+                    weeklyData: vm.weeklyMacroData,
+                    weeklyNote: vm.weeklyNote,
+                    isDark: isDark
+                )
+                .id(healthTabId)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+
+            consumedTabContent(proxy: proxy)
+
+            Color.clear
+                .frame(height: 120)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
+        .onChange(of: vm.foodEntries.count) { oldCount, newCount in
+            if oldCount == 0 && newCount > 0 && !hasShownFirstMealCelebration {
+                awaitingFirstEntryCalculation = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation { proxy.scrollTo("inputField", anchor: .top) }
+            }
+        }
+        .onChange(of: isInputFocused) { _, isFocused in
+            if !isFocused && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
+                withAnimation(.easeInOut(duration: 0.2)) { isShowingFoodInput = false }
+            }
+        }
+        .onChange(of: vm.hasAnyEntries) { _, newValue in
+            if newValue == false {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isShowingFoodInput = false
+                    isInputFocused = false
+                }
+                hasShownFirstMealCelebration = false
+                showIntakeCardNudge = false
+                pulseIntakeCard = false
+            }
+        }
+        .onChange(of: vm.foodEntries) { _, entries in
+            guard awaitingFirstEntryCalculation,
+                  let first = entries.first,
+                  !first.isLoading,
+                  first.calories != nil else { return }
+            awaitingFirstEntryCalculation = false
+            hasShownFirstMealCelebration = true
+            showFirstMealCelebration = true
+        }
+        .onChange(of: shouldScrollToInput) { _, newValue in
+            if newValue {
+                withAnimation { proxy.scrollTo("inputField", anchor: .top) }
+                shouldScrollToInput = false
+            }
+        }
+    }
+
+    private var topNavBarView: some View {
+        TopNavigationBar(
+            showAwards: $showAwards,
+            showProfile: $showProfile,
+            showSettings: $showSettings,
+            showNotifications: $showNotifications,
+            isDateSelectionMode: $isDateSelectionMode,
+            selectedDate: $selectedDate,
+            selectedTab: $selectedTab,
+            isToday: isToday,
+            isDark: isDark,
+            isInputFocused: Binding(
+                get: { isInputFocused || editingEntryId != nil },
+                set: { newValue in
+                    if !newValue {
+                        if editingEntryId != nil { editingEntryId = nil }
+                        isInputFocused = false
+                    } else {
+                        isInputFocused = newValue
+                    }
+                }
+            ),
+            hasUnreadNotifications: notificationManager.unreadCount > 0
+        )
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.appBackground(isDark), Color.appBackground(isDark).opacity(0)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 100)
+            .offset(y: -10)
+            .allowsHitTesting(false)
+            .ignoresSafeArea(edges: .top)
+        )
+    }
+
+    private var bottomFadeView: some View {
+        VStack {
+            Spacer()
+            LinearGradient(
+                gradient: Gradient(colors: [Color.appBackground(isDark).opacity(0), Color.appBackground(isDark)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 100)
+        }
+        .allowsHitTesting(false)
+        .ignoresSafeArea(edges: .bottom)
+    }
+
+    @ViewBuilder private var overlayBannersView: some View {
+        if !networkMonitor.isConnected {
+            VStack {
+                Spacer()
+                HStack(spacing: 10) {
+                    Image(systemName: "wifi.slash")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Offline · manual entries enabled")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                #if os(iOS)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                #else
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                #endif
+                .padding(.bottom, 36)
+            }
+            .ignoresSafeArea(.keyboard)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .animation(.easeOut(duration: 0.3), value: networkMonitor.isConnected)
+            .zIndex(12)
+        }
+
+        if let errorMessage = vm.apiErrorMessage, networkMonitor.isConnected {
+            VStack {
+                Spacer()
+                ErrorBanner(message: errorMessage)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 48)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .zIndex(10)
+        }
+
+        if showIntakeCardNudge {
+            VStack {
+                Spacer()
+                HStack(spacing: 8) {
+                    Image(systemName: "hand.tap.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Tap the daily intake card to see your macros")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                #if os(iOS)
+                .glassEffect(.regular.tint(Color.yellow.opacity(0.15)), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                #else
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                #endif
+                .padding(.bottom, 100)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .animation(.easeOut(duration: 0.3), value: showIntakeCardNudge)
+            .zIndex(13)
+            .ignoresSafeArea(.keyboard)
+        }
+
+        if let award = vm.awardBannerAchievement {
+            VStack {
+                Spacer()
+                AwardBanner(achievement: award) { showAwards = true }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, vm.apiErrorMessage != nil ? 120 : 48)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .zIndex(11)
+        }
+    }
+
+    private var bottomNavBarView: some View {
+        VStack {
+            Spacer()
+            BottomNavigationBar(
+                isDark: isDark,
+                isRecording: isRecordingFromField,
+                onFocusInput: {
+                    selectedTab = "consumed"
+                    isInputFocused = true
+                    shouldScrollToInput = true
+                },
+                onAskOrie: {
+                    dismissAllInputs()
+                    if subscriptionManager.tier == .premium {
+                        showOrieChat = true
+                    } else {
+                        showPremiumRequired = true
+                    }
+                },
+                onTriggerMic: {
+                    if isRecordingFromField {
+                        triggerStopMicFromNav = true
+                    } else {
+                        selectedTab = "consumed"
+                        shouldScrollToInput = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            triggerMicFromNav = true
+                        }
+                    }
+                },
+                onTriggerCamera: {
+                    selectedTab = "consumed"
+                    shouldScrollToInput = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        triggerCameraFromNav = true
+                    }
+                }
+            )
+        }
+        .ignoresSafeArea(.keyboard)
+    }
+
     // MARK: - ❇️ Body
 
     var body: some View {
         ZStack(alignment: .top) {
-
-            // MARK: ❇️ Background
-            Color.appBackground(isDark)
-                .ignoresSafeArea()
-
-            // MARK: ❇️ Main Scrollable Content
-            ScrollViewReader { proxy in
-                List {
-                    Color.clear
-                        .frame(height: 68)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-
-                    tabSelectorContent
-
-                    // MARK: 👉 Health Tab
-                    if selectedTab == "health" {
-                        HealthTabView(
-                            consumedCalories: consumedCalories,
-                            dailyCalorieGoal: vm.dailyCalorieGoal,
-                            burnedCalories: 0,
-                            consumedProtein: consumedProtein,
-                            dailyProteinGoal: vm.dailyProteinGoal,
-                            consumedCarbs: consumedCarbs,
-                            dailyCarbsGoal: vm.dailyCarbsGoal,
-                            consumedFats: consumedFats,
-                            dailyFatsGoal: vm.dailyFatsGoal,
-                            consumedFibre: consumedFibre,
-                            dailyFibreGoal: vm.dailyFibreGoal,
-                            consumedSodium: consumedSodium,
-                            dailySodiumGoal: vm.dailySodiumGoal,
-                            consumedSugar: consumedSugar,
-                            dailySugarGoal: vm.dailySugarGoal,
-                            meals: mealBubbles,
-                            weeklyData: vm.weeklyMacroData,
-                            weeklyNote: vm.weeklyNote,
-                            isDark: isDark
-                        )
-                        .id(healthTabId)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-
-                    // MARK: 👉 Consumed Tab
-                    consumedTabContent(proxy: proxy)
-
-                    Color.clear
-                        .frame(height: 120)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .scrollIndicators(.hidden)
-                .onChange(of: vm.foodEntries.count) { oldCount, newCount in
-                    if oldCount == 0 && newCount > 0 && !hasShownFirstMealCelebration {
-                        awaitingFirstEntryCalculation = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation { proxy.scrollTo("inputField", anchor: .top) }
-                    }
-                }
-                .onChange(of: isInputFocused) { _, isFocused in
-                    if !isFocused && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isShowingFoodInput = false
-                        }
-                    }
-                }
-                .onChange(of: vm.hasAnyEntries) { _, newValue in
-                    if newValue == false {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isShowingFoodInput = false
-                            isInputFocused = false
-                        }
-                        hasShownFirstMealCelebration = false
-                        showIntakeCardNudge = false
-                        pulseIntakeCard = false
-                    }
-                }
-                .onChange(of: vm.foodEntries) { _, entries in
-                    guard awaitingFirstEntryCalculation,
-                          let first = entries.first,
-                          !first.isLoading,
-                          first.calories != nil else { return }
-                    awaitingFirstEntryCalculation = false
-                    hasShownFirstMealCelebration = true
-                    showFirstMealCelebration = true
-                }
-                .onChange(of: shouldScrollToInput) { _, newValue in
-                    if newValue {
-                        withAnimation { proxy.scrollTo("inputField", anchor: .top) }
-                        shouldScrollToInput = false
-                    }
-                }
-            }
-
-            // MARK: - ❇️ Floating Navigation Bar
-            TopNavigationBar(
-                showAwards: $showAwards,
-                showProfile: $showProfile,
-                showSettings: $showSettings,
-                showNotifications: $showNotifications,
-                isDateSelectionMode: $isDateSelectionMode,
-                selectedDate: $selectedDate,
-                selectedTab: $selectedTab,
-                isToday: isToday,
-                isDark: isDark,
-                isInputFocused: Binding(
-                    get: { isInputFocused || editingEntryId != nil },
-                    set: { newValue in
-                        if !newValue {
-                            if editingEntryId != nil { editingEntryId = nil }
-                            isInputFocused = false
-                        } else {
-                            isInputFocused = newValue
-                        }
-                    }
-                ),
-                hasUnreadNotifications: notificationManager.unreadCount > 0
-            )
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.appBackground(isDark), Color.appBackground(isDark).opacity(0)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 100)
-                .offset(y: -10)
-                .allowsHitTesting(false)
-                .ignoresSafeArea(edges: .top)
-            )
-
-            // MARK: - ❇️ Bottom Fade Overlay
-            VStack {
-                Spacer()
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.appBackground(isDark).opacity(0), Color.appBackground(isDark)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 100)
-            }
-            .allowsHitTesting(false)
-            .ignoresSafeArea(edges: .bottom)
-
-            // MARK: - Offline Indicator
-            if !networkMonitor.isConnected {
-                VStack {
-                    Spacer()
-                    HStack(spacing: 10) {
-                        Image(systemName: "wifi.slash")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        Text("Offline · manual entries enabled")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    #if os(iOS)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    #else
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    #endif
-                    .padding(.bottom, 36)
-                }
-                .ignoresSafeArea(.keyboard)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(.easeOut(duration: 0.3), value: networkMonitor.isConnected)
-                .zIndex(12)
-            }
-
-            // MARK: - ❇️ Error Banner
-            if let errorMessage = vm.apiErrorMessage, networkMonitor.isConnected {
-                VStack {
-                    Spacer()
-                    ErrorBanner(message: errorMessage)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 48)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .zIndex(10)
-            }
-
-            // MARK: - ❇️ Intake Card Nudge
-            if showIntakeCardNudge {
-                VStack {
-                    Spacer()
-                    HStack(spacing: 8) {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 13))
-                            .foregroundColor(Color.primaryText(isDark))
-                        Text("Tap the daily intake card to see your macros")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Color.primaryText(isDark))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    #if os(iOS)
-                    .glassEffect(.regular.tint(Color.yellow.opacity(0.15)), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    #else
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    #endif
-                    .padding(.bottom, 100)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(.easeOut(duration: 0.3), value: showIntakeCardNudge)
-                .zIndex(13)
-                .ignoresSafeArea(.keyboard)
-            }
-
-            // MARK: - ❇️ Award Banner
-            if let award = vm.awardBannerAchievement {
-                VStack {
-                    Spacer()
-                    AwardBanner(achievement: award) { showAwards = true }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, vm.apiErrorMessage != nil ? 120 : 48)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .zIndex(11)
-            }
-
-            // MARK: - ❇️ Bottom Navigation Bar
-            VStack {
-                Spacer()
-                BottomNavigationBar(
-                    isDark: isDark,
-                    isRecording: isRecordingFromField,
-                    onFocusInput: {
-                        selectedTab = "consumed"
-                        isInputFocused = true
-                        shouldScrollToInput = true
-                    },
-                    onAskOrie: {
-                        dismissAllInputs()
-                        if subscriptionManager.tier == .premium {
-                            showOrieChat = true
-                        } else {
-                            showPremiumRequired = true
-                        }
-                    },
-                    onTriggerMic: {
-                        if isRecordingFromField {
-                            triggerStopMicFromNav = true
-                        } else {
-                            selectedTab = "consumed"
-                            shouldScrollToInput = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                                triggerMicFromNav = true
-                            }
-                        }
-                    },
-                    onTriggerCamera: {
-                        selectedTab = "consumed"
-                        shouldScrollToInput = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            triggerCameraFromNav = true
-                        }
-                    }
-                )
-            }
-            .ignoresSafeArea(.keyboard)
-
-            // MARK: - ❇️ Autocomplete Pill
+            Color.appBackground(isDark).ignoresSafeArea()
+            ScrollViewReader { proxy in mainListContent(proxy: proxy) }
+            topNavBarView
+            bottomFadeView
+            overlayBannersView
+            bottomNavBarView
             autocompletePillOverlay
         }
 
@@ -871,7 +869,7 @@ struct MainView: View {
         .sheet(isPresented: $showProfile, onDismiss: {
             vm.loadUserProfile()
         }) {
-            ProfileSheet(startTab: .profile)
+            ProfileSheet()
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
                 .environmentObject(localNotificationManager)
@@ -881,7 +879,7 @@ struct MainView: View {
         .sheet(isPresented: $showSettings, onDismiss: {
             vm.loadUserProfile()
         }) {
-            ProfileSheet(startTab: .settings)
+            SettingsSheet()
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
                 .environmentObject(localNotificationManager)

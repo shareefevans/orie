@@ -54,6 +54,7 @@ struct MainView: View {
     @State private var awaitingFirstEntryCalculation = false
     @State private var showIntakeCardNudge = false
     @State private var pulseIntakeCard = false
+    @State private var showAiLimitReachedAlert = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -528,6 +529,7 @@ struct MainView: View {
                                     entry: entry,
                                     isDark: isDark,
                                     isOffline: !networkMonitor.isConnected,
+                                    isFree: subscriptionManager.tier == .free,
                                     authManager: authManager,
                                     onTimeChange: { vm.updateEntryTime(entry.id, newTime: $0) },
                                     onDelete: { vm.deleteFoodEntry(entry) },
@@ -677,11 +679,10 @@ struct MainView: View {
                 pulseIntakeCard = false
             }
         }
-        .onChange(of: vm.showUpgradePrompt) { _, show in
+        .onChange(of: vm.showAiLimitAlert) { _, show in
             if show {
-                subscriptionManager.paywallMessage = "You've hit your daily Ai entry limit."
-                subscriptionManager.showUpgradePaywall = true
-                vm.showUpgradePrompt = false
+                showAiLimitReachedAlert = true
+                vm.showAiLimitAlert = false
             }
         }
         .onChange(of: vm.foodEntries) { _, entries in
@@ -785,6 +786,26 @@ struct MainView: View {
                 ErrorBanner(message: errorMessage)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 48)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .zIndex(10)
+        }
+
+        if showAiLimitReachedAlert {
+            VStack {
+                Spacer()
+                AiLimitBanner(
+                    used: subscriptionManager.aiUsedToday,
+                    limit: subscriptionManager.aiLimit,
+                    isDark: isDark,
+                    onUpgrade: {
+                        showAiLimitReachedAlert = false
+                        subscriptionManager.paywallMessage = "Upgrade to Premium for more daily AI entries."
+                        subscriptionManager.showUpgradePaywall = true
+                    }
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 48)
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .zIndex(10)

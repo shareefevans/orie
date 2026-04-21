@@ -30,6 +30,7 @@ struct NutritionEditSheet: View {
     let entry: FoodEntry
     var isDark: Bool = false
     var isOffline: Bool = false
+    var isFree: Bool = false
     var authManager: AuthManager? = nil
     var onSave: (Int, Double, Double, Double) -> Void
 
@@ -79,6 +80,7 @@ struct NutritionEditSheet: View {
         entry: FoodEntry,
         isDark: Bool = false,
         isOffline: Bool = false,
+        isFree: Bool = false,
         authManager: AuthManager? = nil,
         onSave: @escaping (Int, Double, Double, Double) -> Void,
         initialIngredients: [AddedIngredient] = [],
@@ -87,6 +89,7 @@ struct NutritionEditSheet: View {
         self.entry = entry
         self.isDark = isDark
         self.isOffline = isOffline
+        self.isFree = isFree
         self.authManager = authManager
         self.onSave = onSave
         _editedCalories = State(initialValue: "\(entry.calories ?? 0)")
@@ -438,7 +441,7 @@ struct NutritionEditSheet: View {
                         }
                         .glassEffect(in: .capsule)
 
-                        if !isOffline {
+                        if !isOffline && !isFree {
                             if showGetSpecific {
                                 Button(action: {
                                     onSave(totalCalories, totalProtein, totalCarbs, totalFats)

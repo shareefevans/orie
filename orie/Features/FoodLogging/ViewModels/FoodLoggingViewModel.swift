@@ -33,10 +33,11 @@ final class FoodLoggingViewModel: ObservableObject {
     @Published var dailySugarGoal: Int = 0
     @Published var weeklyNote: String = "Tap to see your weekly overview and daily averages."
     @Published var weeklyTip: String? = nil
-    @Published var showUpgradePrompt: Bool = false
+    @Published var showAiLimitAlert: Bool = false
     @Published var hasAnyEntries: Bool? = nil
 
     @AppStorage("lastWeeklyProgressRefreshDate") var lastWeeklyProgressRefreshDate: String = ""
+    @AppStorage("aiLimitAlertShownDate") private var aiLimitAlertShownDate: String = ""
 
     // MARK: - ❇️ Private Task Handles
 
@@ -266,8 +267,23 @@ final class FoodLoggingViewModel: ObservableObject {
                     print("Failed to save free tier entry: \(error)")
                 }
             } catch APIError.aiLimitReached {
-                withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
-                showUpgradePrompt = true
+                // Save entry without nutrition (same as offline) so it shows "Add" button
+                guard let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) else { return }
+                foodEntries[index].isLoading = false
+                do {
+                    let dbEntry = try await authManager.withAuthRetry { accessToken in
+                        try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[index])
+                    }
+                    foodEntries[index].dbId = dbEntry.id
+                    localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
+                } catch {
+                    print("Failed to save AI limit entry: \(error)")
+                }
+                let todayString = Calendar.current.startOfDay(for: Date()).ISO8601Format()
+                if aiLimitAlertShownDate != todayString {
+                    aiLimitAlertShownDate = todayString
+                    showAiLimitAlert = true
+                }
             } catch {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {

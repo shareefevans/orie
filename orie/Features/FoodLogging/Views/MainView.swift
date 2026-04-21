@@ -330,23 +330,25 @@ struct MainView: View {
 
     @ViewBuilder
     private var lazyManCard: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             Image(isDark ? "lazy_man" : "lazy_man_light")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 200)
                 .frame(maxWidth: .infinity)
+                .opacity(0.25)
+                .padding(.bottom, -12)
 
             Text("WAKE UP!!!")
                 .font(.system(size: 14, weight: .black))
                 .italic()
-                .foregroundColor(.white)
+                .foregroundColor(Color(red: 47/255, green: 47/255, blue: 47/255))
 
             Text("New Day New You.")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundColor(.gray)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(red: 47/255, green: 47/255, blue: 47/255))
         }
-        .padding(.top, 60)
+        .padding(.top, 70)
     }
 
     @ViewBuilder
@@ -1068,47 +1070,4 @@ private extension DateFormatter {
         .environmentObject(NotificationManager())
         .environmentObject(LocalNotificationManager.shared)
         .environmentObject(SubscriptionManager())
-}
-
-#Preview("Lazy Man - Onboarded, No Entries Today") {
-    let isDark = true
-    ScrollView {
-        VStack(spacing: 0) {
-            // Simulate the food input row at its natural position
-            HStack(alignment: .center, spacing: 8) {
-                Text("12:00pm")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color.yellow)
-                    .frame(width: 90, alignment: .leading)
-                Text("Tap to Enter...")
-                    .font(.system(size: 15))
-                    .foregroundColor(Color.gray.opacity(0.5))
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
-
-            // Lazy man card
-            VStack(spacing: 8) {
-                Image(isDark ? "lazy_man" : "lazy_man_light")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 200)
-                    .frame(maxWidth: .infinity)
-
-                Text("WAKE UP!!!")
-                    .font(.system(size: 14, weight: .black))
-                    .italic()
-                    .foregroundColor(.white)
-
-                Text("New Day New You.")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.gray)
-            }
-            .padding(.top, 60)
-            .padding(.horizontal, 24)
-        }
-        .padding(.top, 80)
-    }
-    .background(Color(red: 0x10/255, green: 0x10/255, blue: 0x10/255))
 }

@@ -9,6 +9,7 @@ struct AskOrieModal: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     var remainingCalories: Int
     var consumedCalories: Int
@@ -501,8 +502,14 @@ struct AskOrieModal: View {
                     let errorText: String
                     if let apiError = error as? APIError {
                         switch apiError {
-                        case .aiLimitReached: errorText = "You've reached your daily AI limit. Upgrade to continue."
-                        case .upgradeRequired: errorText = "This feature requires a premium subscription."
+                        case .aiLimitReached:
+                            subscriptionManager.paywallMessage = "You've hit your daily Ai entry limit."
+                            subscriptionManager.showUpgradePaywall = true
+                            errorText = ""
+                        case .upgradeRequired:
+                            subscriptionManager.paywallMessage = "Orie's chat is reserved for premium members."
+                            subscriptionManager.showUpgradePaywall = true
+                            errorText = ""
                         default: errorText = "Something went wrong. Please try again."
                         }
                     } else {

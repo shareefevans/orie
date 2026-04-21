@@ -18,6 +18,7 @@ struct FoodInputField: View {
     var onSubmit: (String) -> Void
     var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
     var onError: ((String) -> Void)? = nil
+    var onPaywallRequired: ((String) -> Void)? = nil
     @FocusState.Binding var isFocused: Bool
     var authManager: AuthManager? = nil
     var onSuggestionChanged: ((String?) -> Void)? = nil
@@ -174,12 +175,12 @@ struct FoodInputField: View {
             } catch APIError.upgradeRequired {
                 await MainActor.run {
                     isAnalyzingImage = false
-                    onError?("Image scanning requires Premium. Upgrade in Settings.")
+                    onPaywallRequired?("Photo scanning is a premium feature. Upgrade to scan unlimited meals.")
                 }
             } catch APIError.aiLimitReached {
                 await MainActor.run {
                     isAnalyzingImage = false
-                    onError?("Daily AI limit reached. Resets at midnight.")
+                    onPaywallRequired?("You've hit your daily Ai entry limit.")
                 }
             } catch {
                 print("Error analyzing image: \(error)")

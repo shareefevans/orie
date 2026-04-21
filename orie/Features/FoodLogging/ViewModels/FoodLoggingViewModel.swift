@@ -267,7 +267,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
             } catch APIError.aiLimitReached {
                 withAnimation { foodEntries.removeAll { $0.id == newEntry.id } }
-                showError("Daily AI limit reached. Resets at midnight.")
+                showUpgradePrompt = true
             } catch {
                 print("Error: \(error)")
                 if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {

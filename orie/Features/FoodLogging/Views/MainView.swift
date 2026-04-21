@@ -546,6 +546,10 @@ struct MainView: View {
                                 }
                             },
                             onError: { vm.showError($0) },
+                            onPaywallRequired: { message in
+                                subscriptionManager.paywallMessage = message
+                                subscriptionManager.showUpgradePaywall = true
+                            },
                             isFocused: $isInputFocused,
                             authManager: authManager,
                             onSuggestionChanged: { suggestion in
@@ -645,6 +649,13 @@ struct MainView: View {
                 hasShownFirstMealCelebration = false
                 showIntakeCardNudge = false
                 pulseIntakeCard = false
+            }
+        }
+        .onChange(of: vm.showUpgradePrompt) { _, show in
+            if show {
+                subscriptionManager.paywallMessage = "You've hit your daily Ai entry limit."
+                subscriptionManager.showUpgradePaywall = true
+                vm.showUpgradePrompt = false
             }
         }
         .onChange(of: vm.foodEntries) { _, entries in
@@ -807,7 +818,8 @@ struct MainView: View {
                     if subscriptionManager.tier == .premium {
                         showOrieChat = true
                     } else {
-                        showPremiumRequired = true
+                        subscriptionManager.paywallMessage = "Orie's chat is reserved for premium members."
+                        subscriptionManager.showUpgradePaywall = true
                     }
                 },
                 onTriggerMic: {
@@ -822,10 +834,15 @@ struct MainView: View {
                     }
                 },
                 onTriggerCamera: {
-                    selectedTab = "consumed"
-                    shouldScrollToInput = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        triggerCameraFromNav = true
+                    if subscriptionManager.tier != .premium {
+                        subscriptionManager.paywallMessage = "Photo scanning is a premium feature. Upgrade to scan unlimited meals."
+                        subscriptionManager.showUpgradePaywall = true
+                    } else {
+                        selectedTab = "consumed"
+                        shouldScrollToInput = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            triggerCameraFromNav = true
+                        }
                     }
                 }
             )
@@ -844,6 +861,11 @@ struct MainView: View {
             overlayBannersView
             bottomNavBarView
             autocompletePillOverlay
+            if subscriptionManager.showUpgradePaywall {
+                UpgradePremiumModal()
+                    .zIndex(20)
+                    .transaction { $0.animation = nil }
+            }
         }
 
         // MARK: - ❇️ Sheet Modifiers
@@ -936,12 +958,6 @@ struct MainView: View {
         .onChange(of: showAwards) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: showProfile) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: showSettings) { _, shown in if shown { dismissAllInputs() } }
-        .alert("Premium Required", isPresented: $showPremiumRequired) {
-            Button("Upgrade") { showSettings = true }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Ask Orie is a Premium feature. Upgrade to unlock AI chat and more.")
-        }
         .onChange(of: showNotifications) { _, shown in if shown { dismissAllInputs() } }
         .onChange(of: networkMonitor.isConnected) { _, isConnected in
             guard isConnected else { return }

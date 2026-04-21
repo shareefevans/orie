@@ -15,6 +15,9 @@ struct SettingsTabContent: View {
     let isLoading: Bool
     let isDark: Bool
 
+    var onUpgradeTapped: (() -> Void)? = nil
+    var onDowngradeTapped: (() -> Void)? = nil
+
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountAlert = false
     @AppStorage("calorieProgressActivityEnabled") private var calorieProgressActivityEnabled = true
@@ -114,12 +117,7 @@ struct SettingsTabContent: View {
 
             // CTA
             if subscriptionManager.tier == .premium {
-                Button(action: {
-                    Task {
-                        let userId = authManager.currentUser?.id ?? ""
-                        await subscriptionManager.selectFree(authManager: authManager, userId: userId)
-                    }
-                }) {
+                Button(action: { onDowngradeTapped?() }) {
                     Text("Downgrade Plan")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(isDark ? .white : .black)
@@ -160,7 +158,9 @@ struct SettingsTabContent: View {
                     .glassEffect(in: Capsule())
             }
 
-            HStack(spacing: 10) {
+            let columns = Array(repeating: GridItem(.flexible()), count: 10)
+
+            LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(0..<limit, id: \.self) { index in
                     if index < used {
                         Image(systemName: "checkmark.circle.fill")
@@ -243,12 +243,7 @@ struct SettingsTabContent: View {
 
     // MARK: - Upgrade Content
     private var upgradeContent: some View {
-        Button(action: {
-            Task {
-                let userId = authManager.currentUser?.id ?? ""
-                await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
-            }
-        }) {
+        Button(action: { onUpgradeTapped?() }) {
             HStack(spacing: 8) {
                 Text("Upgrade to Premium")
                     .font(.system(size: 14, weight: .semibold))
@@ -261,6 +256,7 @@ struct SettingsTabContent: View {
         .glassEffect(in: .capsule)
         .disabled(subscriptionManager.isLoading)
     }
+
 
     private var premiumInclusionsList: some View {
         let items: [(String, String)] = [

@@ -23,6 +23,8 @@ final class SubscriptionManager: ObservableObject {
     @Published var aiLimit: Int = 0
     @Published var isLoading: Bool = false
     @Published var purchaseError: String? = nil
+    @Published var showUpgradePaywall: Bool = false
+    @Published var paywallMessage: String = ""
 
     private var transactionListener: Task<Void, Never>?
     private weak var authManager: AuthManager?

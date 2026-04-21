@@ -310,20 +310,6 @@ struct SettingsTabContent: View {
     private var appToggles: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "location")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color.primaryText(isDark))
-                Text("Location")
-                    .font(.footnote)
-                    .fontWeight(.medium)
-                    .foregroundColor(Color.primaryText(isDark))
-                Spacer()
-                Toggle("", isOn: .constant(true)).labelsHidden()
-            }
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
-            HStack(spacing: 8) {
                 Image(systemName: "sun.lefthalf.filled")
                     .font(.system(size: 16))
                     .foregroundColor(Color.primaryText(isDark))

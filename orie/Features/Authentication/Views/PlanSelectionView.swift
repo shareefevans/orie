@@ -17,6 +17,8 @@ struct PlanSelectionView: View {
     @State private var premiumProduct: Product? = nil
     @State private var loadingProduct = true
     @State private var billingCycle: Int = 0  // 0 = monthly, 1 = annually
+    @State private var isPremiumLoading = false
+    @State private var isFreeLoading = false
 
     private var monthlyPriceDisplay: String {
         premiumProduct?.displayPrice ?? "$2.99"
@@ -133,16 +135,18 @@ struct PlanSelectionView: View {
                         // CTA inside card
                         Button(action: {
                             Task {
+                                isPremiumLoading = true
                                 await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                                isPremiumLoading = false
                             }
                         }) {
                             ZStack {
                                 Text(trialLabel)
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(.black)
-                                    .opacity(subscriptionManager.isLoading ? 0 : 1)
+                                    .opacity(isPremiumLoading ? 0 : 1)
 
-                                if subscriptionManager.isLoading {
+                                if isPremiumLoading {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                 }
@@ -152,7 +156,7 @@ struct PlanSelectionView: View {
                             .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
                         }
                         .glassEffect(in: .capsule)
-                        .disabled(subscriptionManager.isLoading)
+                        .disabled(isPremiumLoading || isFreeLoading)
                         .padding(.top, 4)
                     }
                     .padding(24)
@@ -202,17 +206,27 @@ struct PlanSelectionView: View {
                         // CTA inside card
                         Button(action: {
                             Task {
+                                isFreeLoading = true
                                 await subscriptionManager.selectFree(authManager: authManager, userId: userId)
+                                isFreeLoading = false
                             }
                         }) {
-                            Text("Continue for free")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(isDark ? .white : .black)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
+                            ZStack {
+                                Text("Continue for free")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(isDark ? .white : .black)
+                                    .opacity(isFreeLoading ? 0 : 1)
+
+                                if isFreeLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .white : .black))
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
                         }
                         .glassEffect(in: .capsule)
-                        .disabled(subscriptionManager.isLoading)
+                        .disabled(isPremiumLoading || isFreeLoading)
                         .padding(.top, 4)
                     }
                     .padding(24)
@@ -241,7 +255,7 @@ struct PlanSelectionView: View {
                             .frame(height: 44)
                     }
                     .glassEffect(in: .capsule)
-                    .disabled(subscriptionManager.isLoading)
+                    .disabled(isPremiumLoading || isFreeLoading)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 40)
                 }

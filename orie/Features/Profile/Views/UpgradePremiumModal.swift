@@ -108,20 +108,29 @@ struct UpgradePremiumModal: View {
                             .frame(height: 50)
                     }
                     .glassEffect(in: .capsule)
+                    .disabled(subscriptionManager.isLoading)
 
                     Button(action: {
-                        dismiss()
                         Task {
                             let userId = authManager.currentUser?.id ?? ""
                             await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
+                            dismiss()
                         }
                     }) {
-                        Text("Upgrade Plan")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.yellow.opacity(0.55), in: .capsule)
+                        ZStack {
+                            Text("Upgrade Plan")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(.black)
+                                .opacity(subscriptionManager.isLoading ? 0 : 1)
+
+                            if subscriptionManager.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.yellow.opacity(0.55), in: .capsule)
                     }
                     .glassEffect(in: .capsule)
                     .disabled(subscriptionManager.isLoading)

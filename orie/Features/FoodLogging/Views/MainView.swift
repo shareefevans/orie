@@ -54,7 +54,6 @@ struct MainView: View {
     @State private var awaitingFirstEntryCalculation = false
     @State private var showIntakeCardNudge = false
     @State private var pulseIntakeCard = false
-    @State private var showAiLimitReachedAlert = false
 
     // MARK: - ❇️ Computed Properties
 
@@ -679,12 +678,6 @@ struct MainView: View {
                 pulseIntakeCard = false
             }
         }
-        .onChange(of: vm.showAiLimitAlert) { _, show in
-            if show {
-                showAiLimitReachedAlert = true
-                vm.showAiLimitAlert = false
-            }
-        }
         .onChange(of: vm.foodEntries) { _, entries in
             guard awaitingFirstEntryCalculation,
                   let first = entries.first,
@@ -791,7 +784,7 @@ struct MainView: View {
             .zIndex(10)
         }
 
-        if showAiLimitReachedAlert {
+        if vm.showAiLimitAlert {
             VStack {
                 Spacer()
                 AiLimitBanner(
@@ -799,17 +792,24 @@ struct MainView: View {
                     limit: subscriptionManager.aiLimit,
                     isDark: isDark,
                     onUpgrade: {
-                        showAiLimitReachedAlert = false
+                        vm.showAiLimitAlert = false
                         subscriptionManager.paywallMessage = "Upgrade to Premium for more daily AI entries."
                         subscriptionManager.showUpgradePaywall = true
+                    },
+                    onDismiss: {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            vm.showAiLimitAlert = false
+                        }
                     }
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
+            .animation(.easeOut(duration: 0.3), value: vm.showAiLimitAlert)
             .zIndex(10)
         }
+
 
         if showIntakeCardNudge {
             VStack {
@@ -825,7 +825,7 @@ struct MainView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 #if os(iOS)
-                .glassEffect(.regular.tint(Color.yellow.opacity(0.15)), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .glassEffect(.regular.tint(Color.yellow.opacity(0.45)), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 #else
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 #endif

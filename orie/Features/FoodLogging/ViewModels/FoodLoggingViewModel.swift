@@ -266,6 +266,11 @@ final class FoodLoggingViewModel: ObservableObject {
                 } catch {
                     print("Failed to save free tier entry: \(error)")
                 }
+                let todayString = Calendar.current.startOfDay(for: Date()).ISO8601Format()
+                if aiLimitAlertShownDate != todayString {
+                    aiLimitAlertShownDate = todayString
+                    showAiLimitAlert = true
+                }
             } catch APIError.aiLimitReached {
                 // Save entry without nutrition (same as offline) so it shows "Add" button
                 guard let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) else { return }
@@ -752,10 +757,20 @@ final class FoodLoggingViewModel: ObservableObject {
                     } catch {
                         print("Failed to save free tier entry during auto-calc: \(error)")
                     }
+                    let todayString = Calendar.current.startOfDay(for: Date()).ISO8601Format()
+                    if aiLimitAlertShownDate != todayString {
+                        aiLimitAlertShownDate = todayString
+                        showAiLimitAlert = true
+                    }
+                    break
                 } catch APIError.aiLimitReached {
                     // AI limit reached - stop processing remaining entries
                     foodEntries[index].isLoading = false
-                    print("⚠️ AI limit reached during auto-calculation")
+                    let todayString = Calendar.current.startOfDay(for: Date()).ISO8601Format()
+                    if aiLimitAlertShownDate != todayString {
+                        aiLimitAlertShownDate = todayString
+                        showAiLimitAlert = true
+                    }
                     break
                 } catch {
                     // Silent failure for auto-calculation - don't show error banner

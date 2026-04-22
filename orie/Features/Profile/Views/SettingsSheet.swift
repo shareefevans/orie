@@ -85,7 +85,7 @@ struct SettingsSheet: View {
                 }
 
                 Rectangle()
-                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .fill(isDark ? Color(red: 24/255, green: 24/255, blue: 24/255) : Color(red: 220/255, green: 220/255, blue: 220/255))
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
@@ -112,7 +112,7 @@ struct SettingsSheet: View {
                 }
 
                 Rectangle()
-                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .fill(isDark ? Color(red: 24/255, green: 24/255, blue: 24/255) : Color(red: 220/255, green: 220/255, blue: 220/255))
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
@@ -126,19 +126,28 @@ struct SettingsSheet: View {
                             .frame(height: 50)
                     }
                     .glassEffect(in: .capsule)
+                    .disabled(subscriptionManager.isLoading)
 
                     Button(action: {
-                        showDowngradeModal = false
                         Task {
                             let userId = authManager.currentUser?.id ?? ""
                             await subscriptionManager.selectFree(authManager: authManager, userId: userId)
+                            showDowngradeModal = false
                         }
                     }) {
-                        Text("Downgrade to Free")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(isDark ? .white : .black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
+                        ZStack {
+                            Text("Downgrade to Free")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(isDark ? .white : .black)
+                                .opacity(subscriptionManager.isLoading ? 0 : 1)
+
+                            if subscriptionManager.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: isDark ? .white : .black))
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
                     }
                     .glassEffect(in: .capsule)
                     .disabled(subscriptionManager.isLoading)

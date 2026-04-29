@@ -569,6 +569,9 @@ struct MainView: View {
                                     withAnimation { proxy.scrollTo("inputField", anchor: .top) }
                                 }
                             },
+                            onImageCaptureStarted: {
+                                vm.beginImageEntry(date: selectedDate)
+                            },
                             onError: { vm.showError($0) },
                             onPaywallRequired: { message in
                                 subscriptionManager.paywallMessage = message

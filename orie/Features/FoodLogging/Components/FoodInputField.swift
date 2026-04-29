@@ -17,6 +17,7 @@ struct FoodInputField: View {
     var isDark: Bool = false
     var onSubmit: (String) -> Void
     var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
+    var onImageCaptureStarted: (() -> Void)?
     var onError: ((String) -> Void)? = nil
     var onPaywallRequired: ((String) -> Void)? = nil
     @FocusState.Binding var isFocused: Bool
@@ -155,6 +156,7 @@ struct FoodInputField: View {
         }
 
         isAnalyzingImage = true
+        onImageCaptureStarted?()
 
         Task {
             do {

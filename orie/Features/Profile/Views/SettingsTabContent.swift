@@ -146,11 +146,11 @@ struct SettingsTabContent: View {
                 .foregroundColor(.gray)
 
             HStack(spacing: 8) {
-                Text("Remaining Entries")
+                Text("Entries Used")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(Color.primaryText(isDark))
 
-                Text("\(max(0, limit - used)) / \(limit) Ai Entries")
+                Text("\(used) / \(limit) Ai Entries")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)

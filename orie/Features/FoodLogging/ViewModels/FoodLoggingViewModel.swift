@@ -321,37 +321,70 @@ final class FoodLoggingViewModel: ObservableObject {
         }
     }
 
+    private var pendingImageEntryId: UUID? = nil
+
+    func beginImageEntry(date: Date) {
+        var placeholder = FoodEntry(foodName: "Analysing photo…", entryDate: date)
+        placeholder.isLoading = true
+        pendingImageEntryId = placeholder.id
+        foodEntries.append(placeholder)
+    }
+
     func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse, date: Date) {
-        // Check if this is the first entry of the day
-        let isFirstEntryToday = isFirstEntryOfDay(for: date)
+        // Resolve which entry to update/append and whether it's the first today
+        let entryId: UUID
+        let isFirstEntryToday: Bool
 
-        var newEntry = FoodEntry(foodName: result.description, entryDate: date)
-        newEntry.calories = result.nutrition.calories
-        newEntry.protein = result.nutrition.protein
-        newEntry.carbs = result.nutrition.carbs
-        newEntry.fats = result.nutrition.fats
-        newEntry.fibre = result.nutrition.fibre
-        newEntry.sodium = result.nutrition.sodium
-        newEntry.sugar = result.nutrition.sugar
-        newEntry.servingSize = result.nutrition.servingSize
-        newEntry.imageUrl = result.nutrition.imageUrl
-        newEntry.sources = result.nutrition.sources
-        newEntry.isLoading = false
+        if let pendingId = pendingImageEntryId,
+           let idx = foodEntries.firstIndex(where: { $0.id == pendingId }) {
+            let othersTodayCount = foodEntries.filter {
+                Calendar.current.isDate($0.entryDate, inSameDayAs: date) && $0.id != pendingId
+            }.count
+            isFirstEntryToday = othersTodayCount == 0
+            foodEntries[idx].foodName = result.description
+            foodEntries[idx].calories = result.nutrition.calories
+            foodEntries[idx].protein = result.nutrition.protein
+            foodEntries[idx].carbs = result.nutrition.carbs
+            foodEntries[idx].fats = result.nutrition.fats
+            foodEntries[idx].fibre = result.nutrition.fibre
+            foodEntries[idx].sodium = result.nutrition.sodium
+            foodEntries[idx].sugar = result.nutrition.sugar
+            foodEntries[idx].servingSize = result.nutrition.servingSize
+            foodEntries[idx].imageUrl = result.nutrition.imageUrl
+            foodEntries[idx].sources = result.nutrition.sources
+            foodEntries[idx].isLoading = false
+            entryId = pendingId
+            pendingImageEntryId = nil
+        } else {
+            isFirstEntryToday = isFirstEntryOfDay(for: date)
+            var entry = FoodEntry(foodName: result.description, entryDate: date)
+            entry.calories = result.nutrition.calories
+            entry.protein = result.nutrition.protein
+            entry.carbs = result.nutrition.carbs
+            entry.fats = result.nutrition.fats
+            entry.fibre = result.nutrition.fibre
+            entry.sodium = result.nutrition.sodium
+            entry.sugar = result.nutrition.sugar
+            entry.servingSize = result.nutrition.servingSize
+            entry.imageUrl = result.nutrition.imageUrl
+            entry.sources = result.nutrition.sources
+            entry.isLoading = false
+            entryId = entry.id
+            foodEntries.append(entry)
+        }
 
-        foodEntries.append(newEntry)
-
-        // Trigger streak celebration for first entry
         if isFirstEntryToday {
             triggerStreakCelebration()
         }
 
         Task {
-            guard let authManager else { return }
+            guard let authManager,
+                  let idx = foodEntries.firstIndex(where: { $0.id == entryId }) else { return }
             do {
                 let dbEntry = try await authManager.withAuthRetry { accessToken in
-                    try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: newEntry)
+                    try await FoodEntryService.createFoodEntry(accessToken: accessToken, entry: self.foodEntries[idx])
                 }
-                if let index = foodEntries.firstIndex(where: { $0.id == newEntry.id }) {
+                if let index = foodEntries.firstIndex(where: { $0.id == entryId }) {
                     foodEntries[index].dbId = dbEntry.id
                     localNotificationManager?.scheduleMealNotification(for: foodEntries[index], userName: userName)
                     loadWeeklyFoodEntries()

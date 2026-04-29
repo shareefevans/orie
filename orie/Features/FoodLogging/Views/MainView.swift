@@ -717,6 +717,7 @@ struct MainView: View {
                     }
                 }
             ),
+            streakCount: vm.currentStreak,
             hasUnreadNotifications: notificationManager.unreadCount > 0
         )
         .background(

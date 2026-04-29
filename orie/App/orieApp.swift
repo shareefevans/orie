@@ -95,7 +95,6 @@ struct orieApp: App {
                             .environmentObject(localNotificationManager)
                             .environmentObject(subscriptionManager)
                             .onAppear {
-                                StreakManager.shared.recordAppOpen()
                                 Task {
                                     await notificationManager.syncSystemNotifications()
                                     await subscriptionManager.loadStatus(authManager: authManager)

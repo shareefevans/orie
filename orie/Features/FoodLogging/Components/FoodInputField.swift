@@ -137,7 +137,7 @@ struct FoodInputField: View {
         }
         #endif
         #if os(iOS)
-        .sheet(isPresented: $showCameraPicker) {
+        .fullScreenCover(isPresented: $showCameraPicker) {
             ImagePicker(sourceType: .camera) { image in
                 handleCapturedImage(image)
             }

@@ -35,6 +35,7 @@ final class FoodLoggingViewModel: ObservableObject {
     @Published var weeklyTip: String? = nil
     @Published var showAiLimitAlert: Bool = false
     @Published var hasAnyEntries: Bool? = nil
+    @Published var currentStreak: Int = StreakManager.shared.currentStreak
 
     @AppStorage("lastWeeklyProgressRefreshDate") var lastWeeklyProgressRefreshDate: String = ""
     @AppStorage("aiLimitAlertShownDate") private var aiLimitAlertShownDate: String = ""
@@ -93,6 +94,24 @@ final class FoodLoggingViewModel: ObservableObject {
         loadWeeklyFoodEntries()
         loadUserProfile()
         loadWeeklyProgress()
+        refreshStreak()
+    }
+
+    func refreshStreak() {
+        Task {
+            guard let authManager = authManager else { return }
+            do {
+                let streak = try await authManager.withAuthRetry { accessToken in
+                    try await APIService.getStreak(accessToken: accessToken)
+                }
+                await MainActor.run {
+                    StreakManager.shared.update(to: streak)
+                    self.currentStreak = streak
+                }
+            } catch {
+                // Fall back to cached value silently
+            }
+        }
     }
 
     // MARK: - ❇️ Calendar Helpers
@@ -819,11 +838,13 @@ final class FoodLoggingViewModel: ObservableObject {
 
     /// Trigger the streak celebration Live Activity
     private func triggerStreakCelebration() {
-        if #available(iOS 16.1, *) {
-            let currentStreak = StreakManager.shared.currentStreak
-            // Only show if streak is greater than 0
-            guard currentStreak > 0 else { return }
-            StreakActivityManager.shared.startStreakCelebration(streakDays: currentStreak)
+        Task {
+            // Refresh from backend first so the celebration shows the accurate count
+            await withTaskGroup(of: Void.self) { _ in refreshStreak() }
+            if #available(iOS 16.1, *) {
+                guard self.currentStreak > 0 else { return }
+                StreakActivityManager.shared.startStreakCelebration(streakDays: self.currentStreak)
+            }
         }
     }
 
@@ -862,7 +883,7 @@ final class FoodLoggingViewModel: ObservableObject {
             goalCarbs: dailyCarbsGoal,
             consumedFats: consumedFats,
             goalFats: dailyFatsGoal,
-            streakDays: StreakManager.shared.currentStreak
+            streakDays: self.currentStreak
         )
     }
 

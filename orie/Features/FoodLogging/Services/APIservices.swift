@@ -233,6 +233,30 @@ class APIService {
         guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
     }
 
+    // MARK: - Streak
+
+    static func getStreak(accessToken: String) async throws -> Int {
+        guard let url = URL(string: "\(baseURL)/api/achievements/streak") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
+        guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
+
+        struct StreakResponse: Decodable { let streak: Int }
+        return try JSONDecoder().decode(StreakResponse.self, from: data).streak
+    }
+
     // MARK: - Chat
 
     struct ChatMessagePayload: Codable {

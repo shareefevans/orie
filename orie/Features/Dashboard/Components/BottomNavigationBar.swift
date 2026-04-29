@@ -59,7 +59,7 @@ struct BottomNavigationBar: View {
 
             // MARK: - Photo button
             Button(action: { onTriggerCamera?() }) {
-                Image(systemName: "photo")
+                Image(systemName: "camera")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Color.primaryText(isDark))
                     .frame(width: 50, height: 50)

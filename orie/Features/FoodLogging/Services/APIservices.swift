@@ -297,6 +297,31 @@ class APIService {
         }
     }
 
+    // MARK: - Chat Feedback
+
+    static func sendChatFeedback(accessToken: String, messageContent: String, sentiment: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/chat-feedback") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: String] = ["message_content": messageContent, "sentiment": sentiment]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
+        guard (200...299).contains(httpResponse.statusCode) else { throw URLError(.badServerResponse) }
+    }
+
     // MARK: - Feedback
 
     struct FeedbackRequest: Codable {

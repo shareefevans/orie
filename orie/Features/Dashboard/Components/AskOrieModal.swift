@@ -218,6 +218,18 @@ struct AskOrieModal: View {
                     messages[idx].mealSuggestion = nil
                     saveHistory()
                 }
+            },
+            onFeedback: { state in
+                let sentiment = state == .positive ? "positive" : "negative"
+                Task {
+                    try? await authManager.withAuthRetry { token in
+                        try await APIService.sendChatFeedback(
+                            accessToken: token,
+                            messageContent: message.content,
+                            sentiment: sentiment
+                        )
+                    }
+                }
             }
         )
     }
@@ -563,6 +575,10 @@ struct AskOrieModal: View {
 
 // MARK: - Chat Bubble
 
+private enum FeedbackState {
+    case none, positive, negative
+}
+
 private struct ChatBubble: View {
     let message: ChatMessage
     var isLast: Bool = false
@@ -570,6 +586,10 @@ private struct ChatBubble: View {
     var isAdded: Bool = false
     var onAddMeal: ((MealSuggestion) -> Void)? = nil
     var onCancelMeal: (() -> Void)? = nil
+    var onFeedback: ((FeedbackState) -> Void)? = nil
+
+    @State private var feedbackState: FeedbackState = .none
+    @State private var copied = false
 
     var body: some View {
         if message.role == .user {
@@ -614,24 +634,50 @@ private struct ChatBubble: View {
             }
 
             HStack(spacing: 16) {
-                Button(action: {}) {
-                    Image(systemName: "hand.thumbsup")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                if feedbackState != .negative {
+                    Button(action: {
+                        feedbackState = .positive
+                        onFeedback?(.positive)
+                    }) {
+                        Image(systemName: feedbackState == .positive ? "hand.thumbsup.fill" : "hand.thumbsup")
+                            .font(.system(size: 14))
+                            .foregroundColor(
+                                feedbackState == .positive
+                                    ? Color.primaryText(isDark)
+                                    : Color.primaryText(isDark).opacity(0.35)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
-                Button(action: {}) {
-                    Image(systemName: "hand.thumbsdown")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                if feedbackState != .positive {
+                    Button(action: {
+                        feedbackState = .negative
+                        onFeedback?(.negative)
+                    }) {
+                        Image(systemName: feedbackState == .negative ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                            .font(.system(size: 14))
+                            .foregroundColor(
+                                feedbackState == .negative
+                                    ? Color.primaryText(isDark)
+                                    : Color.primaryText(isDark).opacity(0.35)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
-                Button(action: {}) {
-                    Image(systemName: "square.and.arrow.up")
+                Button(action: {
+                    UIPasteboard.general.string = message.content
+                    copied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
+                }) {
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 14))
-                        .foregroundColor(Color.primaryText(isDark).opacity(0.35))
+                        .foregroundColor(
+                            copied
+                                ? Color.primaryText(isDark)
+                                : Color.primaryText(isDark).opacity(0.35)
+                        )
                 }
                 .buttonStyle(.plain)
             }

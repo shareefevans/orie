@@ -415,9 +415,9 @@ struct AskOrieModal: View {
 
         Task {
             do {
-                let payload = messages.map {
-                    APIService.ChatMessagePayload(role: $0.role.rawValue, content: $0.content)
-                }
+                let payload = messages
+                    .filter { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                    .map { APIService.ChatMessagePayload(role: $0.role.rawValue, content: $0.content) }
 
                 let context = APIService.ChatContext(
                     remainingCalories: remainingCalories,
@@ -515,9 +515,13 @@ struct AskOrieModal: View {
                     if let apiError = error as? APIError {
                         switch apiError {
                         case .aiLimitReached:
-                            subscriptionManager.paywallMessage = "You've hit your daily Ai entry limit."
-                            subscriptionManager.showUpgradePaywall = true
-                            errorText = ""
+                            if subscriptionManager.tier == .premium {
+                                errorText = "You've hit your daily AI limit. It resets tomorrow — come back then! 🙌"
+                            } else {
+                                subscriptionManager.paywallMessage = "You've hit your daily AI entry limit."
+                                subscriptionManager.showUpgradePaywall = true
+                                errorText = ""
+                            }
                         case .upgradeRequired:
                             subscriptionManager.paywallMessage = "Orie's chat is reserved for premium members."
                             subscriptionManager.showUpgradePaywall = true
@@ -527,7 +531,9 @@ struct AskOrieModal: View {
                     } else {
                         errorText = "Something went wrong. Please try again."
                     }
-                    messages.append(ChatMessage(role: .assistant, content: errorText))
+                    if !errorText.isEmpty {
+                        messages.append(ChatMessage(role: .assistant, content: errorText))
+                    }
                     scrollToBottom()
                 }
             }

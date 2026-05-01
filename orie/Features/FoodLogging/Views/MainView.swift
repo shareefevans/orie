@@ -288,23 +288,11 @@ struct MainView: View {
                 .foregroundColor(Color.primaryText(isDark))
                 .multilineTextAlignment(.center)
 
-            (
-                Text("Track your intake here. You can ")
-                + Text(Image(systemName: "plus")).baselineOffset(-1)
-                + Text(" type, ")
-                + Text(Image(systemName: "mic.fill")).baselineOffset(-1)
-                + Text(" talk, and ")
-                + Text(Image(systemName: "camera.fill")).baselineOffset(-1)
-                + Text(" photograph your meal. Once done, enter or tap the ")
-                + Text(Image(systemName: "arrow.turn.down.left")).baselineOffset(-1)
-                + Text(" 'tab' in the bottom right of your keyboard to log, ")
-                + Text("Orie will handle the breakdown.")
-                    .foregroundColor(Color.accessibleYellow(isDark))
-            )
-            .font(.system(size: 14))
-            .foregroundColor(Color.secondaryText(isDark))
-            .multilineTextAlignment(.center)
-            .lineSpacing(4)
+            Text("Track your intake here. You can \(Image(systemName: "plus")) type, \(Image(systemName: "mic.fill")) talk, and \(Image(systemName: "camera.fill")) photograph your meal. Once done, enter or tap the \(Image(systemName: "arrow.turn.down.left")) 'tab' in the bottom right of your keyboard to log, \(Text("Orie will handle the breakdown.").foregroundColor(Color.accessibleYellow(isDark)))")
+                .font(.system(size: 14))
+                .foregroundColor(Color.secondaryText(isDark))
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
 
             Button(action: {
                 isShowingFoodInput = true
@@ -795,6 +783,7 @@ struct MainView: View {
                     used: subscriptionManager.aiUsedToday,
                     limit: subscriptionManager.aiLimit,
                     isDark: isDark,
+                    isPremium: subscriptionManager.tier == .premium,
                     onUpgrade: {
                         vm.showAiLimitAlert = false
                         subscriptionManager.paywallMessage = "Upgrade to Premium for more daily AI entries."

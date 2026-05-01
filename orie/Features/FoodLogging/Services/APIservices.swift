@@ -32,6 +32,7 @@ class APIService {
     }
 
     struct ImageAnalysisResponse: Codable {
+        let name: String?
         let description: String
         let confidence: String
         let nutrition: ImageNutritionData

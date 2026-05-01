@@ -9,6 +9,7 @@ struct AiLimitBanner: View {
     let used: Int
     let limit: Int
     var isDark: Bool = false
+    var isPremium: Bool = false
     let onUpgrade: () -> Void
     let onDismiss: () -> Void
 
@@ -21,23 +22,32 @@ struct AiLimitBanner: View {
                 .foregroundColor(Color.primaryText(isDark))
                 .padding(.trailing, 8)
 
-            Text("You've run out of AI entries today \(used)/\(limit)")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color.primaryText(isDark))
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("You've run out of AI entries today \(used)/\(limit)")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color.primaryText(isDark))
+                    .fixedSize(horizontal: false, vertical: true)
+                if isPremium {
+                    Text("Resets tomorrow")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.primaryText(isDark).opacity(0.6))
+                }
+            }
 
             Spacer(minLength: 0)
 
-            Button(action: onUpgrade) {
-                Text("Upgrade")
-                    .font(.system(size: 14))
-                    .fontWeight(.medium)
-                    .foregroundStyle(.black)
-                    .frame(height: 44)
-                    .padding(.horizontal, 20)
-                    .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+            if !isPremium {
+                Button(action: onUpgrade) {
+                    Text("Upgrade")
+                        .font(.system(size: 14))
+                        .fontWeight(.medium)
+                        .foregroundStyle(.black)
+                        .frame(height: 44)
+                        .padding(.horizontal, 20)
+                        .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
+                }
+                .glassEffect(in: .capsule)
             }
-            .glassEffect(in: .capsule)
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")

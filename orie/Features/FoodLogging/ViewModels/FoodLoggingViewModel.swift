@@ -229,7 +229,8 @@ final class FoodLoggingViewModel: ObservableObject {
                         sugar: cached.sugar,
                         servingSize: cached.servingSize,
                         imageUrl: nil,
-                        sources: nil
+                        sources: nil,
+                        isEstimated: nil
                     )
                 } else {
                     print("🌐 Fetching fresh nutrition for: \(foodName)")
@@ -342,7 +343,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 Calendar.current.isDate($0.entryDate, inSameDayAs: date) && $0.id != pendingId
             }.count
             isFirstEntryToday = othersTodayCount == 0
-            foodEntries[idx].foodName = result.description
+            foodEntries[idx].foodName = result.name ?? result.description
             foodEntries[idx].calories = result.nutrition.calories
             foodEntries[idx].protein = result.nutrition.protein
             foodEntries[idx].carbs = result.nutrition.carbs
@@ -358,7 +359,7 @@ final class FoodLoggingViewModel: ObservableObject {
             pendingImageEntryId = nil
         } else {
             isFirstEntryToday = isFirstEntryOfDay(for: date)
-            var entry = FoodEntry(foodName: result.description, entryDate: date)
+            var entry = FoodEntry(foodName: result.name ?? result.description, entryDate: date)
             entry.calories = result.nutrition.calories
             entry.protein = result.nutrition.protein
             entry.carbs = result.nutrition.carbs
@@ -764,7 +765,8 @@ final class FoodLoggingViewModel: ObservableObject {
                             sugar: cached.sugar,
                             servingSize: cached.servingSize,
                             imageUrl: nil,
-                            sources: nil
+                            sources: nil,
+                            isEstimated: nil
                         )
                     } else {
                         print("🌐 Fetching fresh nutrition for: \(entry.foodName)")

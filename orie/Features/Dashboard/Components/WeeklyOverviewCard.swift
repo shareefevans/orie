@@ -352,21 +352,24 @@ struct NutritionAverageRow: View {
 
     var body: some View {
         HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-
-            Text(title)
-                .font(.system(size: 14))
-                .foregroundColor(Color.primaryText(isDark))
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color.primaryText(isDark))
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .background(Color(red: 34/255, green: 34/255, blue: 34/255), in: Capsule())
+            .overlay(Capsule().stroke(Color(red: 45/255, green: 45/255, blue: 45/255), lineWidth: 1))
 
             Spacer()
 
             Text("\(value)\(unit)")
-                .font(.system(size: 13))
-                .fontWeight(.regular)
-                .italic()
-                .foregroundColor(Color.primaryText(isDark))
+                .font(.system(size: 14))
+                .foregroundColor(Color.secondaryText(isDark))
         }
     }
 }
@@ -382,45 +385,84 @@ struct MacroAverageRow: View {
     let isDark: Bool
 
     private var isTooLow: Bool {
-        guard let (suggestionText, show) = suggestion, show else { return false }
-        return suggestionText == "Increase"
+        guard let (text, show) = suggestion, show else { return false }
+        return text == "Increase"
+    }
+
+    private var isTooHigh: Bool {
+        guard let (text, show) = suggestion, show else { return false }
+        return text == "Decrease"
     }
 
     var body: some View {
         HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-
-            Text(title)
-                .font(.system(size: 14))
-                .foregroundColor(Color.primaryText(isDark))
+            if isTooLow {
+                AlertPill(message: "\(title) - Increase", severity: .warning)
+            } else if isTooHigh {
+                AlertPill(message: "\(title) - Decrease", severity: .danger)
+            } else {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 8, height: 8)
+                    Text(title)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color.primaryText(isDark))
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .background(Color(red: 34/255, green: 34/255, blue: 34/255), in: Capsule())
+                .overlay(Capsule().stroke(Color(red: 45/255, green: 45/255, blue: 45/255), lineWidth: 1))
+            }
 
             Spacer()
 
             HStack(spacing: 0) {
-                if isTooLow {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.accessibleYellow(isDark))
-                        .padding(.trailing, 4)
-                }
-
-                Text(" \(value)\(unit)")
+                Text("\(value)\(unit)")
                     .foregroundColor(Color.primaryText(isDark))
                 Text(" / \(goal)\(unit)")
-                    .foregroundColor(.gray)
-
-                if let (suggestionText, showSuggestion) = suggestion, showSuggestion {
-                    Text(" - \(suggestionText)")
-                        .foregroundColor(.gray)
-                }
+                    .foregroundColor(Color.secondaryText(isDark))
             }
-            .font(.system(size: 13))
-            .fontWeight(.regular)
-            .italic()
+            .font(.system(size: 14))
         }
     }
+}
+
+#Preview("Macro Row Badges") {
+    VStack(spacing: 16) {
+        MacroAverageRow(
+            color: Color(red: 49/255, green: 209/255, blue: 149/255),
+            title: "Protein", value: 175, goal: 225, unit: "g",
+            suggestion: nil,
+            isDark: true
+        )
+        MacroAverageRow(
+            color: Color(red: 135/255, green: 206/255, blue: 250/255),
+            title: "Carbs", value: 50, goal: 200, unit: "g",
+            suggestion: ("Increase", true),
+            isDark: true
+        )
+        MacroAverageRow(
+            color: Color(red: 135/255, green: 206/255, blue: 250/255),
+            title: "Carbs", value: 280, goal: 200, unit: "g",
+            suggestion: ("Decrease", true),
+            isDark: true
+        )
+        MacroAverageRow(
+            color: Color(red: 255/255, green: 30/255, blue: 60/255),
+            title: "Sugar", value: 5, goal: 15, unit: "g",
+            suggestion: ("Increase", true),
+            isDark: true
+        )
+        MacroAverageRow(
+            color: Color(red: 255/255, green: 30/255, blue: 60/255),
+            title: "Sugar", value: 80, goal: 15, unit: "g",
+            suggestion: ("Decrease", true),
+            isDark: true
+        )
+    }
+    .padding(24)
+    .background(Color(red: 18/255, green: 18/255, blue: 18/255))
 }
 
 #Preview {

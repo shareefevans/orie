@@ -380,63 +380,31 @@ struct MainView: View {
 
                         if isIntakeCardExpanded {
                             VStack(alignment: .leading, spacing: 16) {
-                                // Orie Assist Toggle
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Orie Assist")
-                                            .font(.system(size: 16))
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(Color.primaryText(isDark))
-                                        Text("Start to dig a little deeper")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color.secondaryText(isDark))
-                                    }
-
-                                    Spacer()
-
-                                    Toggle("", isOn: $isOrieAssistEnabled)
-                                        .labelsHidden()
-                                }
-                                .padding(.top, 42)
-
-                                Text("Today's Macros")
-                                    .font(.system(size: 16))
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-                                    .padding(.top, 24)
-                                    .padding(.bottom, 8)
-
+                                Spacer().frame(height: 28)
                                 MacroAverageRow(
                                     color: Color(red: 49/255, green: 209/255, blue: 149/255),
                                     title: "Protein", value: consumedProtein, goal: vm.dailyProteinGoal, unit: "g",
-                                    suggestion: isOrieAssistEnabled ? macroSuggestion(consumed: consumedProtein, goal: vm.dailyProteinGoal) : nil,
+                                    suggestion: macroSuggestion(consumed: consumedProtein, goal: vm.dailyProteinGoal),
                                     isDark: isDark
                                 )
                                 MacroAverageRow(
                                     color: Color(red: 135/255, green: 206/255, blue: 250/255),
                                     title: "Carbs", value: consumedCarbs, goal: vm.dailyCarbsGoal, unit: "g",
-                                    suggestion: isOrieAssistEnabled ? macroSuggestion(consumed: consumedCarbs, goal: vm.dailyCarbsGoal) : nil,
+                                    suggestion: macroSuggestion(consumed: consumedCarbs, goal: vm.dailyCarbsGoal),
                                     isDark: isDark
                                 )
                                 MacroAverageRow(
                                     color: Color(red: 255/255, green: 180/255, blue: 50/255),
                                     title: "Fats", value: consumedFats, goal: vm.dailyFatsGoal, unit: "g",
-                                    suggestion: isOrieAssistEnabled ? macroSuggestion(consumed: consumedFats, goal: vm.dailyFatsGoal) : nil,
+                                    suggestion: macroSuggestion(consumed: consumedFats, goal: vm.dailyFatsGoal),
                                     isDark: isDark
                                 )
-
-                                Text("Today's Nutrition")
-                                    .font(.system(size: 16))
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(Color.primaryText(isDark))
-                                    .padding(.top, 24)
-                                    .padding(.bottom, 8)
 
                                 if vm.dailyFibreGoal > 0 {
                                     MacroAverageRow(
                                         color: Color(red: 160/255, green: 80/255, blue: 255/255),
                                         title: "Fibre", value: consumedFibre, goal: vm.dailyFibreGoal, unit: "g",
-                                        suggestion: isOrieAssistEnabled ? nutritionSuggestion(consumed: consumedFibre, goal: vm.dailyFibreGoal) : nil,
+                                        suggestion: nutritionSuggestion(consumed: consumedFibre, goal: vm.dailyFibreGoal),
                                         isDark: isDark
                                     )
                                 } else {
@@ -450,7 +418,7 @@ struct MainView: View {
                                     MacroAverageRow(
                                         color: Color(red: 255/255, green: 105/255, blue: 180/255),
                                         title: "Sodium", value: consumedSodium, goal: vm.dailySodiumGoal, unit: "mg",
-                                        suggestion: isOrieAssistEnabled ? nutritionSuggestion(consumed: consumedSodium, goal: vm.dailySodiumGoal) : nil,
+                                        suggestion: nutritionSuggestion(consumed: consumedSodium, goal: vm.dailySodiumGoal),
                                         isDark: isDark
                                     )
                                 } else {
@@ -464,7 +432,7 @@ struct MainView: View {
                                     MacroAverageRow(
                                         color: Color(red: 255/255, green: 30/255, blue: 60/255),
                                         title: "Sugar", value: consumedSugar, goal: vm.dailySugarGoal, unit: "g",
-                                        suggestion: isOrieAssistEnabled ? nutritionSuggestion(consumed: consumedSugar, goal: vm.dailySugarGoal) : nil,
+                                        suggestion: nutritionSuggestion(consumed: consumedSugar, goal: vm.dailySugarGoal),
                                         isDark: isDark
                                     )
                                 } else {
@@ -478,7 +446,7 @@ struct MainView: View {
                     }
                     .padding(.top, isIntakeCardExpanded ? 32 : 22)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, isIntakeCardExpanded ? (isOrieAssistEnabled ? 32 : 40) : 22)
+                    .padding(.bottom, isIntakeCardExpanded ? 40 : 22)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(isIntakeCardExpanded ? 32 : 32)
@@ -504,14 +472,8 @@ struct MainView: View {
 
                         if (vm.hasAnyEntries ?? false) || isShowingFoodInput {
                         ForEach(entriesByPeriod, id: \.period) { group in
-                            if isOrieAssistEnabled {
-                                mealPeriodHeader(
-                                    period: group.period,
-                                    calories: group.entries.reduce(0) { $0 + ($1.calories ?? 0) }
-                                )
-                            }
                             ForEach(group.entries) { entry in
-                                let isFirstEntry = !isOrieAssistEnabled && group.period == entriesByPeriod.first?.period && entry.id == group.entries.first?.id
+                                let isFirstEntry = group.period == entriesByPeriod.first?.period && entry.id == group.entries.first?.id
                                 FoodEntryRow(
                                     entry: entry,
                                     isDark: isDark,

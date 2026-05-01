@@ -39,6 +39,7 @@ struct FoodEntry: Identifiable, Comparable {
     var imageUrl: String?
     var sources: [NutritionSource]?
     var isLoading: Bool
+    var isEstimated: Bool
 
     init(foodName: String, entryDate: Date = Date()) {
         self.timestamp = Date()
@@ -56,6 +57,7 @@ struct FoodEntry: Identifiable, Comparable {
         self.imageUrl = nil
         self.sources = nil
         self.isLoading = true
+        self.isEstimated = false
     }
 
     // Comparable implementation for sorting

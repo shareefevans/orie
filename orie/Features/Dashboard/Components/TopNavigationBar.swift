@@ -281,21 +281,6 @@ struct TopNavigationBar: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: { selectedTab = "assistance"; showSettingsDropdown = false }) {
-                HStack(spacing: 12) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.iconColor(isDark))
-                        .frame(width: 20)
-                    Text("Assistance")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color.primaryText(isDark))
-                    Spacer()
-                }
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
-
             Button(action: { showSettingsDropdown = false; feedbackText = ""; showFeedbackModal = true }) {
                 HStack(spacing: 12) {
                     Image(systemName: "bubble.left.fill")
@@ -311,7 +296,12 @@ struct TopNavigationBar: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: { showSettingsDropdown = false }) {
+            Button(action: {
+                showSettingsDropdown = false
+                if let url = URL(string: "https://www.orieapp.com/pages/contact") {
+                    UIApplication.shared.open(url)
+                }
+            }) {
                 HStack(spacing: 12) {
                     Image(systemName: "envelope.fill")
                         .font(.system(size: 14))

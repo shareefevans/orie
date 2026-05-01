@@ -20,6 +20,8 @@ struct SettingsTabContent: View {
 
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountAlert = false
+    @State private var showDeleteErrorAlert = false
+    @State private var isDeletingAccount = false
     @AppStorage("calorieProgressActivityEnabled") private var calorieProgressActivityEnabled = true
 
     var body: some View {
@@ -46,11 +48,22 @@ struct SettingsTabContent: View {
         .alert("Are you sure you want to delete your account?", isPresented: $showDeleteAccountAlert) {
             Button("Yes", role: .destructive) {
                 Task {
+                    isDeletingAccount = true
                     let success = await authManager.deleteAccount()
-                    if success { dismiss() }
+                    isDeletingAccount = false
+                    if success {
+                        dismiss()
+                    } else {
+                        showDeleteErrorAlert = true
+                    }
                 }
             }
             Button("Cancel", role: .cancel) { }
+        }
+        .alert("Failed to Delete Account", isPresented: $showDeleteErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(authManager.errorMessage ?? "Something went wrong. Please try again.")
         }
     }
 
@@ -373,10 +386,16 @@ struct SettingsTabContent: View {
     private var deleteAccountButton: some View {
         Button(action: { showDeleteAccountAlert = true }) {
             HStack(spacing: 10) {
-                Image(systemName: "trash")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                Text("Delete Account")
+                if isDeletingAccount {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.85)
+                } else {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                }
+                Text(isDeletingAccount ? "Deleting..." : "Delete Account")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
             }
@@ -385,6 +404,7 @@ struct SettingsTabContent: View {
             .background(Color.red.opacity(0.25), in: Capsule())
         }
         .glassEffect(in: .capsule)
+        .disabled(isDeletingAccount)
         .padding(.top, 8)
     }
 

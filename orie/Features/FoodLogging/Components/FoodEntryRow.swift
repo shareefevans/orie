@@ -152,7 +152,7 @@ struct FoodEntryRow: View {
                         onOpenSheet?()
                         showNutritionEdit = true
                     }) {
-                        Text("\(calories) cal")
+                        Text("\(entry.isEstimated ? "~" : "")\(calories) cal")
                             .font(.system(size: 14))
                             .foregroundColor(Color.secondaryText(isDark))
                             .frame(width: 90, alignment: .trailing)

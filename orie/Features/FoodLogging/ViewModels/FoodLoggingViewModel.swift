@@ -250,6 +250,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 foodEntries[index].servingSize = nutrition.servingSize
                 foodEntries[index].imageUrl = nutrition.imageUrl
                 foodEntries[index].sources = nutrition.sources
+                foodEntries[index].isEstimated = nutrition.isEstimated ?? false
                 foodEntries[index].isLoading = false
 
                 let dbEntry = try await authManager.withAuthRetry { accessToken in
@@ -571,7 +572,9 @@ final class FoodLoggingViewModel: ObservableObject {
                 }
                 await MainActor.run { hasAnyEntries = result }
             } catch {
-                await MainActor.run { hasAnyEntries = false }
+                // Do not overwrite hasAnyEntries on failure — a network/auth error
+                // should not reset an existing user's onboarding state to false.
+                print("checkHasAnyEntries failed: \(error)")
             }
         }
     }

@@ -238,9 +238,11 @@ class AuthManager: ObservableObject {
             return false
         }
 
-        clearSession()
-        currentUser = nil
-        isAuthenticated = false
+        await MainActor.run {
+            clearSession()
+            currentUser = nil
+            isAuthenticated = false
+        }
         return true
     }
 

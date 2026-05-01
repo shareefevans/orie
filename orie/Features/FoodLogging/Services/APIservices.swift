@@ -24,6 +24,7 @@ class APIService {
         let servingSize: String
         let imageUrl: String?
         let sources: [NutritionSource]?
+        let isEstimated: Bool?
     }
 
     struct NutritionRequest: Codable {

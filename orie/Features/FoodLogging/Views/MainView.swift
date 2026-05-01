@@ -444,9 +444,9 @@ struct MainView: View {
                             }
                         }
                     }
-                    .padding(.top, isIntakeCardExpanded ? 32 : 22)
+                    .padding(.top, isIntakeCardExpanded ? 24 : 24)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, isIntakeCardExpanded ? 40 : 22)
+                    .padding(.bottom, isIntakeCardExpanded ? 24 : 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.cardBackground(isDark))
                     .cornerRadius(isIntakeCardExpanded ? 32 : 32)

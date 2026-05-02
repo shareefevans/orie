@@ -355,7 +355,7 @@ struct MainView: View {
 
                         Text("\(remainingCalories) calories remaining")
                             .font(.system(size: 16))
-                            .foregroundColor(remainingCalories < -100 ? .red : Color.primaryText(isDark))
+                            .foregroundColor(remainingCalories < -200 ? .red : Color.primaryText(isDark))
                             .padding(.top, 4)
                             .padding(.bottom, 4)
                             .fontWeight(.medium)
@@ -992,6 +992,7 @@ struct MainView: View {
                 vm.loadFoodEntries(for: selectedDate)
                 vm.loadWeeklyFoodEntries()
                 vm.checkHasAnyEntries()
+                vm.refreshStreak()
                 let today = DateFormatter.yyyyMMdd.string(from: Date())
                 if today != vm.lastWeeklyProgressRefreshDate {
                     vm.lastWeeklyProgressRefreshDate = today

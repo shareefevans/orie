@@ -138,11 +138,13 @@ struct FoodInputField: View {
         }
         #endif
         #if os(iOS)
-        .fullScreenCover(isPresented: $showCameraPicker) {
+        .sheet(isPresented: $showCameraPicker) {
             ImagePicker(sourceType: .camera) { image in
                 handleCapturedImage(image)
             }
             .ignoresSafeArea()
+            .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
         }
         #endif
     }
@@ -376,40 +378,201 @@ struct FoodInputField: View {
 }
 
 #if os(iOS)
-struct ImagePicker: UIViewControllerRepresentable {
+import AVFoundation
+
+struct ImagePicker: View {
     let sourceType: UIImagePickerController.SourceType
     let onImageCaptured: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = sourceType
-        picker.delegate = context.coordinator
-        return picker
+    var body: some View {
+        AVCameraView(onImageCaptured: onImageCaptured, onDismiss: { dismiss() })
+            .ignoresSafeArea()
+    }
+}
+
+// MARK: - AVFoundation Camera
+
+struct AVCameraView: UIViewControllerRepresentable {
+    let onImageCaptured: (UIImage) -> Void
+    let onDismiss: () -> Void
+
+    func makeUIViewController(context: Context) -> AVCameraViewController {
+        let vc = AVCameraViewController()
+        vc.onImageCaptured = onImageCaptured
+        vc.onDismiss = onDismiss
+        return vc
     }
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    func updateUIViewController(_ uiViewController: AVCameraViewController, context: Context) {}
+}
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+final class AVCameraViewController: UIViewController {
+    var onImageCaptured: ((UIImage) -> Void)?
+    var onDismiss: (() -> Void)?
+
+    private let session = AVCaptureSession()
+    private var photoOutput = AVCapturePhotoOutput()
+    private var previewLayer: AVCaptureVideoPreviewLayer!
+    private var isFlashOn = false
+
+    // MARK: - Lifecycle
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        setupSession()
+        setupPreview()
+        setupControls()
     }
 
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        DispatchQueue.global(qos: .userInitiated).async { self.session.startRunning() }
+    }
 
-        init(_ parent: ImagePicker) {
-            self.parent = parent
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        DispatchQueue.global(qos: .userInitiated).async { self.session.stopRunning() }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer.frame = view.bounds
+    }
+
+    // MARK: - Session Setup
+
+    private func setupSession() {
+        session.beginConfiguration()
+        session.sessionPreset = .photo
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              let input = try? AVCaptureDeviceInput(device: device),
+              session.canAddInput(input) else { return }
+        session.addInput(input)
+        if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
+        session.commitConfiguration()
+    }
+
+    // MARK: - Preview
+
+    private func setupPreview() {
+        previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.frame = view.bounds
+        view.layer.insertSublayer(previewLayer, at: 0)
+    }
+
+    // MARK: - Controls
+
+    private func setupControls() {
+        // Top bar controls
+        let closeBtn = makeIconButton(systemName: "xmark", size: 20, weight: .semibold, action: #selector(closeTapped))
+        let flashBtn = makeIconButton(systemName: "bolt.slash.fill", size: 20, weight: .medium, action: #selector(flashTapped))
+        flashBtn.tag = 1 // used to find it later for icon updates
+
+        closeBtn.translatesAutoresizingMaskIntoConstraints = false
+        flashBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(closeBtn)
+        view.addSubview(flashBtn)
+
+        // Shutter button
+        let shutter = UIButton(type: .custom)
+        shutter.translatesAutoresizingMaskIntoConstraints = false
+        shutter.backgroundColor = .white
+        shutter.layer.cornerRadius = 36
+        shutter.layer.borderWidth = 3
+        shutter.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        shutter.addTarget(self, action: #selector(shutterTapped), for: .touchUpInside)
+        view.addSubview(shutter)
+
+        // Ring around shutter
+        let ring = UIView()
+        ring.translatesAutoresizingMaskIntoConstraints = false
+        ring.layer.cornerRadius = 44
+        ring.layer.borderWidth = 2
+        ring.layer.borderColor = UIColor.white.withAlphaComponent(0.6).cgColor
+        ring.backgroundColor = .clear
+        ring.isUserInteractionEnabled = false
+        view.addSubview(ring)
+
+        NSLayoutConstraint.activate([
+            // Close - top left
+            closeBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            closeBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            closeBtn.widthAnchor.constraint(equalToConstant: 44),
+            closeBtn.heightAnchor.constraint(equalToConstant: 44),
+
+            // Flash - top right
+            flashBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            flashBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            flashBtn.widthAnchor.constraint(equalToConstant: 44),
+            flashBtn.heightAnchor.constraint(equalToConstant: 44),
+
+            // Shutter ring
+            ring.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            ring.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -28),
+            ring.widthAnchor.constraint(equalToConstant: 88),
+            ring.heightAnchor.constraint(equalToConstant: 88),
+
+            // Shutter button inside ring
+            shutter.centerXAnchor.constraint(equalTo: ring.centerXAnchor),
+            shutter.centerYAnchor.constraint(equalTo: ring.centerYAnchor),
+            shutter.widthAnchor.constraint(equalToConstant: 72),
+            shutter.heightAnchor.constraint(equalToConstant: 72),
+        ])
+    }
+
+    private func makeIconButton(systemName: String, size: CGFloat, weight: UIImage.SymbolWeight, action: Selector) -> UIButton {
+        let btn = UIButton(type: .custom)
+        let config = UIImage.SymbolConfiguration(pointSize: size, weight: weight)
+        btn.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+        btn.tintColor = .white
+        btn.addTarget(self, action: action, for: .touchUpInside)
+        return btn
+    }
+
+    // MARK: - Actions
+
+    @objc private func closeTapped() {
+        onDismiss?()
+    }
+
+    @objc private func flashTapped() {
+        isFlashOn.toggle()
+        let iconName = isFlashOn ? "bolt.fill" : "bolt.slash.fill"
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        if let btn = view.viewWithTag(1) as? UIButton {
+            btn.setImage(UIImage(systemName: iconName, withConfiguration: config), for: .normal)
         }
+    }
 
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.onImageCaptured(image)
+    @objc private func shutterTapped() {
+        let settings = AVCapturePhotoSettings()
+        if let device = (session.inputs.first as? AVCaptureDeviceInput)?.device,
+           device.hasFlash {
+            settings.flashMode = isFlashOn ? .on : .off
+        }
+        photoOutput.capturePhoto(with: settings, delegate: self)
+
+        // Brief scale animation on shutter
+        if let shutter = view.subviews.first(where: { $0.layer.cornerRadius == 36 }) {
+            UIView.animate(withDuration: 0.08, animations: { shutter.transform = CGAffineTransform(scaleX: 0.88, y: 0.88) }) { _ in
+                UIView.animate(withDuration: 0.08) { shutter.transform = .identity }
             }
-            parent.dismiss()
         }
+    }
+}
 
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss()
+extension AVCameraViewController: AVCapturePhotoCaptureDelegate {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        guard error == nil,
+              let data = photo.fileDataRepresentation(),
+              let image = UIImage(data: data) else { return }
+        DispatchQueue.main.async {
+            self.onImageCaptured?(image)
+            self.onDismiss?()
         }
     }
 }

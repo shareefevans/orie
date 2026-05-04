@@ -151,6 +151,15 @@ struct FoodInputField: View {
 
     // MARK: - ❇️ Functions
     #if os(iOS)
+    private func resizeImage(_ image: UIImage, maxDimension: CGFloat = 512) -> UIImage {
+        let size = image.size
+        guard size.width > maxDimension || size.height > maxDimension else { return image }
+        let scale = maxDimension / max(size.width, size.height)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
+    }
+
     private func handleCapturedImage(_ image: UIImage) {
         guard let authManager = authManager else {
             onError?("Please sign in to use image scanning.")
@@ -162,7 +171,8 @@ struct FoodInputField: View {
 
         Task {
             do {
-                guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                let resized = resizeImage(image)
+                guard let imageData = resized.jpegData(compressionQuality: 0.4) else {
                     await MainActor.run { isAnalyzingImage = false }
                     return
                 }

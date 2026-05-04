@@ -448,7 +448,10 @@ final class AVCameraViewController: UIViewController {
         session.sessionPreset = .photo
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: device),
-              session.canAddInput(input) else { return }
+              session.canAddInput(input) else {
+            session.commitConfiguration()
+            return
+        }
         session.addInput(input)
         if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
         session.commitConfiguration()
@@ -549,6 +552,7 @@ final class AVCameraViewController: UIViewController {
     }
 
     @objc private func shutterTapped() {
+        guard session.outputs.contains(photoOutput) else { return }
         let settings = AVCapturePhotoSettings()
         if let device = (session.inputs.first as? AVCaptureDeviceInput)?.device,
            device.hasFlash {

@@ -98,19 +98,19 @@ final class FoodLoggingViewModel: ObservableObject {
     }
 
     func refreshStreak() {
-        Task {
-            guard let authManager = authManager else { return }
-            do {
-                let streak = try await authManager.withAuthRetry { accessToken in
-                    try await APIService.getStreak(accessToken: accessToken)
-                }
-                await MainActor.run {
-                    StreakManager.shared.update(to: streak)
-                    self.currentStreak = streak
-                }
-            } catch {
-                // Fall back to cached value silently
+        Task { await refreshStreakAsync() }
+    }
+
+    func refreshStreakAsync() async {
+        guard let authManager = authManager, authManager.isAuthenticated else { return }
+        do {
+            let streak = try await authManager.withAuthRetry { accessToken in
+                try await APIService.getStreak(accessToken: accessToken)
             }
+            StreakManager.shared.update(to: streak)
+            self.currentStreak = streak
+        } catch {
+            // Keep current displayed value, don't reset
         }
     }
 
@@ -203,11 +203,6 @@ final class FoodLoggingViewModel: ObservableObject {
 
         foodEntries.append(newEntry)
 
-        // Trigger streak celebration for first entry
-        if isFirstEntryToday {
-            triggerStreakCelebration()
-        }
-
         Task {
             guard let authManager else { return }
             do {
@@ -270,6 +265,11 @@ final class FoodLoggingViewModel: ObservableObject {
                     try await AchievementService.syncAchievements(accessToken: accessToken)
                 }), !syncResult.newlyUnlocked.isEmpty {
                     showAwardBanners(syncResult.newlyUnlocked)
+                }
+
+                // Refresh streak after entry is saved — backend now has the new entry
+                if isFirstEntryToday {
+                    await refreshStreakAsync()
                 }
 
             } catch APIError.sessionExpired {
@@ -877,8 +877,7 @@ final class FoodLoggingViewModel: ObservableObject {
     /// Trigger the streak celebration Live Activity
     private func triggerStreakCelebration() {
         Task {
-            // Refresh from backend first so the celebration shows the accurate count
-            await withTaskGroup(of: Void.self) { _ in refreshStreak() }
+            await refreshStreakAsync()
             if #available(iOS 16.1, *) {
                 guard self.currentStreak > 0 else { return }
                 StreakActivityManager.shared.startStreakCelebration(streakDays: self.currentStreak)

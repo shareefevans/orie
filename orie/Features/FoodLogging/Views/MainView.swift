@@ -355,7 +355,7 @@ struct MainView: View {
 
                         Text("\(remainingCalories) calories remaining")
                             .font(.system(size: 16))
-                            .foregroundColor(remainingCalories < -200 ? .red : Color.primaryText(isDark))
+                            .foregroundColor(vm.dailyCalorieGoal > 0 && remainingCalories < -200 ? .red : Color.primaryText(isDark))
                             .padding(.top, 4)
                             .padding(.bottom, 4)
                             .fontWeight(.medium)
@@ -987,12 +987,15 @@ struct MainView: View {
                 autocompleteSuggestion = nil
             }
         }
+        .onChange(of: authManager.sessionRefreshCount) { _, _ in
+            // Called after orieApp finishes refreshSession() — token is guaranteed fresh here
+            vm.refreshStreak()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 vm.loadFoodEntries(for: selectedDate)
                 vm.loadWeeklyFoodEntries()
                 vm.checkHasAnyEntries()
-                vm.refreshStreak()
                 let today = DateFormatter.yyyyMMdd.string(from: Date())
                 if today != vm.lastWeeklyProgressRefreshDate {
                     vm.lastWeeklyProgressRefreshDate = today

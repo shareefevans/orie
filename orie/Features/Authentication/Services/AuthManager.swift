@@ -16,6 +16,9 @@ class AuthManager: ObservableObject {
     @Published var currentUser: AuthService.User?
     @Published var errorMessage: String?
     @Published var profileSetupCompleted = false
+    /// Incremented each time a session refresh completes successfully.
+    /// Observers can use this to react after a guaranteed-fresh token is available.
+    @Published var sessionRefreshCount: Int = 0
 
     private let accessTokenKey = "accessToken"
     private let refreshTokenKey = "refreshToken"
@@ -429,6 +432,7 @@ class AuthManager: ObservableObject {
                 checkProfileSetupCompleted()
                 await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
+                sessionRefreshCount += 1
             } else {
                 // Server responded but returned no session — refresh token is invalid
                 clearSession()
@@ -446,6 +450,7 @@ class AuthManager: ObservableObject {
                 currentUser = loadSavedUser()
                 checkProfileSetupCompleted()
                 isAuthenticated = true
+                sessionRefreshCount += 1
             }
         }
     }

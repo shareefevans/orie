@@ -47,7 +47,7 @@ struct NutritionDetailSheet: View {
             .padding(.top, 16)
             .padding(.bottom, 16)
 
-            VStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 6) {
                 // MARK: 👉Food name
                 Text(entry.foodName)
                     .font(.title2)
@@ -57,9 +57,20 @@ struct NutritionDetailSheet: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 8)
+
+                if let description = entry.photoDescription {
+                    Text(description)
+                        .font(.footnote)
+                        .foregroundColor(Color.secondaryText(isDark))
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 24)
 
             // MARK: 👉Sources row (buttons)
             if let sources = entry.sources, !sources.isEmpty {
@@ -205,9 +216,24 @@ struct NutritionDetailSheet: View {
     }
 }
 
-#Preview {
+#Preview("Without description") {
     NutritionDetailSheet(
         entry: FoodEntry(foodName: "KFC Zinger Burger"),
         isDark: true
     )
+}
+
+#Preview("With photo description") {
+    var entry = FoodEntry(foodName: "Grilled Chicken Rice")
+    entry.calories = 580
+    entry.protein = 42.0
+    entry.carbs = 68.0
+    entry.fats = 12.0
+    entry.fibre = 2.5
+    entry.sodium = 420
+    entry.sugar = 1.5
+    entry.servingSize = "1 plate (~350g)"
+    entry.photoDescription = "Approx. 200g white rice with 150g grilled chicken breast and a side salad"
+    entry.isLoading = false
+    return NutritionDetailSheet(entry: entry, isDark: true)
 }

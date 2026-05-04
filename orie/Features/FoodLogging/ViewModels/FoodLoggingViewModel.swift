@@ -333,6 +333,9 @@ final class FoodLoggingViewModel: ObservableObject {
     }
 
     func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse, date: Date) {
+        let rawName = result.name ?? result.description
+        let foodName = rawName.hasPrefix("{") ? "Unknown food item" : rawName
+
         // Resolve which entry to update/append and whether it's the first today
         let entryId: UUID
         let isFirstEntryToday: Bool
@@ -343,7 +346,7 @@ final class FoodLoggingViewModel: ObservableObject {
                 Calendar.current.isDate($0.entryDate, inSameDayAs: date) && $0.id != pendingId
             }.count
             isFirstEntryToday = othersTodayCount == 0
-            foodEntries[idx].foodName = result.name ?? result.description
+            foodEntries[idx].foodName = foodName
             foodEntries[idx].calories = result.nutrition.calories
             foodEntries[idx].protein = result.nutrition.protein
             foodEntries[idx].carbs = result.nutrition.carbs
@@ -354,12 +357,13 @@ final class FoodLoggingViewModel: ObservableObject {
             foodEntries[idx].servingSize = result.nutrition.servingSize
             foodEntries[idx].imageUrl = result.nutrition.imageUrl
             foodEntries[idx].sources = result.nutrition.sources
+            foodEntries[idx].photoDescription = result.description
             foodEntries[idx].isLoading = false
             entryId = pendingId
             pendingImageEntryId = nil
         } else {
             isFirstEntryToday = isFirstEntryOfDay(for: date)
-            var entry = FoodEntry(foodName: result.name ?? result.description, entryDate: date)
+            var entry = FoodEntry(foodName: foodName, entryDate: date)
             entry.calories = result.nutrition.calories
             entry.protein = result.nutrition.protein
             entry.carbs = result.nutrition.carbs
@@ -370,6 +374,7 @@ final class FoodLoggingViewModel: ObservableObject {
             entry.servingSize = result.nutrition.servingSize
             entry.imageUrl = result.nutrition.imageUrl
             entry.sources = result.nutrition.sources
+            entry.photoDescription = result.description
             entry.isLoading = false
             entryId = entry.id
             foodEntries.append(entry)

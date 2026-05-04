@@ -38,6 +38,7 @@ struct FoodEntry: Identifiable, Comparable {
     var servingSize: String?
     var imageUrl: String?
     var sources: [NutritionSource]?
+    var photoDescription: String?
     var isLoading: Bool
     var isEstimated: Bool
 
@@ -56,6 +57,7 @@ struct FoodEntry: Identifiable, Comparable {
         self.servingSize = nil
         self.imageUrl = nil
         self.sources = nil
+        self.photoDescription = nil
         self.isLoading = true
         self.isEstimated = false
     }

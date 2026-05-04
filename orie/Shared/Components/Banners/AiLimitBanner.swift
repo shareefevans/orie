@@ -23,7 +23,7 @@ struct AiLimitBanner: View {
                 .padding(.trailing, 8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("You've run out of AI entries today \(used)/\(limit)")
+                Text("You've run out of AI entries today \(isPremium ? "15/15" : "3/3")")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Color.primaryText(isDark))
                     .fixedSize(horizontal: false, vertical: true)

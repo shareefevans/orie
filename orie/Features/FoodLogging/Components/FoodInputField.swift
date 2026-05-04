@@ -102,13 +102,6 @@ struct FoodInputField: View {
             Spacer()
 
             #if os(iOS)
-            if isAnalyzingImage {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: Color.secondaryText(isDark)))
-                    .scaleEffect(0.8)
-                    .frame(width: 44, height: 44)
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
-            }
             #endif
         }
         .frame(minHeight: 44)

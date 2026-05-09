@@ -324,12 +324,28 @@ final class FoodLoggingViewModel: ObservableObject {
     }
 
     private var pendingImageEntryId: UUID? = nil
+    var isPhotoAnalyzing: Bool { pendingImageEntryId != nil }
 
     func beginImageEntry(date: Date) {
         var placeholder = FoodEntry(foodName: "Analysing photo…", entryDate: date)
         placeholder.isLoading = true
         pendingImageEntryId = placeholder.id
         foodEntries.append(placeholder)
+    }
+
+    func cancelPendingImageEntry() {
+        guard let pendingId = pendingImageEntryId,
+              let idx = foodEntries.firstIndex(where: { $0.id == pendingId }) else { return }
+        foodEntries.remove(at: idx)
+        pendingImageEntryId = nil
+    }
+
+    func triggerAiLimitAlert() {
+        let todayString = Calendar.current.startOfDay(for: Date()).ISO8601Format()
+        if aiLimitAlertShownDate != todayString {
+            aiLimitAlertShownDate = todayString
+        }
+        showAiLimitAlert = true
     }
 
     func addFoodEntryFromImage(result: APIService.ImageAnalysisResponse, date: Date) {
@@ -343,7 +359,7 @@ final class FoodLoggingViewModel: ObservableObject {
         if let pendingId = pendingImageEntryId,
            let idx = foodEntries.firstIndex(where: { $0.id == pendingId }) {
             let othersTodayCount = foodEntries.filter {
-                Calendar.current.isDate($0.entryDate, inSameDayAs: date) && $0.id != pendingId
+                Calendar.current.isDate($0.entryDate, inSameDayAs: date) && $0.id != pendingId && !$0.isLoading
             }.count
             isFirstEntryToday = othersTodayCount == 0
             foodEntries[idx].foodName = foodName
@@ -875,7 +891,7 @@ final class FoodLoggingViewModel: ObservableObject {
     /// Check if this is the first food entry logged today
     private func isFirstEntryOfDay(for date: Date) -> Bool {
         let calendar = Calendar.current
-        let todayEntries = foodEntries.filter { calendar.isDate($0.entryDate, inSameDayAs: date) }
+        let todayEntries = foodEntries.filter { calendar.isDate($0.entryDate, inSameDayAs: date) && !$0.isLoading }
         return todayEntries.isEmpty
     }
 

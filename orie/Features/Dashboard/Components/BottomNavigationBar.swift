@@ -14,6 +14,7 @@ struct BottomNavigationBar: View {
     var onAskOrie: (() -> Void)? = nil
     var onTriggerMic: (() -> Void)? = nil
     var onTriggerCamera: (() -> Void)? = nil
+    var isPhotoAnalyzing: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -61,10 +62,11 @@ struct BottomNavigationBar: View {
             Button(action: { onTriggerCamera?() }) {
                 Image(systemName: "camera")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color.primaryText(isDark))
+                    .foregroundColor(isPhotoAnalyzing ? Color.primaryText(isDark).opacity(0.3) : Color.primaryText(isDark))
                     .frame(width: 50, height: 50)
             }
             .glassEffect(.regular.interactive())
+            .disabled(isPhotoAnalyzing)
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 15)

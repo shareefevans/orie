@@ -18,8 +18,10 @@ struct FoodInputField: View {
     var onSubmit: (String) -> Void
     var onImageAnalyzed: ((APIService.ImageAnalysisResponse) -> Void)?
     var onImageCaptureStarted: (() -> Void)?
+    var onImageAnalysisFailed: (() -> Void)? = nil
     var onError: ((String) -> Void)? = nil
     var onPaywallRequired: ((String) -> Void)? = nil
+    var onAiLimitReached: (() -> Void)? = nil
     @FocusState.Binding var isFocused: Bool
     var authManager: AuthManager? = nil
     var onSuggestionChanged: ((String?) -> Void)? = nil
@@ -182,17 +184,20 @@ struct FoodInputField: View {
             } catch APIError.upgradeRequired {
                 await MainActor.run {
                     isAnalyzingImage = false
+                    onImageAnalysisFailed?()
                     onPaywallRequired?("Photo scanning is a premium feature. Upgrade to scan unlimited meals.")
                 }
             } catch APIError.aiLimitReached {
                 await MainActor.run {
                     isAnalyzingImage = false
-                    onPaywallRequired?("You've hit your daily Ai entry limit.")
+                    onImageAnalysisFailed?()
+                    onAiLimitReached?()
                 }
             } catch {
                 print("Error analyzing image: \(error)")
                 await MainActor.run {
                     isAnalyzingImage = false
+                    onImageAnalysisFailed?()
                     if let urlError = error as? URLError {
                         switch urlError.code {
                         case .notConnectedToInternet:

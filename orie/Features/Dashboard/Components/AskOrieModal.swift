@@ -263,25 +263,6 @@ struct AskOrieModal: View {
             .padding(.trailing, 8)
             .padding(.bottom, isTextFieldFocused ? 8 : 7)
         }
-        .overlay(alignment: .bottomLeading) {
-            if isTextFieldFocused {
-                HStack(spacing: 16) {
-                    Button(action: {}) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color.secondaryText(isDark))
-                    }
-                    Button(action: {}) {
-                        Image(systemName: "face.smiling")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color.secondaryText(isDark))
-                    }
-                }
-                .padding(.leading, 16)
-                .padding(.bottom, 10)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-        }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isTextFieldFocused)
         #if os(iOS)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))

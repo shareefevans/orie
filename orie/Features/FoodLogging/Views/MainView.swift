@@ -522,10 +522,16 @@ struct MainView: View {
                             onImageCaptureStarted: {
                                 vm.beginImageEntry(date: selectedDate)
                             },
+                            onImageAnalysisFailed: {
+                                vm.cancelPendingImageEntry()
+                            },
                             onError: { vm.showError($0) },
                             onPaywallRequired: { message in
                                 subscriptionManager.paywallMessage = message
                                 subscriptionManager.showUpgradePaywall = true
+                            },
+                            onAiLimitReached: {
+                                vm.triggerAiLimitAlert()
                             },
                             isFocused: $isInputFocused,
                             authManager: authManager,
@@ -839,6 +845,8 @@ struct MainView: View {
                     if subscriptionManager.tier != .premium {
                         subscriptionManager.paywallMessage = "Photo scanning is a premium feature. Upgrade to scan unlimited meals."
                         subscriptionManager.showUpgradePaywall = true
+                    } else if subscriptionManager.aiUsedToday >= subscriptionManager.aiLimit && subscriptionManager.aiLimit > 0 {
+                        vm.triggerAiLimitAlert()
                     } else {
                         selectedTab = "consumed"
                         shouldScrollToInput = true
@@ -846,7 +854,8 @@ struct MainView: View {
                             triggerCameraFromNav = true
                         }
                     }
-                }
+                },
+                isPhotoAnalyzing: vm.isPhotoAnalyzing
             )
         }
         .ignoresSafeArea(.keyboard)

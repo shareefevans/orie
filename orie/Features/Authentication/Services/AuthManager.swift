@@ -390,6 +390,11 @@ class AuthManager: ObservableObject {
             }
         }
 
+        // Only check profile completion if a plan has already been selected.
+        // A brand-new user cannot have completed profile setup, and checking early
+        // can cause a race condition during the premium purchase flow.
+        guard UserDefaults.standard.bool(forKey: "planSelected_\(userId)") else { return }
+
         if !profileSetupCompleted {
             if let isComplete = try? await withAuthRetry({ token in
                 try await APIService.getProfileIsComplete(accessToken: token)
@@ -430,7 +435,6 @@ class AuthManager: ObservableObject {
                     saveUser(user)
                 }
                 checkProfileSetupCompleted()
-                await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
                 sessionRefreshCount += 1
             } else {

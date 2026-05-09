@@ -19,6 +19,7 @@ struct SettingsTabContent: View {
     var onDowngradeTapped: (() -> Void)? = nil
 
     @State private var showNotificationDeniedAlert = false
+    @State private var showSubscriptionWarningAlert = false
     @State private var showDeleteAccountAlert = false
     @State private var showDeleteErrorAlert = false
     @State private var isDeletingAccount = false
@@ -44,6 +45,17 @@ struct SettingsTabContent: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("To receive meal reminders, please enable notifications in Settings.")
+        }
+        .alert("Active Subscription", isPresented: $showSubscriptionWarningAlert) {
+            Button("Manage Subscription") {
+                subscriptionManager.manageSubscription()
+            }
+            Button("Delete Anyway", role: .destructive) {
+                showDeleteAccountAlert = true
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("You have an active Premium subscription. Deleting your account won't cancel it — you'll continue to be charged. Please cancel your subscription first in your Apple ID settings.")
         }
         .alert("Are you sure you want to delete your account?", isPresented: $showDeleteAccountAlert) {
             Button("Yes", role: .destructive) {
@@ -384,7 +396,13 @@ struct SettingsTabContent: View {
 
     // MARK: - Delete Account Button
     private var deleteAccountButton: some View {
-        Button(action: { showDeleteAccountAlert = true }) {
+        Button(action: {
+            if subscriptionManager.tier == .premium {
+                showSubscriptionWarningAlert = true
+            } else {
+                showDeleteAccountAlert = true
+            }
+        }) {
             HStack(spacing: 10) {
                 if isDeletingAccount {
                     ProgressView()

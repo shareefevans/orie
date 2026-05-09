@@ -28,6 +28,7 @@ final class SubscriptionManager: ObservableObject {
 
     private var transactionListener: Task<Void, Never>?
     private weak var authManager: AuthManager?
+    private var purchaseInProgress = false
 
     init() {
         transactionListener = listenForTransactions()
@@ -114,22 +115,26 @@ final class SubscriptionManager: ObservableObject {
                 return
             }
 
+            purchaseInProgress = true
             let result = try await product.purchase()
 
             switch result {
             case .success(let verificationResult):
                 switch verificationResult {
                 case .verified(let transaction):
-                    try await authManager.withAuthRetry { accessToken in
+                    // Always finish and grant access — StoreKit has already verified payment
+                    await transaction.finish()
+                    tier = .premium
+                    aiLimit = 15
+                    purchaseError = nil
+                    markPlanSelected(userId: userId)
+                    // Best-effort backend sync — don't block or fail the purchase if this errors
+                    try? await authManager.withAuthRetry { accessToken in
                         try await APIService.verifyAppleTransaction(
                             accessToken: accessToken,
                             jwsRepresentation: verificationResult.jwsRepresentation
                         )
                     }
-                    await transaction.finish()
-                    tier = .premium
-                    aiLimit = 15
-                    markPlanSelected(userId: userId)
                 case .unverified:
                     purchaseError = "Purchase could not be verified. Please contact support."
                 }
@@ -144,6 +149,7 @@ final class SubscriptionManager: ObservableObject {
             purchaseError = "Purchase failed. Please try again."
             print("Purchase error: \(error)")
         }
+        purchaseInProgress = false
         isLoading = false
     }
 
@@ -198,7 +204,7 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private func refreshFromBackend() async {
-        guard let authManager = authManager else { return }
+        guard let authManager = authManager, !purchaseInProgress else { return }
         await loadStatus(authManager: authManager)
     }
 }

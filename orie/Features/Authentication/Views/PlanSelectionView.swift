@@ -292,7 +292,7 @@ struct PlanSelectionView: View {
         if let product = premiumProduct,
            let offer = product.subscription?.introductoryOffer,
            offer.paymentMode == .freeTrial {
-            return "Try Free for 7 Days — then \(product.displayPrice)/mo"
+            return "Try Free for 7 Days"
         }
         return "Select Premium Plan"
     }

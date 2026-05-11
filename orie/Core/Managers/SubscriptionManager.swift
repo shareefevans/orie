@@ -53,14 +53,38 @@ final class SubscriptionManager: ObservableObject {
     func loadStatus(authManager: AuthManager) async {
         self.authManager = authManager
         isLoading = true
+
+        // Check StoreKit entitlements first — this is the source of truth for
+        // whether the user has paid, regardless of backend sync state.
+        var hasValidEntitlement = false
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result,
+               transaction.productID == Self.premiumProductId,
+               transaction.revocationDate == nil {
+                hasValidEntitlement = true
+                break
+            }
+        }
+
         do {
             let status = try await authManager.withAuthRetry { accessToken in
                 try await APIService.getSubscriptionStatus(accessToken: accessToken)
             }
-            tier = SubscriptionTier(rawValue: status.tier) ?? .free
+            // If StoreKit says they have a valid purchase, don't let the backend downgrade them.
+            // This handles cases where backend verification was delayed or failed.
+            if hasValidEntitlement {
+                tier = .premium
+                aiLimit = 15
+            } else {
+                tier = SubscriptionTier(rawValue: status.tier) ?? .free
+                aiLimit = status.aiLimit
+            }
             aiUsedToday = status.aiUsedToday
-            aiLimit = status.aiLimit
         } catch {
+            if hasValidEntitlement {
+                tier = .premium
+                aiLimit = 15
+            }
             print("Failed to load subscription status: \(error)")
         }
         isLoading = false
@@ -80,23 +104,6 @@ final class SubscriptionManager: ObservableObject {
             markPlanSelected(userId: userId)
         } catch {
             print("Failed to select free tier: \(error)")
-        }
-        isLoading = false
-    }
-
-    // MARK: - Select premium tier directly
-
-    func selectPremium(authManager: AuthManager, userId: String) async {
-        isLoading = true
-        do {
-            try await authManager.withAuthRetry { accessToken in
-                try await APIService.selectPremiumTier(accessToken: accessToken)
-            }
-            tier = .premium
-            aiLimit = 15
-            markPlanSelected(userId: userId)
-        } catch {
-            print("Failed to select premium tier: \(error)")
         }
         isLoading = false
     }
@@ -204,7 +211,7 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private func refreshFromBackend() async {
-        guard let authManager = authManager, !purchaseInProgress else { return }
+        guard let authManager = authManager, !purchaseInProgress, tier != .premium else { return }
         await loadStatus(authManager: authManager)
     }
 }

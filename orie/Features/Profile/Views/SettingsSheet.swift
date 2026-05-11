@@ -49,7 +49,11 @@ struct SettingsSheet: View {
         .preferredColorScheme(isDark ? .dark : .light)
         .presentationDragIndicator(.visible)
         .onAppear {
-            Task { await subscriptionManager.loadStatus(authManager: authManager) }
+            Task {
+                if subscriptionManager.tier != .premium {
+                    await subscriptionManager.loadStatus(authManager: authManager)
+                }
+            }
         }
         .overlay {
             if subscriptionManager.showUpgradePaywall {
@@ -129,14 +133,11 @@ struct SettingsSheet: View {
                     .disabled(subscriptionManager.isLoading)
 
                     Button(action: {
-                        Task {
-                            let userId = authManager.currentUser?.id ?? ""
-                            await subscriptionManager.selectFree(authManager: authManager, userId: userId)
-                            showDowngradeModal = false
-                        }
+                        showDowngradeModal = false
+                        subscriptionManager.manageSubscription()
                     }) {
                         ZStack {
-                            Text("Downgrade to Free")
+                            Text("Manage Subscription")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(isDark ? .white : .black)
                                 .opacity(subscriptionManager.isLoading ? 0 : 1)

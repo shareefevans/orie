@@ -66,7 +66,11 @@ struct ProfileSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear {
             loadProfile()
-            Task { await subscriptionManager.loadStatus(authManager: authManager) }
+            Task {
+                if subscriptionManager.tier != .premium {
+                    await subscriptionManager.loadStatus(authManager: authManager)
+                }
+            }
         }
     }
 

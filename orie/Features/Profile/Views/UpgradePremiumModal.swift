@@ -113,8 +113,10 @@ struct UpgradePremiumModal: View {
                     Button(action: {
                         Task {
                             let userId = authManager.currentUser?.id ?? ""
-                            await subscriptionManager.selectPremium(authManager: authManager, userId: userId)
-                            dismiss()
+                            await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                            if subscriptionManager.tier == .premium {
+                                dismiss()
+                            }
                         }
                     }) {
                         ZStack {

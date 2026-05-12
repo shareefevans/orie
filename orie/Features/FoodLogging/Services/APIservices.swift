@@ -10,6 +10,11 @@ import Foundation
 class APIService {
     static let baseURL = "https://oriebackend.onrender.com"
 
+    /// Attaches the persistent device fingerprint header to any URLRequest.
+    static func addDeviceID(to request: inout URLRequest) {
+        request.setValue(DeviceIDManager.deviceID, forHTTPHeaderField: "X-Device-ID")
+    }
+
     // MARK: - Nutrition Models
 
     struct NutritionResponse: Codable {
@@ -78,6 +83,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.httpBody = try JSONEncoder().encode(NutritionRequest(foodItem: foodItem))
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -109,6 +115,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.timeoutInterval = 60
         request.httpBody = try JSONEncoder().encode(ImageAnalysisRequest(image: imageBase64))
 
@@ -138,6 +145,7 @@ class APIService {
         guard let url = URL(string: "\(baseURL)/api/profile") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         if httpResponse.statusCode == 401 { throw APIError.sessionExpired }
@@ -159,6 +167,7 @@ class APIService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -181,6 +190,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.httpBody = try JSONEncoder().encode([String: String]())
 
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -203,6 +213,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.httpBody = try JSONEncoder().encode(["jwsRepresentation": jwsRepresentation])
 
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -225,6 +236,7 @@ class APIService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -280,6 +292,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.timeoutInterval = 30
         request.httpBody = try JSONEncoder().encode(ChatRequest(messages: messages, context: context))
 
@@ -314,6 +327,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
 
         let body: [String: String] = ["message_content": messageContent, "sentiment": sentiment]
         request.httpBody = try JSONEncoder().encode(body)
@@ -345,6 +359,7 @@ class APIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        addDeviceID(to: &request)
         request.httpBody = try JSONEncoder().encode(FeedbackRequest(name: name, email: email, message: message))
 
         let (_, response) = try await URLSession.shared.data(for: request)

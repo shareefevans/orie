@@ -15,6 +15,12 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Orie uses your camera to photograph meals for AI nutrition analysis.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Orie uses your microphone for voice food logging.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Orie uses speech recognition to let you log food by voice.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>

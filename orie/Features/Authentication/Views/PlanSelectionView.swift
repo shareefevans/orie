@@ -119,19 +119,19 @@ struct PlanSelectionView: View {
                             .padding(.top, 8)
                             .padding(.bottom, 4)
                         
-                        Text(billingCycle == 0 ? "This is a monthly, recurring payment that can be canceled at any time" : "This is an annually recurring payment that can be canceled at any time")
+                        Text(billingCycle == 0 ? "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase." : "This is an annually recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
                             .font(.system(size: 13))
                             .italic()
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 0)
 
                         Rectangle()
                             .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
                             .frame(height: 1)
                             .padding(.vertical, 4)
-                        
+
                         // CTA inside card
                         Button(action: {
                             Task {
@@ -158,6 +158,19 @@ struct PlanSelectionView: View {
                         .glassEffect(in: .capsule)
                         .disabled(isPremiumLoading || isFreeLoading)
                         .padding(.top, 4)
+
+                        HStack(spacing: 4) {
+                            Link("Terms of Use", destination: URL(string: "https://www.orieapp.com/pages/terms")!)
+                                .underline()
+                            Text("&")
+                            Link("Privacy Policy", destination: URL(string: "https://www.orieapp.com/pages/privacy")!)
+                                .underline()
+                        }
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 4)
+                        
                     }
                     .padding(24)
                     .background(Color.cardBackground(isDark))

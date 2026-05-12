@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct UpgradePremiumModal: View {
     @EnvironmentObject var authManager: AuthManager
@@ -11,6 +12,13 @@ struct UpgradePremiumModal: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     var isDark: Bool { themeManager.isDarkMode }
+
+    @State private var premiumProduct: Product? = nil
+
+    private var priceDisplay: String {
+        guard let product = premiumProduct else { return "$2.99" }
+        return "\(product.displayPrice)/month"
+    }
 
     private func dismiss() {
         subscriptionManager.showUpgradePaywall = false
@@ -31,7 +39,7 @@ struct UpgradePremiumModal: View {
                             .font(.footnote)
                             .fontWeight(.regular)
                             .foregroundColor(.yellow)
-                        Text("$2.99usd per month")
+                        Text(priceDisplay)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(Color.primaryText(isDark))
                         if !subscriptionManager.paywallMessage.isEmpty {
@@ -85,7 +93,7 @@ struct UpgradePremiumModal: View {
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
-                Text("This is a monthly, recurring payment that can be canceled at any time")
+                Text("This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
                     .font(.system(size: 13))
                     .italic()
                     .foregroundColor(.gray)
@@ -137,6 +145,17 @@ struct UpgradePremiumModal: View {
                     .glassEffect(in: .capsule)
                     .disabled(subscriptionManager.isLoading)
                 }
+
+                HStack(spacing: 4) {
+                    Link("Terms of Use", destination: URL(string: "https://www.orieapp.com/pages/terms")!)
+                        .underline()
+                    Text("&")
+                    Link("Privacy Policy", destination: URL(string: "https://www.orieapp.com/pages/privacy")!)
+                        .underline()
+                }
+                .font(.system(size: 12))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
             }
             .padding(24)
             .background(Color.cardBackground(isDark))
@@ -156,6 +175,11 @@ struct UpgradePremiumModal: View {
         }
         .onAppear {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+        .task {
+            if let products = try? await Product.products(for: [SubscriptionManager.premiumProductId]) {
+                premiumProduct = products.first
+            }
         }
     }
 }

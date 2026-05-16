@@ -126,7 +126,7 @@ struct SettingsTabContent: View {
                 .frame(height: 1)
 
             if subscriptionManager.tier == .premium {
-                Text("This is a monthly, recurring payment that can be canceled at any time")
+                Text("This is a recurring payment that can be canceled at any time")
                     .font(.system(size: 13))
                     .italic()
                     .foregroundColor(.gray)

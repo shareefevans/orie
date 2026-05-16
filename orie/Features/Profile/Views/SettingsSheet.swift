@@ -81,7 +81,7 @@ struct SettingsSheet: View {
                             .font(.footnote)
                             .fontWeight(.regular)
                             .foregroundColor(Color.secondaryText(isDark))
-                        Text("$0usd per month")
+                        Text("$0 per month")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(Color.primaryText(isDark))
                     }

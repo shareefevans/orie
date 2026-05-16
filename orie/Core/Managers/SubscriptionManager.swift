@@ -17,11 +17,15 @@ enum SubscriptionTier: String {
 final class SubscriptionManager: ObservableObject {
 
     static let premiumProductId = "orie.premium.monthly"
+    static let premiumAnnualProductId = "orie.premium.annually"
 
     @Published var tier: SubscriptionTier = .free
     @Published var aiUsedToday: Int = 0
     @Published var aiLimit: Int = 0
     @Published var isLoading: Bool = false
+    /// True while the initial subscription status is being fetched on launch.
+    /// Gates are ignored during this window so premium users aren't shown the paywall mid-load.
+    @Published var isLoadingStatus: Bool = true
     @Published var purchaseError: String? = nil
     @Published var showUpgradePaywall: Bool = false
     @Published var paywallMessage: String = ""
@@ -88,6 +92,7 @@ final class SubscriptionManager: ObservableObject {
             print("Failed to load subscription status: \(error)")
         }
         isLoading = false
+        isLoadingStatus = false
     }
 
     // MARK: - Select free tier
@@ -110,12 +115,12 @@ final class SubscriptionManager: ObservableObject {
 
     // MARK: - Purchase premium
 
-    func purchase(authManager: AuthManager, userId: String) async {
+    func purchase(authManager: AuthManager, userId: String, productId: String = premiumProductId) async {
         isLoading = true
         purchaseError = nil
 
         do {
-            let products = try await Product.products(for: [Self.premiumProductId])
+            let products = try await Product.products(for: [productId])
             guard let product = products.first else {
                 purchaseError = "Product not found. Please try again."
                 isLoading = false

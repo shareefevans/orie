@@ -14,28 +14,27 @@ struct PlanSelectionView: View {
     private var isDark: Bool { themeManager.isDarkMode }
     private var userId: String { authManager.currentUser?.id ?? "" }
 
-    @State private var premiumProduct: Product? = nil
+    @State private var monthlyProduct: Product? = nil
+    @State private var annualProduct: Product? = nil
     @State private var loadingProduct = true
     @State private var billingCycle: Int = 0  // 0 = monthly, 1 = annually
     @State private var isPremiumLoading = false
     @State private var isFreeLoading = false
 
+    private var selectedProduct: Product? {
+        billingCycle == 0 ? monthlyProduct : annualProduct
+    }
+
     private var monthlyPriceDisplay: String {
-        premiumProduct?.displayPrice ?? "$2.99"
+        monthlyProduct?.displayPrice ?? "$2.99"
     }
 
     private var annualPriceDisplay: String {
-        guard let product = premiumProduct else { return "$35.88" }
-        let annual = product.price * 12
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: annual as NSDecimalNumber) ?? "$35.88"
+        annualProduct?.displayPrice ?? "$29.99"
     }
 
     private var displayedPrice: String {
-        billingCycle == 0 ? "\(monthlyPriceDisplay)usd per month" : "\(annualPriceDisplay)usd per year"
+        billingCycle == 0 ? "\(monthlyPriceDisplay) per month" : "\(annualPriceDisplay) per year"
     }
 
     var body: some View {
@@ -136,7 +135,10 @@ struct PlanSelectionView: View {
                         Button(action: {
                             Task {
                                 isPremiumLoading = true
-                                await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                                let productId = billingCycle == 0
+                                    ? SubscriptionManager.premiumProductId
+                                    : SubscriptionManager.premiumAnnualProductId
+                                await subscriptionManager.purchase(authManager: authManager, userId: userId, productId: productId)
                                 isPremiumLoading = false
                             }
                         }) {
@@ -190,7 +192,7 @@ struct PlanSelectionView: View {
                                     .font(.footnote)
                                     .fontWeight(.regular)
                                     .foregroundColor(Color.secondaryText(isDark))
-                                Text(billingCycle == 0 ? "$0usd per month" : "$0usd per year")
+                                Text(billingCycle == 0 ? "$0 per month" : "$0 per year")
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(Color.primaryText(isDark))
@@ -302,7 +304,7 @@ struct PlanSelectionView: View {
     }
 
     private var trialLabel: String {
-        if let product = premiumProduct,
+        if let product = selectedProduct,
            let offer = product.subscription?.introductoryOffer,
            offer.paymentMode == .freeTrial {
             return "Try Free for 7 Days"
@@ -312,8 +314,12 @@ struct PlanSelectionView: View {
 
     private func loadProduct() async {
         loadingProduct = true
-        if let products = try? await Product.products(for: [SubscriptionManager.premiumProductId]) {
-            premiumProduct = products.first
+        if let products = try? await Product.products(for: [
+            SubscriptionManager.premiumProductId,
+            SubscriptionManager.premiumAnnualProductId
+        ]) {
+            monthlyProduct = products.first(where: { $0.id == SubscriptionManager.premiumProductId })
+            annualProduct = products.first(where: { $0.id == SubscriptionManager.premiumAnnualProductId })
         }
         loadingProduct = false
     }

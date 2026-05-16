@@ -13,11 +13,17 @@ struct UpgradePremiumModal: View {
 
     var isDark: Bool { themeManager.isDarkMode }
 
-    @State private var premiumProduct: Product? = nil
+    @State private var monthlyProduct: Product? = nil
+    @State private var annualProduct: Product? = nil
+    @State private var billingCycle: Int = 0 // 0 = monthly, 1 = annually
+
+    private var selectedProduct: Product? {
+        billingCycle == 0 ? monthlyProduct : annualProduct
+    }
 
     private var priceDisplay: String {
-        guard let product = premiumProduct else { return "$2.99" }
-        return "\(product.displayPrice)/month"
+        guard let product = selectedProduct else { return "..." }
+        return billingCycle == 0 ? "\(product.displayPrice)/month" : "\(product.displayPrice)/year"
     }
 
     private func dismiss() {
@@ -42,6 +48,8 @@ struct UpgradePremiumModal: View {
                         Text(priceDisplay)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(Color.primaryText(isDark))
+                            .contentTransition(.numericText())
+                            .animation(.easeInOut(duration: 0.2), value: billingCycle)
                         if !subscriptionManager.paywallMessage.isEmpty {
                             Text(subscriptionManager.paywallMessage)
                                 .font(.system(size: 14))
@@ -49,14 +57,12 @@ struct UpgradePremiumModal: View {
                         }
                     }
                     Spacer()
-                    Text("Upgrade")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.yellow.opacity(0.55), in: Capsule())
-                        .glassEffect(in: Capsule())
+                    Picker("", selection: $billingCycle) {
+                        Text("Monthly").tag(0)
+                        Text("Annually").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 150)
                 }
 
                 Rectangle()
@@ -93,7 +99,7 @@ struct UpgradePremiumModal: View {
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
-                Text("This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
+                Text(billingCycle == 0 ? "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase." : "This is an annual, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
                     .font(.system(size: 13))
                     .italic()
                     .foregroundColor(.gray)
@@ -121,7 +127,10 @@ struct UpgradePremiumModal: View {
                     Button(action: {
                         Task {
                             let userId = authManager.currentUser?.id ?? ""
-                            await subscriptionManager.purchase(authManager: authManager, userId: userId)
+                            let productId = billingCycle == 0
+                                ? SubscriptionManager.premiumProductId
+                                : SubscriptionManager.premiumAnnualProductId
+                            await subscriptionManager.purchase(authManager: authManager, userId: userId, productId: productId)
                             if subscriptionManager.tier == .premium {
                                 dismiss()
                             }
@@ -177,8 +186,12 @@ struct UpgradePremiumModal: View {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .task {
-            if let products = try? await Product.products(for: [SubscriptionManager.premiumProductId]) {
-                premiumProduct = products.first
+            if let products = try? await Product.products(for: [
+                SubscriptionManager.premiumProductId,
+                SubscriptionManager.premiumAnnualProductId
+            ]) {
+                monthlyProduct = products.first(where: { $0.id == SubscriptionManager.premiumProductId })
+                annualProduct = products.first(where: { $0.id == SubscriptionManager.premiumAnnualProductId })
             }
         }
     }

@@ -48,7 +48,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "9.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6759941861",
@@ -68,6 +68,39 @@
           "productID" : "orie.premium.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Premium",
+          "subscriptionGroupID" : "21958059",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "59.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "orie.premium.annually.internal",
+          "introductoryOffer" : {
+            "internalID" : "78E40415",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "AI-powered food logging with up to 15 entries per day",
+              "displayName" : "Orie Premium Annual",
+              "locale" : "en_AU"
+            }
+          ],
+          "productID" : "orie.premium.annually",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Annual",
           "subscriptionGroupID" : "21958059",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

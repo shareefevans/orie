@@ -823,6 +823,7 @@ struct MainView: View {
                 },
                 onAskOrie: {
                     dismissAllInputs()
+                    if subscriptionManager.isLoadingStatus { return }
                     if subscriptionManager.tier == .premium {
                         showOrieChat = true
                     } else {
@@ -842,6 +843,7 @@ struct MainView: View {
                     }
                 },
                 onTriggerCamera: {
+                    if subscriptionManager.isLoadingStatus { return }
                     if subscriptionManager.tier != .premium {
                         subscriptionManager.paywallMessage = "Photo scanning is a premium feature. Upgrade to scan unlimited meals."
                         subscriptionManager.showUpgradePaywall = true

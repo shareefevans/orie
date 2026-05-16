@@ -107,6 +107,7 @@ class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(DeviceIDManager.deviceID, forHTTPHeaderField: "X-Device-ID")
 
         var body: [String: Any] = [
             "email": email,
@@ -187,6 +188,7 @@ class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(DeviceIDManager.deviceID, forHTTPHeaderField: "X-Device-ID")
 
         var body: [String: Any] = ["identityToken": identityToken]
         if let fullName = fullName { body["fullName"] = fullName }

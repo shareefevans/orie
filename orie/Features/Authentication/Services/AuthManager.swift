@@ -72,7 +72,7 @@ class AuthManager: ObservableObject {
                 isAuthenticated = true
             } else {
                 // Email confirmation might be required
-                errorMessage = "Please check your email to confirm your account"
+                errorMessage = "Check your email to verify your account"
             }
         } catch let error as AuthError {
             errorMessage = error.localizedDescription

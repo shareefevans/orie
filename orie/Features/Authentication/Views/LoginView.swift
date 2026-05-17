@@ -106,7 +106,7 @@ struct LoginView: View {
                         if let error = authManager.errorMessage {
                             Text(error)
                                 .font(.system(size: 14))
-                                .foregroundColor(.red)
+                                .foregroundColor(error == "Check your email to verify your account" ? .green : .red)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
@@ -305,7 +305,9 @@ struct LoginView: View {
 
 
 #Preview {
-    LoginView(showResetPassword: .constant(false), resetPasswordToken: .constant(""))
-        .environmentObject(AuthManager())
+    let auth = AuthManager()
+    auth.errorMessage = "Check your email to verify your account"
+    return LoginView(showResetPassword: .constant(false), resetPasswordToken: .constant(""))
+        .environmentObject(auth)
         .environmentObject(ThemeManager())
 }

@@ -104,11 +104,26 @@ struct LoginView: View {
 
                         // MARK: 🚨 Error Message
                         if let error = authManager.errorMessage {
-                            Text(error)
-                                .font(.system(size: 14))
-                                .foregroundColor(error == "Check your email to verify your account" ? .green : .red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
+                            VStack(spacing: 6) {
+                                Text(error)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(error == "Check your email to verify your account." ? .green : .red)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+
+                                if error == "Check your email to verify your account." {
+                                    Button(action: {
+                                        Task {
+                                            await authManager.resendVerification(email: email)
+                                        }
+                                    }) {
+                                        Text("Resend email")
+                                            .font(.system(size: 14))
+                                            .underline()
+                                            .foregroundColor(.green)
+                                    }
+                                }
+                            }
                         }
 
                         // MARK: 👉 Primary Button
@@ -311,7 +326,7 @@ struct LoginView: View {
 
 #Preview {
     let auth = AuthManager()
-    auth.errorMessage = "Check your email to verify your account"
+    auth.errorMessage = "Check your email to verify your account."
     return LoginView(showResetPassword: .constant(false), resetPasswordToken: .constant(""))
         .environmentObject(auth)
         .environmentObject(ThemeManager())

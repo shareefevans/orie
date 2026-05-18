@@ -26,17 +26,11 @@ struct PlanSelectionView: View {
     }
 
     private var monthlyPriceDisplay: String {
-        monthlyProduct?.displayPrice ?? "$2.99"
+        monthlyProduct?.displayPrice ?? "--"
     }
 
     private var annualPriceDisplay: String {
         annualProduct?.displayPrice ?? "--"
-    }
-
-    private var annualPerMonthDisplay: String {
-        guard let product = annualProduct else { return "" }
-        let perMonth = product.price / 12
-        return perMonth.formatted(product.priceFormatStyle)
     }
 
     private var displayedPrice: String {
@@ -109,13 +103,6 @@ struct PlanSelectionView: View {
                                         .foregroundColor(Color.primaryText(isDark))
                                         .contentTransition(.numericText())
                                         .animation(.easeInOut(duration: 0.2), value: billingCycle)
-                                    if billingCycle == 1 {
-                                        Text("\(annualPerMonthDisplay)/month")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                            .contentTransition(.numericText())
-                                            .animation(.easeInOut(duration: 0.2), value: billingCycle)
-                                    }
                                 }
                             }
                             Spacer()

@@ -73,12 +73,21 @@ class AuthManager: ObservableObject {
                 isAuthenticated = true
             } else {
                 // Email confirmation might be required
-                errorMessage = "Check your email to verify your account"
+                errorMessage = "Check your email to verify your account."
             }
         } catch let error as AuthError {
             errorMessage = error.localizedDescription
         } catch {
             errorMessage = "An unexpected error occurred"
+        }
+    }
+
+    func resendVerification(email: String) async {
+        do {
+            try await AuthService.resendVerification(email: email)
+            errorMessage = "Email resent. Check your inbox."
+        } catch {
+            errorMessage = "Failed to resend. Please try again."
         }
     }
 

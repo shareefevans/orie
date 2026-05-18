@@ -134,6 +134,30 @@ class AuthService {
         return authResponse
     }
 
+    static func resendVerification(email: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/auth/resend-verification") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = ["email": email]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if httpResponse.statusCode >= 400 {
+            let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+            throw AuthError.serverError(messageResponse.error ?? "Failed to resend verification email")
+        }
+    }
+
     static func login(email: String, password: String) async throws -> AuthResponse {
         guard let url = URL(string: "\(baseURL)/api/auth/login") else {
             throw URLError(.badURL)

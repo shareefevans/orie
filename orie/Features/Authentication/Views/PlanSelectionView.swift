@@ -30,11 +30,34 @@ struct PlanSelectionView: View {
     }
 
     private var annualPriceDisplay: String {
-        annualProduct?.displayPrice ?? "$29.99"
+        annualProduct?.displayPrice ?? "--"
+    }
+
+    private var annualPerMonthDisplay: String {
+        guard let product = annualProduct else { return "" }
+        let perMonth = product.price / 12
+        return perMonth.formatted(product.priceFormatStyle)
     }
 
     private var displayedPrice: String {
         billingCycle == 0 ? "\(monthlyPriceDisplay) per month" : "\(annualPriceDisplay) per year"
+    }
+
+    private var disclaimerText: String {
+        let hasTrial = selectedProduct?.subscription?.introductoryOffer?.paymentMode == .freeTrial
+        if billingCycle == 0 {
+            if hasTrial {
+                return "After your 7-day free trial, \(monthlyPriceDisplay)/month. Cancel anytime. Payment will be charged to your Apple ID at confirmation of purchase."
+            } else {
+                return "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase."
+            }
+        } else {
+            if hasTrial {
+                return "After your 7-day free trial, \(annualPriceDisplay)/year. Cancel anytime. Payment will be charged to your Apple ID at confirmation of purchase."
+            } else {
+                return "This is an annual, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase."
+            }
+        }
     }
 
     var body: some View {
@@ -86,6 +109,13 @@ struct PlanSelectionView: View {
                                         .foregroundColor(Color.primaryText(isDark))
                                         .contentTransition(.numericText())
                                         .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                                    if billingCycle == 1 {
+                                        Text("\(annualPerMonthDisplay)/month")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                            .contentTransition(.numericText())
+                                            .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                                    }
                                 }
                             }
                             Spacer()
@@ -104,9 +134,9 @@ struct PlanSelectionView: View {
                             .frame(height: 1)
                             .padding(.vertical, 8)
 
-                        FeatureRow(icon: "checkmark.circle.fill", text: "15 Ai entries per day", color: .yellow, isDark: isDark)
-                        FeatureRow(icon: "checkmark.circle.fill", text: "Orie natural language nutritional chatbot", color: .yellow, isDark: isDark)
-                        FeatureRow(icon: "checkmark.circle.fill", text: "Voice to Text", color: .yellow, isDark: isDark)
+                        FeatureRow(icon: "checkmark.circle.fill", text: "15 AI entries per day", color: .yellow, isDark: isDark)
+                        FeatureRow(icon: "checkmark.circle.fill", text: "AI nutrition assistant", color: .yellow, isDark: isDark)
+                        FeatureRow(icon: "checkmark.circle.fill", text: "Voice logging", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Image Scanning", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Unlimited manual entries", color: .yellow, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Weekly Tracking & Overview Dashboard", color: .yellow, isDark: isDark)
@@ -118,7 +148,7 @@ struct PlanSelectionView: View {
                             .padding(.top, 8)
                             .padding(.bottom, 4)
                         
-                        Text(billingCycle == 0 ? "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase." : "This is an annually recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
+                        Text(disclaimerText)
                             .font(.system(size: 13))
                             .italic()
                             .foregroundColor(.gray)
@@ -207,7 +237,7 @@ struct PlanSelectionView: View {
                             .frame(height: 1)
                             .padding(.vertical, 8)
 
-                        FeatureRow(icon: "checkmark.circle.fill", text: "3 Ai entries per day", color: .gray, isDark: isDark)
+                        FeatureRow(icon: "checkmark.circle.fill", text: "3 AI entries per day", color: .gray, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Unlimited Manual food entry (unlimited)", color: .gray, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "AI nutrition lookup (3/day)", color: .gray, isDark: isDark)
                         FeatureRow(icon: "checkmark.circle.fill", text: "Full dashboard & tracking", color: .gray, isDark: isDark)

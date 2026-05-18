@@ -26,6 +26,29 @@ struct UpgradePremiumModal: View {
         return billingCycle == 0 ? "\(product.displayPrice)/month" : "\(product.displayPrice)/year"
     }
 
+    private var annualPerMonthDisplay: String {
+        guard let product = annualProduct else { return "" }
+        let perMonth = product.price / 12
+        return perMonth.formatted(product.priceFormatStyle)
+    }
+
+    private var disclaimerText: String {
+        let hasTrial = selectedProduct?.subscription?.introductoryOffer?.paymentMode == .freeTrial
+        if billingCycle == 0 {
+            if hasTrial {
+                return "After your 7-day free trial, \(monthlyProduct?.displayPrice ?? "--")/month. Cancel anytime. Payment will be charged to your Apple ID at confirmation of purchase."
+            } else {
+                return "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase."
+            }
+        } else {
+            if hasTrial {
+                return "After your 7-day free trial, \(annualProduct?.displayPrice ?? "--")/year. Cancel anytime. Payment will be charged to your Apple ID at confirmation of purchase."
+            } else {
+                return "This is an annual, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase."
+            }
+        }
+    }
+
     private func dismiss() {
         subscriptionManager.showUpgradePaywall = false
         subscriptionManager.paywallMessage = ""
@@ -50,6 +73,13 @@ struct UpgradePremiumModal: View {
                             .foregroundColor(Color.primaryText(isDark))
                             .contentTransition(.numericText())
                             .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                        if billingCycle == 1 && !annualPerMonthDisplay.isEmpty {
+                            Text("\(annualPerMonthDisplay)/month")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .contentTransition(.numericText())
+                                .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                        }
                         if !subscriptionManager.paywallMessage.isEmpty {
                             Text(subscriptionManager.paywallMessage)
                                 .font(.system(size: 14))
@@ -73,9 +103,9 @@ struct UpgradePremiumModal: View {
                 // Features
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach([
-                        "15 Ai entries per day",
-                        "Orie natural language nutritional chatbot",
-                        "Voice to Text",
+                        "15 AI entries per day",
+                        "AI nutrition assistant",
+                        "Voice logging",
                         "Unlimited photo scanning",
                         "Unlimited manual entries",
                         "Weekly Tracking & Overview Dashboard",
@@ -99,7 +129,7 @@ struct UpgradePremiumModal: View {
                     .frame(height: 1)
                     .padding(.vertical, 4)
 
-                Text(billingCycle == 0 ? "This is a monthly, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase." : "This is an annual, recurring payment that can be canceled at any time. Payment will be charged to your Apple ID at confirmation of purchase.")
+                Text(disclaimerText)
                     .font(.system(size: 13))
                     .italic()
                     .foregroundColor(.gray)

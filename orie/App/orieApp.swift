@@ -140,21 +140,34 @@ struct orieApp: App {
         func parseFragment(_ fragment: String) -> [String: String] {
             fragment.components(separatedBy: "&")
                 .compactMap { item -> (String, String)? in
-                    let parts = item.components(separatedBy: "=")
-                    guard parts.count == 2 else { return nil }
-                    return (parts[0], parts[1])
+                    guard let eqIndex = item.firstIndex(of: "=") else { return nil }
+                    let key = String(item[item.startIndex..<eqIndex])
+                    let value = String(item[item.index(after: eqIndex)...])
+                    guard !key.isEmpty else { return nil }
+                    return (key, value)
                 }
                 .reduce(into: [String: String]()) { $0[$1.0] = $1.1 }
         }
 
         // Handle OAuth callback: orie://callback?access_token=...&refresh_token=...
+        // Also handles email verification: orie://callback#access_token=...&refresh_token=...&type=signup
         if url.host == "callback" {
+            // Try query params first (OAuth PKCE flow)
             let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value
             let refreshToken = queryItems.first(where: { $0.name == "refresh_token" })?.value
 
             if let accessToken = accessToken, let refreshToken = refreshToken {
                 Task {
                     await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+                }
+            } else if let fragment = url.fragment {
+                // Supabase email verification puts tokens in the URL fragment
+                let params = parseFragment(fragment)
+                if let accessToken = params["access_token"],
+                   let refreshToken = params["refresh_token"] {
+                    Task {
+                        await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+                    }
                 }
             }
         }

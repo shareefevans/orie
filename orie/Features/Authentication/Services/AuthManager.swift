@@ -13,6 +13,7 @@ import Combine
 class AuthManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = true
+    @Published var isHandlingDeepLink = false
     @Published var currentUser: AuthService.User?
     @Published var errorMessage: String?
     @Published var profileSetupCompleted = false
@@ -167,6 +168,7 @@ class AuthManager: ObservableObject {
 
     /// Handle OAuth callback with tokens directly (from redirect URL)
     func handleOAuthTokens(accessToken: String, refreshToken: String) async {
+        isHandlingDeepLink = true
         errorMessage = nil
 
         // Save the tokens
@@ -180,11 +182,13 @@ class AuthManager: ObservableObject {
             saveUser(user)
             checkProfileSetupCompleted()
             await restoreOnboardingStateIfNeeded()
+            isHandlingDeepLink = false
             isAuthenticated = true
         } catch {
             // Tokens are saved, mark as authenticated even if user fetch fails
             checkProfileSetupCompleted()
             await restoreOnboardingStateIfNeeded()
+            isHandlingDeepLink = false
             isAuthenticated = true
         }
     }

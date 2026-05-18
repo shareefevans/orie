@@ -118,7 +118,12 @@ struct LoginView: View {
                             }
                         }) {
                             HStack {
-                                if isLoading {
+                                if authManager.isHandlingDeepLink {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                    Text("Logging you in...")
+                                        .font(.system(size: 16, weight: .semibold))
+                                } else if isLoading {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                 } else {
@@ -132,8 +137,8 @@ struct LoginView: View {
                             .background(Color.accessibleYellow(isDark).opacity(0.55), in: .capsule)
                         }
                         .glassEffect(in: .capsule)
-                        .disabled(isLoading || !isFormValid)
-                        .opacity(isFormValid ? 1 : 0.6)
+                        .disabled(isLoading || authManager.isHandlingDeepLink || !isFormValid)
+                        .opacity(isFormValid || authManager.isHandlingDeepLink ? 1 : 0.6)
                         .padding(.top, 8)
                     }
                     .padding(24)

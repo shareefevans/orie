@@ -136,6 +136,17 @@ struct orieApp: App {
 
         let queryItems = components.queryItems ?? []
 
+        // Helper to parse key=value pairs from a fragment string
+        func parseFragment(_ fragment: String) -> [String: String] {
+            fragment.components(separatedBy: "&")
+                .compactMap { item -> (String, String)? in
+                    let parts = item.components(separatedBy: "=")
+                    guard parts.count == 2 else { return nil }
+                    return (parts[0], parts[1])
+                }
+                .reduce(into: [String: String]()) { $0[$1.0] = $1.1 }
+        }
+
         // Handle OAuth callback: orie://callback?access_token=...&refresh_token=...
         if url.host == "callback" {
             let accessToken = queryItems.first(where: { $0.name == "access_token" })?.value
@@ -145,6 +156,20 @@ struct orieApp: App {
                 Task {
                     await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
                 }
+            }
+        }
+
+        // Handle email verification: orie://#access_token=...&refresh_token=...&type=signup
+        // Supabase redirects here after the user clicks the verification link in their email
+        if url.host == nil, let fragment = url.fragment {
+            let params = parseFragment(fragment)
+            if params["type"] == "signup" || params["type"] == "email",
+               let accessToken = params["access_token"],
+               let refreshToken = params["refresh_token"] {
+                Task {
+                    await authManager.handleOAuthTokens(accessToken: accessToken, refreshToken: refreshToken)
+                }
+                return
             }
         }
 
@@ -160,14 +185,7 @@ struct orieApp: App {
 
             // Try fragment (Supabase format)
             if let fragment = url.fragment {
-                let fragmentItems = fragment.components(separatedBy: "&")
-                    .compactMap { item -> (String, String)? in
-                        let parts = item.components(separatedBy: "=")
-                        guard parts.count == 2 else { return nil }
-                        return (parts[0], parts[1])
-                    }
-                    .reduce(into: [String: String]()) { $0[$1.0] = $1.1 }
-
+                let fragmentItems = parseFragment(fragment)
                 if let accessToken = fragmentItems["access_token"] {
                     resetPasswordToken = accessToken
                     showResetPassword = true

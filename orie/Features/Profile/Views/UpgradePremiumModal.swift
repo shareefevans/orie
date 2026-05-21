@@ -69,14 +69,19 @@ struct UpgradePremiumModal: View {
                             .fontWeight(.regular)
                             .foregroundColor(.yellow)
                         Text(priceDisplay)
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(Color.primaryText(isDark))
                             .contentTransition(.numericText())
                             .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                        Text(billingCycle == 0 ? "Billed monthly" : "Billed annually")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .contentTransition(.identity)
+                            .animation(.easeInOut(duration: 0.2), value: billingCycle)
                         if billingCycle == 1 && !annualPerMonthDisplay.isEmpty {
-                            Text("\(annualPerMonthDisplay)/month")
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                            Text("\(annualPerMonthDisplay)/mo equivalent")
+                                .font(.caption2)
+                                .foregroundColor(.gray.opacity(0.7))
                                 .contentTransition(.numericText())
                                 .animation(.easeInOut(duration: 0.2), value: billingCycle)
                         }
@@ -225,4 +230,11 @@ struct UpgradePremiumModal: View {
             }
         }
     }
+}
+
+#Preview {
+    UpgradePremiumModal()
+        .environmentObject(AuthManager())
+        .environmentObject(SubscriptionManager())
+        .environmentObject(ThemeManager())
 }

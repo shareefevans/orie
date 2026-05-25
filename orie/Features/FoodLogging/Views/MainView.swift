@@ -541,7 +541,12 @@ struct MainView: View {
                             triggerRecording: $triggerMicFromNav,
                             triggerStopRecording: $triggerStopMicFromNav,
                             triggerCamera: $triggerCameraFromNav,
-                            onRecordingChanged: { isRecordingFromField = $0 }
+                            onRecordingChanged: { isRecordingFromField = $0 },
+                            onCameraPickerDismissed: {
+                                if vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
+                                    withAnimation(.easeInOut(duration: 0.2)) { isShowingFoodInput = false }
+                                }
+                            }
                         )
                         } // end if hasEverLoggedFood || isShowingFoodInput
                     }
@@ -623,6 +628,11 @@ struct MainView: View {
         }
         .onChange(of: isInputFocused) { _, isFocused in
             if !isFocused && !isRecordingFromField && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
+                withAnimation(.easeInOut(duration: 0.2)) { isShowingFoodInput = false }
+            }
+        }
+        .onChange(of: isRecordingFromField) { _, isRecording in
+            if !isRecording && !isInputFocused && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
                 withAnimation(.easeInOut(duration: 0.2)) { isShowingFoodInput = false }
             }
         }

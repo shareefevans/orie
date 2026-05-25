@@ -29,6 +29,7 @@ struct FoodInputField: View {
     var triggerStopRecording: Binding<Bool> = .constant(false)
     var triggerCamera: Binding<Bool> = .constant(false)
     var onRecordingChanged: ((Bool) -> Void)? = nil
+    var onCameraPickerDismissed: (() -> Void)? = nil
 
     #if os(iOS)
     @State private var isRecording = false
@@ -133,7 +134,11 @@ struct FoodInputField: View {
         }
         #endif
         #if os(iOS)
-        .sheet(isPresented: $showCameraPicker) {
+        .sheet(isPresented: $showCameraPicker, onDismiss: {
+            if !isAnalyzingImage {
+                onCameraPickerDismissed?()
+            }
+        }) {
             ImagePicker(sourceType: .camera) { image in
                 handleCapturedImage(image)
             }

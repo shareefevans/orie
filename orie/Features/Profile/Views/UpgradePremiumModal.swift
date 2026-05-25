@@ -62,42 +62,43 @@ struct UpgradePremiumModal: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 // Header
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center) {
                         Text("Premium")
                             .font(.footnote)
                             .fontWeight(.regular)
                             .foregroundColor(.yellow)
-                        Text(priceDisplay)
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(Color.primaryText(isDark))
+                        Spacer()
+                        NativeSegmentedControl(
+                            options: ["Monthly", "Annually"],
+                            selectedIndex: $billingCycle,
+                            isDark: isDark
+                        )
+                        .frame(width: 160, height: 38)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 100, style: .continuous))
+                    }
+                    Text(priceDisplay)
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Color.primaryText(isDark))
+                        .contentTransition(.numericText())
+                        .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                    Text(billingCycle == 0 ? "Billed monthly" : "Billed annually")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .contentTransition(.identity)
+                        .animation(.easeInOut(duration: 0.2), value: billingCycle)
+                    if billingCycle == 1 && !annualPerMonthDisplay.isEmpty {
+                        Text("\(annualPerMonthDisplay)/mo equivalent")
+                            .font(.caption2)
+                            .foregroundColor(.gray.opacity(0.7))
                             .contentTransition(.numericText())
                             .animation(.easeInOut(duration: 0.2), value: billingCycle)
-                        Text(billingCycle == 0 ? "Billed monthly" : "Billed annually")
-                            .font(.caption)
+                    }
+                    if !subscriptionManager.paywallMessage.isEmpty {
+                        Text(subscriptionManager.paywallMessage)
+                            .font(.system(size: 14))
                             .foregroundColor(.gray)
-                            .contentTransition(.identity)
-                            .animation(.easeInOut(duration: 0.2), value: billingCycle)
-                        if billingCycle == 1 && !annualPerMonthDisplay.isEmpty {
-                            Text("\(annualPerMonthDisplay)/mo equivalent")
-                                .font(.caption2)
-                                .foregroundColor(.gray.opacity(0.7))
-                                .contentTransition(.numericText())
-                                .animation(.easeInOut(duration: 0.2), value: billingCycle)
-                        }
-                        if !subscriptionManager.paywallMessage.isEmpty {
-                            Text(subscriptionManager.paywallMessage)
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
                     }
-                    Spacer()
-                    Picker("", selection: $billingCycle) {
-                        Text("Monthly").tag(0)
-                        Text("Annually").tag(1)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 150)
                 }
 
                 Rectangle()

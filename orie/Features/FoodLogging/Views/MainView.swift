@@ -622,7 +622,7 @@ struct MainView: View {
             }
         }
         .onChange(of: isInputFocused) { _, isFocused in
-            if !isFocused && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
+            if !isFocused && !isRecordingFromField && vm.hasAnyEntries == false && vm.foodEntries.isEmpty {
                 withAnimation(.easeInOut(duration: 0.2)) { isShowingFoodInput = false }
             }
         }
@@ -818,6 +818,7 @@ struct MainView: View {
                 isRecording: isRecordingFromField,
                 onFocusInput: {
                     selectedTab = "consumed"
+                    isShowingFoodInput = true
                     isInputFocused = true
                     shouldScrollToInput = true
                 },
@@ -836,6 +837,7 @@ struct MainView: View {
                         triggerStopMicFromNav = true
                     } else {
                         selectedTab = "consumed"
+                        isShowingFoodInput = true
                         shouldScrollToInput = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                             triggerMicFromNav = true
@@ -851,6 +853,7 @@ struct MainView: View {
                         vm.triggerAiLimitAlert()
                     } else {
                         selectedTab = "consumed"
+                        isShowingFoodInput = true
                         shouldScrollToInput = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                             triggerCameraFromNav = true

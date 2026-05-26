@@ -378,20 +378,51 @@ struct SettingsTabContent: View {
 
     // MARK: - Account Actions
     private var accountActions: some View {
-        Button(action: { Task { await authManager.logout(); dismiss() } }) {
-            HStack(spacing: 8) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 16))
-                    .foregroundColor(Color.primaryText(isDark))
-                Text("Log Out")
-                    .font(.footnote)
-                    .foregroundColor(Color.primaryText(isDark))
-                    .fontWeight(.medium)
-                Spacer()
+        VStack(spacing: 0) {
+            Link(destination: URL(string: "https://www.orieapp.com/pages/privacy")!) {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Privacy Policy")
+                        .font(.footnote)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fontWeight(.medium)
+                    Spacer()
+                }
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+            }
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
+            Link(destination: URL(string: "https://www.orieapp.com/pages/terms")!) {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Terms & Conditions")
+                        .font(.footnote)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fontWeight(.medium)
+                    Spacer()
+                }
+                .padding(.vertical, 16)
+            }
+            Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
+            Button(action: { Task { await authManager.logout(); dismiss() } }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.primaryText(isDark))
+                    Text("Log Out")
+                        .font(.footnote)
+                        .foregroundColor(Color.primaryText(isDark))
+                        .fontWeight(.medium)
+                    Spacer()
+                }
+                .padding(.top, 16)
+                .padding(.bottom, 8)
             }
         }
-        .padding(.top, 24)
-        .padding(.bottom, 8)
     }
 
     // MARK: - Delete Account Button

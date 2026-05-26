@@ -176,7 +176,7 @@ struct ProfileSetupView: View {
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(Color.primaryText(isDark))
                                 .multilineTextAlignment(.center)
-                            Text("Please take a moment to review your breakdown. If you'd like to make any changes you can do so now, or alternatively from your profile page within settings.")
+                            Text("Review your breakdown.These figures are estimates for general wellness guidance only and are not a substitute for advice from a qualified healthcare professional.")
                                 .font(.system(size: 14))
                                 .foregroundColor(Color.secondaryText(isDark))
                                 .multilineTextAlignment(.center)
@@ -197,6 +197,9 @@ struct ProfileSetupView: View {
                             },
                             onComplete: { finalMacros in Task { await saveOrie(macros: finalMacros) } }
                         )
+
+                        // MARK: - ❇️ Citations
+                        SourcesCard(isDark: isDark)
                     } else {
                         // MARK: - ❇️ Toggle (above card)
                         NativeSegmentedControl(
@@ -547,6 +550,43 @@ struct ProfileSetupView: View {
     }
 }
 
+// MARK: - Sources Card
+
+private struct SourcesCard: View {
+    let isDark: Bool
+    @Environment(\.openURL) private var openURL
+
+    private let sources: [(String, URL)] = [
+        ("Mifflin-St Jeor BMR Equation — Am J Clin Nutr (1990)", URL(string: "https://pubmed.ncbi.nlm.nih.gov/2305711/")!),
+        ("ISSN Position Stand: Protein & Macronutrient Recommendations", URL(string: "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8")!),
+        ("FDA Daily Values — Sodium, Fibre & Sugar", URL(string: "https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels")!)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sources")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Color.primaryText(isDark))
+            ForEach(sources, id: \.0) { label, url in
+                Button {
+                    openURL(url)
+                } label: {
+                    Text(label)
+                        .font(.system(size: 14))
+                        .foregroundColor(.accentColor)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(32)
+        .padding(.horizontal, 16)
+    }
+}
+
 // MARK: - Results Card
 
 struct ResultsCard: View {
@@ -887,7 +927,7 @@ struct WheelPickerSheet: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
-                    Text("Please take a moment to review your breakdown. If you'd like to make any changes you can do so now, or alternatively from your profile page within settings.")
+                    Text("Review your breakdown.These figures are estimates for general wellness guidance only and are not a substitute for advice from a qualified healthcare professional.")
                         .font(.system(size: 13))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -904,6 +944,8 @@ struct WheelPickerSheet: View {
                     onBack: {},
                     onComplete: { _ in }
                 )
+
+                SourcesCard(isDark: true)
             }
         }
     }

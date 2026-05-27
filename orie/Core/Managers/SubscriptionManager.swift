@@ -216,7 +216,7 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private func refreshFromBackend() async {
-        guard let authManager = authManager, !purchaseInProgress, tier != .premium else { return }
+        guard let authManager = authManager, !purchaseInProgress else { return }
         await loadStatus(authManager: authManager)
     }
 }

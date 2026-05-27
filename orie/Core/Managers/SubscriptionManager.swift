@@ -58,33 +58,25 @@ final class SubscriptionManager: ObservableObject {
         self.authManager = authManager
         isLoading = true
 
-        // Check StoreKit entitlements first — this is the source of truth for
-        // whether the user has paid, regardless of backend sync state.
-        var hasValidEntitlement = false
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result,
-               transaction.productID == Self.premiumProductId,
-               transaction.revocationDate == nil {
-                hasValidEntitlement = true
-                break
-            }
-        }
-
         do {
             let status = try await authManager.withAuthRetry { accessToken in
                 try await APIService.getSubscriptionStatus(accessToken: accessToken)
             }
-            // If StoreKit says they have a valid purchase, don't let the backend downgrade them.
-            // This handles cases where backend verification was delayed or failed.
-            if hasValidEntitlement {
-                tier = .premium
-                aiLimit = 15
-            } else {
-                tier = SubscriptionTier(rawValue: status.tier) ?? .free
-                aiLimit = status.aiLimit
-            }
+            // Backend is the source of truth — always use its value
+            tier = SubscriptionTier(rawValue: status.tier) ?? .free
+            aiLimit = status.aiLimit
             aiUsedToday = status.aiUsedToday
         } catch {
+            // Backend unreachable — fall back to StoreKit so paying users aren't locked out offline
+            var hasValidEntitlement = false
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result,
+                   transaction.productID == Self.premiumProductId,
+                   transaction.revocationDate == nil {
+                    hasValidEntitlement = true
+                    break
+                }
+            }
             if hasValidEntitlement {
                 tier = .premium
                 aiLimit = 15

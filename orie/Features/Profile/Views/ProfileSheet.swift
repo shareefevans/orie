@@ -67,9 +67,7 @@ struct ProfileSheet: View {
         .onAppear {
             loadProfile()
             Task {
-                if subscriptionManager.tier != .premium {
-                    await subscriptionManager.loadStatus(authManager: authManager)
-                }
+                await subscriptionManager.loadStatus(authManager: authManager)
             }
         }
     }

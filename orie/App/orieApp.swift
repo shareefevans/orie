@@ -97,9 +97,7 @@ struct orieApp: App {
                             .onAppear {
                                 Task {
                                     await notificationManager.syncSystemNotifications()
-                                    if subscriptionManager.tier != .premium {
-                                        await subscriptionManager.loadStatus(authManager: authManager)
-                                    }
+                                    await subscriptionManager.loadStatus(authManager: authManager)
                                 }
                             }
                     }
@@ -119,9 +117,7 @@ struct orieApp: App {
                 if newPhase == .active && authManager.isAuthenticated {
                     Task {
                         await authManager.refreshSession()
-                        if subscriptionManager.tier != .premium {
-                            await subscriptionManager.loadStatus(authManager: authManager)
-                        }
+                        await subscriptionManager.loadStatus(authManager: authManager)
                     }
                 }
             }

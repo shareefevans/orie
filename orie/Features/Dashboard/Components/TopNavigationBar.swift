@@ -316,8 +316,6 @@ struct TopNavigationBar: View {
             }
             .buttonStyle(.plain)
 
-            Divider()
-
             Link(destination: URL(string: "https://www.orieapp.com/pages/privacy")!) {
                 HStack(spacing: 12) {
                     Image(systemName: "lock.shield")
@@ -332,8 +330,6 @@ struct TopNavigationBar: View {
                 .padding(.vertical, 14)
             }
             .buttonStyle(.plain)
-
-            Divider()
 
             Link(destination: URL(string: "https://www.orieapp.com/pages/terms")!) {
                 HStack(spacing: 12) {

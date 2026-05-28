@@ -54,6 +54,7 @@ struct ProfileSheet: View {
                         dailySugar: $dailySugar,
                         onSave: saveProfile
                     )
+                    SourcesCard(isDark: isDark)
                 }
                 .padding(.horizontal)
                 .padding(.top, 24)
@@ -154,6 +155,53 @@ struct ProfileSheet: View {
                 print("Failed to save profile: \(error)")
             }
         }
+    }
+}
+
+// MARK: - Sources Card
+
+private struct SourcesCard: View {
+    let isDark: Bool
+    @Environment(\.openURL) private var openURL
+
+    private let sources: [(String, URL)] = [
+        ("Mifflin-St Jeor BMR Equation — Am J Clin Nutr (1990)", URL(string: "https://pubmed.ncbi.nlm.nih.gov/2305711/")!),
+        ("ISSN Position Stand: Protein & Macronutrient Recommendations", URL(string: "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8")!),
+        ("FDA Daily Values — Sodium, Fibre & Sugar", URL(string: "https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels")!)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: -4) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Sources")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("See below for more information")
+                    .font(.footnote)
+                    .foregroundColor(Color.secondaryText(isDark))
+                    .padding(.bottom, 8)
+            }
+            .padding(.bottom, 16)
+            ForEach(Array(sources.enumerated()), id: \.offset) { index, source in
+                Rectangle()
+                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .frame(height: 1)
+                Button {
+                    openURL(source.1)
+                } label: {
+                    Text(source.0)
+                        .font(.system(size: 14))
+                        .foregroundColor(.accentColor)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 22)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .background(Color.cardBackground(isDark))
+        .cornerRadius(32)
     }
 }
 

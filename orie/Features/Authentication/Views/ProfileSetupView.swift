@@ -563,19 +563,30 @@ private struct SourcesCard: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sources")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(Color.primaryText(isDark))
-            ForEach(sources, id: \.0) { label, url in
+        VStack(alignment: .leading, spacing: -4) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Sources")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color.primaryText(isDark))
+                Text("See below for more information")
+                    .font(.footnote)
+                    .foregroundColor(Color.secondaryText(isDark))
+                    .padding(.bottom, 8)
+            }
+            .padding(.bottom, 16)
+            ForEach(Array(sources.enumerated()), id: \.offset) { index, source in
+                Rectangle()
+                    .fill(Color(red: 24/255, green: 24/255, blue: 24/255))
+                    .frame(height: 1)
                 Button {
-                    openURL(url)
+                    openURL(source.1)
                 } label: {
-                    Text(label)
+                    Text(source.0)
                         .font(.system(size: 14))
                         .foregroundColor(.accentColor)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 22)
                 }
                 .buttonStyle(.plain)
             }

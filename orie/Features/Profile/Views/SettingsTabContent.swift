@@ -346,6 +346,8 @@ struct SettingsTabContent: View {
                 Toggle("", isOn: $themeManager.isDarkMode).labelsHidden().disabled(true)
             }
             .padding(.vertical, 8)
+            .padding(.top, 4)
+            
             Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             HStack(spacing: 8) {
                 Image(systemName: "bell")
@@ -359,6 +361,7 @@ struct SettingsTabContent: View {
                 Toggle("", isOn: notificationsBinding).labelsHidden()
             }
             .padding(.vertical, 8)
+            
             Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             HStack(spacing: 8) {
                 Image(systemName: "dot.radiowaves.left.and.right")
@@ -390,9 +393,11 @@ struct SettingsTabContent: View {
                         .fontWeight(.medium)
                     Spacer()
                 }
-                .padding(.top, 24)
-                .padding(.bottom, 16)
+                .padding(.top, 20)
+                .padding(.bottom, 20)
             }
+            
+            
             Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             Link(destination: URL(string: "https://www.orieapp.com/pages/terms")!) {
                 HStack(spacing: 8) {
@@ -405,8 +410,11 @@ struct SettingsTabContent: View {
                         .fontWeight(.medium)
                     Spacer()
                 }
-                .padding(.vertical, 16)
+                .padding(.top, 20)
+                .padding(.bottom, 20)
             }
+            
+            
             Rectangle().fill(Color(red: 24/255, green: 24/255, blue: 24/255)).frame(height: 1)
             Button(action: { Task { await authManager.logout(); dismiss() } }) {
                 HStack(spacing: 8) {
@@ -419,7 +427,7 @@ struct SettingsTabContent: View {
                         .fontWeight(.medium)
                     Spacer()
                 }
-                .padding(.top, 16)
+                .padding(.top, 20)
                 .padding(.bottom, 8)
             }
         }

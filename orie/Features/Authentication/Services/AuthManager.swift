@@ -448,6 +448,7 @@ class AuthManager: ObservableObject {
                     saveUser(user)
                 }
                 checkProfileSetupCompleted()
+                await restoreOnboardingStateIfNeeded()
                 isAuthenticated = true
                 sessionRefreshCount += 1
             } else {
